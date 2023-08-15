@@ -6,7 +6,7 @@ import 'mapbox-gl/dist/mapbox-gl.css'
 import '@mapbox/mapbox-gl-draw/dist/mapbox-gl-draw.css'
 import axios from 'axios'
 
-const ACCESS_TOKEN = process.env.VITE_MAPBOX_ACCESS_TOKEN
+const ACCESS_TOKEN = import.meta.env.VITE_MAPBOX_ACCESS_TOKEN
 mapboxgl.accessToken = ACCESS_TOKEN
 
 const MapContainer = () => {
@@ -21,6 +21,7 @@ const MapContainer = () => {
     map.current = new mapboxgl.Map({
       container: mapContainer.current,
       style: 'mapbox://styles/mapbox/satellite-v9',
+      // style: 'mapbox://styles/sebastianait/cljt11d3y01dt01o4cr7ha21t',
       center: [lng, lat],
       zoom: zoom,
     })

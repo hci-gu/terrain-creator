@@ -2,7 +2,9 @@ require('dotenv').config()
 
 const express = require('express')
 const fs = require('fs')
-const mapboxUtils = require('./mapbox')
+const mapbox = require('./mapbox')
+const segmenter = require('./segmenter')
+const heightmap = require('./heightmap')
 const cors = require('cors')
 
 const app = express()
@@ -18,11 +20,13 @@ app.post('/tile', async (req, res) => {
   const { coords } = req.body
   console.log('POST /tile', coords)
 
-  const tile = await mapboxUtils.getTile(coords)
+  const tileId = await mapbox.getTile(coords)
+  const landcoverTiles = await segmenter.getLandcoversForTile(tileId)
+  await heightmap.modifyHeightmap(tileId, landcoverTiles)
 
   //   const file = await writeFile(tile)
 
-  res.send(tile)
+  res.send(tileId)
 })
 
 app.listen(3000, () => {

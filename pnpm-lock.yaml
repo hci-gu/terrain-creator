@@ -11,10 +11,12 @@ specifiers:
   '@tabler/icons-react': ^2.23.0
   '@turf/turf': ^6.5.0
   '@vitejs/plugin-react': ^4.0.0
+  alea: ^1.0.1
   axios: ^1.4.0
   cors: ^2.8.5
   dotenv: ^16.2.0
   express: ^4.18.2
+  form-data: ^4.0.0
   jotai: ^2.2.0
   mapbox-gl: ^2.15.0
   mapbox-gl-draw-rectangle-mode: ^1.0.4
@@ -23,6 +25,7 @@ specifiers:
   react-dom: ^18.2.0
   sha1: ^1.1.1
   sharp: ^0.32.1
+  simplex-noise: ^4.0.1
   uuid: ^9.0.0
   vite: ^4.3.9
 
@@ -36,10 +39,12 @@ dependencies:
   '@mapbox/tilebelt': 1.0.2
   '@tabler/icons-react': 2.23.0_react@18.2.0
   '@turf/turf': 6.5.0
+  alea: 1.0.1
   axios: 1.4.0
   cors: 2.8.5
   dotenv: 16.2.0
   express: 4.18.2
+  form-data: 4.0.0
   jotai: 2.2.0_react@18.2.0
   mapbox-gl: 2.15.0
   mapbox-gl-draw-rectangle-mode: 1.0.4
@@ -48,6 +53,7 @@ dependencies:
   react-dom: 18.2.0_react@18.2.0
   sha1: 1.1.1
   sharp: 0.32.1
+  simplex-noise: 4.0.1
   uuid: 9.0.0
 
 devDependencies:
@@ -1997,6 +2003,10 @@ packages:
       negotiator: 0.6.3
     dev: false
 
+  /alea/1.0.1:
+    resolution: {integrity: sha512-QU+wv+ziDXaMxRdsQg/aH7sVfWdhKps5YP97IIwFkHCsbDZA3k87JXoZ5/iuemf4ntytzIWeScrRpae8+lDrXA==}
+    dev: false
+
   /ansi-styles/3.2.1:
     resolution: {integrity: sha512-VT0ZI6kZRdTh8YyJw3SMbYm/u+NqfsAxEpWO0Pf9sq8/e94WxxOpPKx9FR1FlyCtOVDNOQ+8ntlqFxiRc+r5qA==}
     engines: {node: '>=4'}
@@ -3390,6 +3400,10 @@ packages:
     resolution: {integrity: sha512-JA//kQgZtbuY83m+xT+tXJkmJncGMTFT+C+g2h2R9uxkYIrE2yy9sgmcLhCnw57/WSD+Eh3J97FPEDFnbXnDUg==}
     dependencies:
       is-arrayish: 0.3.2
+    dev: false
+
+  /simplex-noise/4.0.1:
+    resolution: {integrity: sha512-zl/+bdSqW7HJOQ0oDbxrNYaF4F5ik0i7M6YOYmEoIJNtg16NpvWaTTM1Y7oV/7T0jFljawLgYPS81Uu2rsfo1A==}
     dev: false
 
   /skmeans/0.9.7:
