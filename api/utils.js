@@ -175,12 +175,12 @@ const mergeHeightmaps = (heightmap1, heightmap2, multiplier = 1) => {
   return mergedHeightmap
 }
 
-const multiplyHeightmaps = (heightmap1, heightmap2) => {
-  const size = Math.sqrt(heightmap1.length)
+const multiplyHeightmaps = (original, mask, options) => {
+  const size = Math.sqrt(original.length)
   const mergedHeightmap = new Float32Array(size * size)
 
   for (let i = 0; i < size * size; i++) {
-    mergedHeightmap[i] = heightmap1[i] * heightmap2[i]
+    mergedHeightmap[i] = original[i] * mask[i]
   }
 
   return mergedHeightmap
@@ -228,6 +228,38 @@ const stitchTileImages = (images, outPath) => {
       )
     })
     .catch((err) => console.error(err))
+}
+
+const generateOutline = async (inputFile, outputFile) => {
+  const original = await sharp(inputFile).toBuffer()
+
+  // Dilate the shapes with a larger blur and threshold back to binary
+  const dilated = await sharp(original)
+    .blur(12) // Adjust for even thicker dilation
+    .threshold(190) // Higher threshold for more solid outline
+    .toBuffer()
+
+  // Outer edge
+  const outerEdge = await sharp(original)
+    .composite([{ input: dilated, blend: 'difference' }])
+    .toBuffer()
+
+  // Inner edge
+  const innerEdge = await sharp(dilated)
+    .composite([{ input: original, blend: 'difference' }])
+    .toBuffer()
+
+  // Combine the two edges
+  const combinedEdges = await sharp(outerEdge)
+    .composite([{ input: innerEdge, blend: 'add' }])
+    .toBuffer()
+
+  // Apply another threshold to ensure solid black and white
+  const outline = await sharp(combinedEdges).threshold(128).toBuffer()
+
+  const final = await sharp(outline).blur(4).threshold(128).toBuffer()
+
+  await sharp(final).threshold(128).toFile(outputFile)
 }
 
 const promiseSeries = (items, method) => {
@@ -296,5 +328,6 @@ module.exports = {
   stitchTileImages,
   promiseSeries,
   tileToId,
+  generateOutline,
   minTilesForCoords,
 }

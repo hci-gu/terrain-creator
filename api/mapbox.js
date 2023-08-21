@@ -15,6 +15,7 @@ const {
   getEdgePixels,
   reducePixelValue,
 } = require('./utils')
+const googleEarth = require('./google-earth')
 const ACCESS_TOKEN = process.env.MAPBOX_ACCESS_TOKEN
 const MAPBOX_USERNAME = process.env.MAPBOX_USERNAME
 const MAPBOX_STYLE_ID = process.env.MAPBOX_STYLE_ID
@@ -22,7 +23,10 @@ const MAPBOX_STYLE_ID = process.env.MAPBOX_STYLE_ID
 const baseUrl = 'https://api.mapbox.com/v4'
 const downloadTile = async (tile, type = 'mapbox.terrain-rgb') => {
   const [x, y, zoom] = tile
-  const url = `${baseUrl}/${type}/${zoom}/${x}/${y}@2x.pngraw?access_token=${ACCESS_TOKEN}`
+  let url = `${baseUrl}/${type}/${zoom}/${x}/${y}@2x.pngraw?access_token=${ACCESS_TOKEN}`
+  if (type === 'landcover-grass') {
+    url = `https://api.mapbox.com/styles/v1/${MAPBOX_USERNAME}/${MAPBOX_STYLE_ID}/tiles/${zoom}/${x}/${y}?access_token=${ACCESS_TOKEN}&fresh=true`
+  }
 
   const response = await axios.get(url, {
     responseType: 'arraybuffer',
@@ -31,18 +35,12 @@ const downloadTile = async (tile, type = 'mapbox.terrain-rgb') => {
   return response.data
 }
 
-const downloadLandcoverTile = async (tile) => {
-  const [x, y, zoom] = tile
-  const url = `https://api.mapbox.com/styles/v1/${MAPBOX_USERNAME}/${MAPBOX_STYLE_ID}/tiles/${zoom}/${x}/${y}?access_token=${ACCESS_TOKEN}`
-
-  const response = await axios.get(url, {
-    responseType: 'arraybuffer',
-  })
-
-  return response.data
-}
-
-const getChildrenAndStitch = async (parentPath, tile, bottom = false) => {
+const getChildrenAndStitch = async (
+  parentPath,
+  tile,
+  index,
+  bottom = false
+) => {
   const path = `${parentPath}/${tileToId(tile)}`
   await createFolder(path)
 
@@ -71,9 +69,16 @@ const getChildrenAndStitch = async (parentPath, tile, bottom = false) => {
     await stitchTileImages(filePaths, stitchedPath)
   } else {
     const childrenFilePaths = await promiseSeries(children, (childTile) =>
-      getChildrenAndStitch(path, childTile, true)
+      getChildrenAndStitch(path, childTile, children.indexOf(childTile), true)
     )
 
+    fs.writeFileSync(
+      `${path}/tile.json`,
+      JSON.stringify({
+        tile,
+        index,
+      })
+    )
     await stitchTileImages(childrenFilePaths, stitchedPath)
   }
 
@@ -88,7 +93,7 @@ const getTile = async (folder, tile, index) => {
     return [
       `${path}/heightmap.png`,
       `${path}/stitched.png`,
-      `${path}/island_mask.png`,
+      `${path}/landcover_grass.png`,
     ]
   } else {
     // create folder
@@ -100,11 +105,13 @@ const getTile = async (folder, tile, index) => {
   const rgbPixelData = await getPixelDataFromFile(`${path}/terrain-rgb.png`)
   const heightmapData = convertPngToHeightMap(rgbPixelData)
   await writePixelsToPng(heightmapData, 512, 512, `${path}/heightmap.png`)
+  const landcoverGrassData = await downloadTile(tile, 'landcover-grass')
+  await writeFile(landcoverGrassData, `${path}/landcover_grass.png`)
 
   const children = tilebelt.getChildren(tile)
 
   const childrenFiles = await promiseSeries(children, (childTile) =>
-    getChildrenAndStitch(path, childTile)
+    getChildrenAndStitch(path, childTile, children.indexOf(childTile))
   )
 
   await stitchTileImages(childrenFiles, `${path}/stitched.png`)
@@ -119,7 +126,7 @@ const getTile = async (folder, tile, index) => {
   return [
     `${path}/heightmap.png`,
     `${path}/stitched.png`,
-    `${path}/island_mask.png`,
+    `${path}/landcover_grass.png`,
   ]
 }
 
@@ -142,6 +149,7 @@ const compareImageHeightsAndReduce = async (image1, image2, side1, side2) => {
 }
 
 module.exports = {
+  tileToBBOX: (tile) => tilebelt.tileToBBOX(tile),
   getTile: async (coords) => {
     const tiles = minTilesForCoords(coords)
     const tileId = tileToId(tiles.flat())
@@ -156,8 +164,12 @@ module.exports = {
     const imagePaths = await promiseSeries(tiles, (tile, index) =>
       getTile(path, tile, index)
     )
+    const landcoverMaps = await promiseSeries(tiles, (tile) =>
+      googleEarth.downloadTile(tile)
+    )
     const heightMaps = imagePaths.map((imagePath) => imagePath[0])
     const rasterMaps = imagePaths.map((imagePath) => imagePath[1])
+    // const landcoverMaps = imagePaths.map((imagePath) => imagePath[2])
 
     await compareImageHeightsAndReduce(
       heightMaps[0],
@@ -173,9 +185,10 @@ module.exports = {
       'left'
     )
 
-    // stich images
+    // stitch all heightmaps
     await stitchTileImages(heightMaps, `${path}/heightmap.png`)
     await stitchTileImages(rasterMaps, `${path}/sattelite.png`)
+    await stitchTileImages(landcoverMaps, `${path}/landcover.png`)
 
     return tileId
   },

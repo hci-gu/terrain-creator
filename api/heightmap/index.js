@@ -159,7 +159,7 @@ const applyMask = async (heightmapFile, mask) => {
   const maskmap = await heightmapFromFile(mask.file)
   const maskMapWithBlur = applyGaussianFilter(maskmap, RESOLUTION, mask.blur)
 
-  const modifiedHeightmap = multiplyHeightmaps(heightmap, maskMapWithBlur)
+  const modifiedHeightmap = multiplyHeightmaps(heightmap, maskMapWithBlur, mask)
 
   return heightMapToFile(
     modifiedHeightmap,

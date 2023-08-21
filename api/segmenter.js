@@ -6,10 +6,11 @@ const {
   stitchTileImages,
   invertImage,
   resizeAndConvert,
+  generateOutline,
 } = require('./utils')
 
 const segmentTile = async (imagePath, writePath, prompt) => {
-  const url = 'http://130.241.23.151:8765/segment'
+  const url = 'http://130.241.23.169:8765/segment'
   const formData = new FormData()
 
   formData.append('image', fs.createReadStream(imagePath))
@@ -40,10 +41,25 @@ module.exports = {
     if (fs.existsSync(mask_file)) {
       return [
         {
+          name: 'landcover',
+          file: `${path}/landcover.png`,
+          type: 'multiply',
+          amount: 0.5,
+          blur: 8,
+        },
+        {
           name: 'island_mask',
           file: mask_file,
           type: 'multiply',
+          amount: 0.1,
           blur: 12,
+        },
+        {
+          name: 'landcover_sand',
+          file: `${path}/landcover_sand.png`,
+          type: 'multiply',
+          amount: 0.2,
+          blur: 4,
         },
       ]
     }
@@ -77,12 +93,29 @@ module.exports = {
     await invertImage(mask_file)
     await resizeAndConvert(mask_file, 1024)
 
+    await generateOutline(mask_file, `${path}/landcover_sand.png`)
+
     return [
+      {
+        name: 'landcover',
+        file: `${path}/landcover.png`,
+        type: 'multiply',
+        amount: 0.5,
+        blur: 8,
+      },
       {
         name: 'island_mask',
         file: mask_file,
         type: 'multiply',
+        amount: 0.1,
         blur: 12,
+      },
+      {
+        name: 'landcover_sand',
+        file: `${path}/landcover_sand.png`,
+        type: 'multiply',
+        amount: 0.2,
+        blur: 4,
       },
     ]
   },
