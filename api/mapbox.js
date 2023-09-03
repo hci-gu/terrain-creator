@@ -13,7 +13,7 @@ const {
   tileToId,
   minTilesForCoords,
   getEdgePixels,
-  reducePixelValue,
+  updatePixelValues,
 } = require('./utils')
 const googleEarth = require('./google-earth')
 const ACCESS_TOKEN = process.env.MAPBOX_ACCESS_TOKEN
@@ -130,7 +130,13 @@ const getTile = async (folder, tile, index) => {
   ]
 }
 
-const compareImageHeightsAndReduce = async (image1, image2, side1, side2) => {
+const compareImageHeightsAndUpdate = async (
+  image1,
+  image2,
+  side1,
+  side2,
+  increase = false
+) => {
   const edge1 = await getEdgePixels(image1, side1)
   const edge2 = await getEdgePixels(image2, side2)
   const avgEdge1 = edge1.reduce((a, b) => a + b, 0) / edge1.length
@@ -143,9 +149,15 @@ const compareImageHeightsAndReduce = async (image1, image2, side1, side2) => {
   }
   const averageDiff = Math.abs(diffs.reduce((a, b) => a + b, 0) / diffs.length)
 
-  let imageToReduce = avgEdge1 > avgEdge2 ? image1 : image2
+  let imageToUpdate = increase
+    ? avgEdge1 > avgEdge2
+      ? image1
+      : image2
+    : avgEdge1 < avgEdge2
+    ? image1
+    : image2
 
-  await reducePixelValue(imageToReduce, averageDiff)
+  await updatePixelValues(imageToUpdate, increase ? averageDiff : -averageDiff)
 }
 
 module.exports = {
@@ -171,21 +183,9 @@ module.exports = {
     const rasterMaps = imagePaths.map((imagePath) => imagePath[1])
     // const landcoverMaps = imagePaths.map((imagePath) => imagePath[2])
 
-    await compareImageHeightsAndReduce(
-      heightMaps[0],
-      heightMaps[1],
-      'right',
-      'left'
-    )
+    // fix heightmaps before stitching
 
-    await compareImageHeightsAndReduce(
-      heightMaps[2],
-      heightMaps[3],
-      'right',
-      'left'
-    )
-
-    // stitch all heightmaps
+    // stitch all images
     await stitchTileImages(heightMaps, `${path}/heightmap.png`)
     await stitchTileImages(rasterMaps, `${path}/sattelite.png`)
     await stitchTileImages(landcoverMaps, `${path}/landcover.png`)

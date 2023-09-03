@@ -105,7 +105,7 @@ const getEdgePixels = async (imagePath, edge) => {
   return edgePixels
 }
 
-async function reducePixelValue(imagePath, reductionValue) {
+async function updatePixelValues(imagePath, amount) {
   // load the image and convert to raw pixel data
   const {
     data,
@@ -115,9 +115,9 @@ async function reducePixelValue(imagePath, reductionValue) {
   // Traverse the buffer
   for (let i = 0; i < width * height * channels; i += channels) {
     // reduce r,g,b values by the reductionValue
-    data[i] = Math.max(0, data[i] - reductionValue)
-    data[i + 1] = Math.max(0, data[i + 1] - reductionValue)
-    data[i + 2] = Math.max(0, data[i + 2] - reductionValue)
+    data[i] = Math.max(0, data[i] + amount)
+    data[i + 1] = Math.max(0, data[i + 1] + amount)
+    data[i + 2] = Math.max(0, data[i + 2] + amount)
   }
 
   // write the modified data back to the image
@@ -324,7 +324,7 @@ module.exports = {
   getEdgePixels,
   multiplyHeightmaps,
   mergeHeightmaps,
-  reducePixelValue,
+  updatePixelValues,
   stitchTileImages,
   promiseSeries,
   tileToId,

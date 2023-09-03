@@ -1,15 +1,41 @@
-import React, { useEffect, useRef, useState } from 'react'
+import React from 'react'
+import { createBrowserRouter, RouterProvider } from 'react-router-dom'
 import styled from '@emotion/styled'
 import DarkModeToggle from './components/DarkModeToggle'
 import { Title, Header } from '@mantine/core'
 import MapContainer from './components/Map'
+import { useAtomValue } from 'jotai'
+import { tilesAtom } from './state'
+import Tile from './pages/Tile'
 
 const Container = styled.div`
   margin: 0 auto;
   width: 100%;
 `
 
+const TileRoute = () => {
+  return (
+    <>
+      <MapContainer />
+      <Tile />
+    </>
+  )
+}
+
+const router = createBrowserRouter([
+  {
+    path: '/',
+    element: <MapContainer />,
+  },
+  {
+    path: '/tile/:id',
+    element: <TileRoute />,
+  },
+])
+
 const App = () => {
+  useAtomValue(tilesAtom)
+
   return (
     <>
       <Header
@@ -28,7 +54,7 @@ const App = () => {
         <DarkModeToggle />
       </Header>
       <Container>
-        <MapContainer />
+        <RouterProvider router={router} />
       </Container>
     </>
   )

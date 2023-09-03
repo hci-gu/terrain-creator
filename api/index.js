@@ -2,6 +2,7 @@ require('dotenv').config()
 
 const express = require('express')
 const fs = require('fs')
+const { createCanvas, loadImage } = require('canvas')
 const mapbox = require('./mapbox')
 const segmenter = require('./segmenter')
 const heightmap = require('./heightmap')
@@ -56,9 +57,11 @@ app.get('/tiles', (req, res) => {
     const tileFolders = fs
       .readdirSync(`./public/tiles/${id}`, { withFileTypes: true })
       .filter((dir) => dir.isDirectory())
-
     return {
       id,
+      landcover: `/tiles/${id}/landcover_colors.png`,
+      heightmap: `/tiles/${id}/heightmap_with_blur_with_noise.png`,
+      satellite: `/tiles/${id}/sattelite.png`,
       tiles: tileFolders.map((dir) =>
         getTile(`./public/tiles/${id}`, dir.name)
       ),
@@ -80,6 +83,29 @@ app.post('/tile', async (req, res) => {
   //   const file = await writeFile(tile)
 
   res.send(tileId)
+})
+
+// route to accept posted image
+app.post('/tile/:id/landcover', async (req, res) => {
+  const { id } = req.params
+
+  // Create a new canvas
+  const canvas = createCanvas(1024, 1024) // Adjust dimensions as needed
+  const ctx = canvas.getContext('2d')
+
+  // Load the image from the data URL
+  const image = await loadImage(req.body.image)
+  ctx.drawImage(image, 0, 0, 1024, 1024)
+
+  const outputPath = `./public/tiles/${id}/landcover_colors_edited.png` // Provide a valid file path
+  const stream = canvas.createPNGStream()
+  const out = require('fs').createWriteStream(outputPath)
+  stream.pipe(out)
+
+  out.on('finish', () => {
+    console.log('Image saved as PNG')
+    res.status(200).send('Image saved as PNG')
+  })
 })
 
 app.listen(3000, () => {

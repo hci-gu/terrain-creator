@@ -1,5 +1,94 @@
 const sharp = require('sharp')
 const COLORS = require('./colors')
+const alea = require('alea')
+const { createNoise2D } = require('simplex-noise')
+
+const generateOutline = async (image, size) => {
+  const original = await image.png().toBuffer()
+
+  // Dilate the shapes with a larger blur and threshold back to binary
+  const dilated = await sharp(original)
+    .blur(size) // Adjust for even thicker dilation
+    .threshold(190) // Higher threshold for more solid outline
+    .toBuffer()
+
+  // Outer edge
+  const outerEdge = await sharp(original)
+    .composite([{ input: dilated, blend: 'difference' }])
+    .toBuffer()
+
+  // Inner edge
+  const innerEdge = await sharp(dilated)
+    .composite([{ input: original, blend: 'difference' }])
+    .toBuffer()
+
+  // Combine the two edges
+  const combinedEdges = await sharp(outerEdge)
+    .composite([{ input: innerEdge, blend: 'add' }])
+    .toBuffer()
+
+  // Apply another threshold to ensure solid black and white
+  const outline = await sharp(combinedEdges).threshold(128).toBuffer()
+
+  const final = await sharp(outline).blur(4).threshold(128).toBuffer()
+
+  return sharp(final).threshold(128)
+}
+
+async function generateNoiseImage(width, height, size = 20) {
+  const prng = alea(Math.floor(Math.random() * 10000000))
+  const noise2D = createNoise2D(prng)
+  const noiseBuffer = Buffer.alloc(width * height * 4)
+
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      let value = (noise2D(x / size, y / size) + 1) * 0.5 * 255
+      const idx = (y * width + x) * 4
+      // set value to either 0 or 255
+      value = value > 128 ? 255 : 0
+
+      noiseBuffer[idx] = value
+      noiseBuffer[idx + 1] = value
+      noiseBuffer[idx + 2] = value
+      noiseBuffer[idx + 3] = 255
+    }
+  }
+
+  return sharp(noiseBuffer, { raw: { width, height, channels: 4 } }).resize(
+    1024,
+    1024
+  )
+}
+
+async function noiseOutlineOfImage(image) {
+  const noiseImage = await generateNoiseImage(1024, 1024, 15)
+
+  const outline = await generateOutline(image, 6)
+
+  const mask = await noiseImage.composite([
+    {
+      input: await outline.toBuffer(),
+      blend: 'multiply',
+    },
+  ])
+
+  const processed = await image
+    .composite([
+      {
+        input: await mask.toBuffer(),
+        raw: {
+          width: 1024,
+          height: 1024,
+          channels: 4,
+        },
+        blend: 'add',
+      },
+    ])
+    .threshold(128)
+    .toBuffer()
+
+  return sharp(processed)
+}
 
 function colorDistance(color1, color2) {
   const rDiff = color1[0] - color2[0]
@@ -11,6 +100,7 @@ function colorDistance(color1, color2) {
 
 async function extractMask(inputPath, targetColor) {
   const maskImage = await sharp(inputPath)
+    .resize(1024, 1024)
     .toColourspace('srgb')
     .raw()
     .toBuffer({ resolveWithObject: true })
@@ -44,7 +134,7 @@ async function extractMask(inputPath, targetColor) {
   }
 
   // Save the mask
-  return await sharp(data, {
+  const mask = await sharp(data, {
     width: width,
     height: height,
     channels: channels,
@@ -54,6 +144,8 @@ async function extractMask(inputPath, targetColor) {
       channels: channels,
     },
   })
+
+  return noiseOutlineOfImage(mask)
 }
 
 async function combineMasksWithColors(masks, width, height) {
@@ -183,12 +275,12 @@ const combineLandcoverAndRecolor = async (landcoverTiles) => {
   const grassMask = await extractMask(eeLandcover.file, eeColors.grass)
   const rockmask = await extractMask(eeLandcover.file, eeColors.shrub)
   // read and scale down to 512
-  const sandMask = await sharp(sand_mask.file).resize(512, 512)
+  let sandMask = await sharp(sand_mask.file)
+  sandMask = await noiseOutlineOfImage(sandMask)
   // read island mask, invert black/white and scale down to 512
   const islandMask = sharp(island_mask.file)
 
-  const oceanMask = (await invertColorsOfImage(islandMask)).resize(512, 512)
-  console.log(oceanMask)
+  const oceanMask = await invertColorsOfImage(islandMask)
   // .blur(50)
   // .negate(false)
 
@@ -200,7 +292,7 @@ const combineLandcoverAndRecolor = async (landcoverTiles) => {
     { image: rockmask, color: [94, 101, 114] },
   ]
 
-  mergeAndColorize(masksToCombine, 512, 512)
+  mergeAndColorize(masksToCombine, 1024, 1024)
     .then((combined) => {
       combined.toFile(
         eeLandcover.file.replace('landcover', 'landcover_colors'),
@@ -221,3 +313,29 @@ const combineLandcoverAndRecolor = async (landcoverTiles) => {
 module.exports = {
   combineLandcoverAndRecolor,
 }
+
+const path = './public/tiles/7cff2c615067bafdaf154ec56993c26cfc025140'
+
+// combineLandcoverAndRecolor([
+//   {
+//     name: 'landcover',
+//     file: `${path}/landcover.png`,
+//     type: 'multiply',
+//     amount: 0.5,
+//     blur: 8,
+//   },
+//   {
+//     name: 'island_mask',
+//     file: `${path}/island_mask.png`,
+//     type: 'multiply',
+//     amount: 0.1,
+//     blur: 12,
+//   },
+//   {
+//     name: 'landcover_sand',
+//     file: `${path}/landcover_sand.png`,
+//     type: 'multiply',
+//     amount: 0.2,
+//     blur: 4,
+//   },
+// ])
