@@ -2,7 +2,7 @@ const axios = require('axios')
 const baseUrl =
   'https://earthengine.googleapis.com/v1/projects/earthengine-legacy/maps'
 const GOOGLE_EARTH_ID =
-  'fe7eda0941e04d2b3aac0d0aa1da729d-6a95b41780c1294eddee9beb8675026c'
+  '6c308fc1f2712ed92e97086d11dffaf5-b054bf7bca60b28d2d1ce3ad001adf4d'
 
 const downloadTile = async (tile) => {
   const [x, y, zoom] = tile

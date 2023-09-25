@@ -1,6 +1,7 @@
 require('dotenv').config()
 
 const express = require('express')
+const bodyParser = require('body-parser')
 const fs = require('fs')
 const { createCanvas, loadImage } = require('canvas')
 const mapbox = require('./mapbox')
@@ -12,6 +13,7 @@ const { combineLandcoverAndRecolor } = require('./landcover')
 const app = express()
 
 app.use(cors())
+app.use(bodyParser({ limit: '10mb' }))
 app.use(express.json())
 
 app.get('/', (req, res) => {
@@ -26,6 +28,11 @@ const getTile = (path, id) => {
       ...tileInfo,
       bbox: mapbox.tileToBBOX(tileInfo.tile),
     }
+    const zoom = tileInfo.tile[2]
+    tileInfo.getMetersPerPixel = mapbox.getMetersPerPixel(
+      zoom,
+      tileInfo.bbox[1]
+    )
   }
 
   const childTiles = fs
@@ -57,14 +64,49 @@ app.get('/tiles', (req, res) => {
     const tileFolders = fs
       .readdirSync(`./public/tiles/${id}`, { withFileTypes: true })
       .filter((dir) => dir.isDirectory())
+    const tiles = tileFolders.map((dir) =>
+      getTile(`./public/tiles/${id}`, dir.name)
+    )
+    const arrayOfBboxes = tiles.map((tile) => tile.bbox)
+
+    // Initialize an empty bbox with high and low values
+    let overallBbox = [Infinity, Infinity, -Infinity, -Infinity]
+
+    // Iterate through the array of bboxes and expand the overall bbox
+    arrayOfBboxes.forEach((bbox) => {
+      const [minX, minY, maxX, maxY] = bbox
+      overallBbox = [
+        Math.min(minX, overallBbox[0]),
+        Math.min(minY, overallBbox[1]),
+        Math.max(maxX, overallBbox[2]),
+        Math.max(maxY, overallBbox[3]),
+      ]
+    })
+    const minHeight = Math.min(...tiles.map((tile) => tile.minHeight))
+    const maxHeight = Math.max(...tiles.map((tile) => tile.maxHeight))
+
+    // check if edited versions exist
+    const editedLandcoverFile = `./public/tiles/${id}/landcover_colors_edited.png`
+    let landcoverFile = `./public/tiles/${id}/landcover_colors.png`
+
+    if (fs.existsSync(editedLandcoverFile)) {
+      landcoverFile = editedLandcoverFile
+    }
+
     return {
       id,
-      landcover: `/tiles/${id}/landcover_colors.png`,
-      heightmap: `/tiles/${id}/heightmap_with_blur_with_noise.png`,
+      landcover: landcoverFile.replace('./public', ''),
+      heightmap: `/tiles/${id}/heightmap_final.png`,
       satellite: `/tiles/${id}/sattelite.png`,
-      tiles: tileFolders.map((dir) =>
-        getTile(`./public/tiles/${id}`, dir.name)
-      ),
+      bbox: overallBbox,
+      center: [
+        (overallBbox[0] + overallBbox[2]) / 2,
+        (overallBbox[1] + overallBbox[3]) / 2,
+      ],
+      metersPerPixel: tiles[0].getMetersPerPixel,
+      minHeight,
+      maxHeight,
+      tiles,
     }
   })
 
@@ -78,7 +120,7 @@ app.post('/tile', async (req, res) => {
   const tileId = await mapbox.getTile(coords)
   const landcoverTiles = await segmenter.getLandcoversForTile(tileId)
   await combineLandcoverAndRecolor(landcoverTiles)
-  await heightmap.modifyHeightmap(tileId, landcoverTiles)
+  await heightmap.modifyHeightmap(tileId)
 
   //   const file = await writeFile(tile)
 
@@ -88,24 +130,18 @@ app.post('/tile', async (req, res) => {
 // route to accept posted image
 app.post('/tile/:id/landcover', async (req, res) => {
   const { id } = req.params
+  console.log('POST /tile/:id/landcover', id)
+  const image = req.body.image
+  const base64Data = image.replace(/^data:image\/png;base64,/, '')
 
-  // Create a new canvas
-  const canvas = createCanvas(1024, 1024) // Adjust dimensions as needed
-  const ctx = canvas.getContext('2d')
+  // Convert the base64 string back to binary data
+  const binaryData = Buffer.from(base64Data, 'base64')
 
-  // Load the image from the data URL
-  const image = await loadImage(req.body.image)
-  ctx.drawImage(image, 0, 0, 1024, 1024)
+  const outputPath = `./public/tiles/${id}/landcover_colors_edited.png`
+  fs.writeFileSync(outputPath, binaryData, 'binary')
 
-  const outputPath = `./public/tiles/${id}/landcover_colors_edited.png` // Provide a valid file path
-  const stream = canvas.createPNGStream()
-  const out = require('fs').createWriteStream(outputPath)
-  stream.pipe(out)
-
-  out.on('finish', () => {
-    console.log('Image saved as PNG')
-    res.status(200).send('Image saved as PNG')
-  })
+  await heightmap.modifyHeightmap(id)
+  res.send('Image saved successfully')
 })
 
 app.listen(3000, () => {

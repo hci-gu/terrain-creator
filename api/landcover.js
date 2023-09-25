@@ -285,11 +285,11 @@ const combineLandcoverAndRecolor = async (landcoverTiles) => {
   // .negate(false)
 
   const masksToCombine = [
-    { image: oceanMask, color: [138, 196, 255] },
-    { image: sandMask, color: [254, 215, 102] },
-    { image: treeMask, color: [40, 83, 48] },
-    { image: grassMask, color: [121, 171, 95] },
-    { image: rockmask, color: [94, 101, 114] },
+    { image: oceanMask, color: COLORS.LANDCOVER_COLORS.ocean.paint },
+    { image: sandMask, color: COLORS.LANDCOVER_COLORS.sand.paint },
+    { image: treeMask, color: COLORS.LANDCOVER_COLORS.tree.paint },
+    { image: grassMask, color: COLORS.LANDCOVER_COLORS.grass.paint },
+    { image: rockmask, color: COLORS.LANDCOVER_COLORS.rock.paint },
   ]
 
   mergeAndColorize(masksToCombine, 1024, 1024)

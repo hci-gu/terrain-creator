@@ -12,13 +12,20 @@ const {
   promiseSeries,
   tileToId,
   minTilesForCoords,
-  getEdgePixels,
-  updatePixelValues,
+  normalizeColorsBeforeStitching,
+  convertToGrayScale,
 } = require('./utils')
+const distanceTable = require('./mapbox_distance_table.json')
 const googleEarth = require('./google-earth')
 const ACCESS_TOKEN = process.env.MAPBOX_ACCESS_TOKEN
 const MAPBOX_USERNAME = process.env.MAPBOX_USERNAME
 const MAPBOX_STYLE_ID = process.env.MAPBOX_STYLE_ID
+
+const getMetersPerPixel = (zoom, latitude) => {
+  // round for example 57.7 to 60
+  const roundedLatitude = Math.round(latitude / 10) * 10
+  return distanceTable[zoom][roundedLatitude]
+}
 
 const baseUrl = 'https://api.mapbox.com/v4'
 const downloadTile = async (tile, type = 'mapbox.terrain-rgb') => {
@@ -103,8 +110,9 @@ const getTile = async (folder, tile, index) => {
   const rgbHeightMap = await downloadTile(tile, 'mapbox.terrain-rgb')
   await writeFile(rgbHeightMap, `${path}/terrain-rgb.png`)
   const rgbPixelData = await getPixelDataFromFile(`${path}/terrain-rgb.png`)
-  const heightmapData = convertPngToHeightMap(rgbPixelData)
-  await writePixelsToPng(heightmapData, 512, 512, `${path}/heightmap.png`)
+  const { heightMapData, minHeight, maxHeight } =
+    convertPngToHeightMap(rgbPixelData)
+  await writePixelsToPng(heightMapData, 512, 512, `${path}/heightmap.png`)
   const landcoverGrassData = await downloadTile(tile, 'landcover-grass')
   await writeFile(landcoverGrassData, `${path}/landcover_grass.png`)
 
@@ -120,6 +128,8 @@ const getTile = async (folder, tile, index) => {
     JSON.stringify({
       tile,
       index,
+      minHeight,
+      maxHeight,
     })
   )
 
@@ -130,38 +140,9 @@ const getTile = async (folder, tile, index) => {
   ]
 }
 
-const compareImageHeightsAndUpdate = async (
-  image1,
-  image2,
-  side1,
-  side2,
-  increase = false
-) => {
-  const edge1 = await getEdgePixels(image1, side1)
-  const edge2 = await getEdgePixels(image2, side2)
-  const avgEdge1 = edge1.reduce((a, b) => a + b, 0) / edge1.length
-  const avgEdge2 = edge2.reduce((a, b) => a + b, 0) / edge2.length
-
-  let diffs = []
-  for (let i = 0; i < edge1.length; i++) {
-    const diff = edge1[i] - edge2[i]
-    diffs.push(diff)
-  }
-  const averageDiff = Math.abs(diffs.reduce((a, b) => a + b, 0) / diffs.length)
-
-  let imageToUpdate = increase
-    ? avgEdge1 > avgEdge2
-      ? image1
-      : image2
-    : avgEdge1 < avgEdge2
-    ? image1
-    : image2
-
-  await updatePixelValues(imageToUpdate, increase ? averageDiff : -averageDiff)
-}
-
 module.exports = {
   tileToBBOX: (tile) => tilebelt.tileToBBOX(tile),
+  getMetersPerPixel,
   getTile: async (coords) => {
     const tiles = minTilesForCoords(coords)
     const tileId = tileToId(tiles.flat())
@@ -184,9 +165,18 @@ module.exports = {
     // const landcoverMaps = imagePaths.map((imagePath) => imagePath[2])
 
     // fix heightmaps before stitching
+    await Promise.all(
+      heightMaps.map((p) =>
+        convertToGrayScale(p, p.replace('.png', '_grayscale.jpg'))
+      )
+    )
+
+    const updatedHeightmapPaths = await normalizeColorsBeforeStitching(
+      heightMaps.map((p) => p.replace('.png', '_grayscale.jpg'))
+    )
 
     // stitch all images
-    await stitchTileImages(heightMaps, `${path}/heightmap.png`)
+    await stitchTileImages(updatedHeightmapPaths, `${path}/heightmap.png`)
     await stitchTileImages(rasterMaps, `${path}/sattelite.png`)
     await stitchTileImages(landcoverMaps, `${path}/landcover.png`)
 

@@ -10,12 +10,49 @@ const earthEngine = {
   snow: '#B39FE1',
 }
 
+const LANDCOVER_COLORS = {
+  ocean: {
+    order: 1,
+    paint: [138, 196, 255],
+    rules: {
+      type: 'subtract',
+      amount: 0.75,
+      blur: 18,
+    },
+  },
+  sand: {
+    order: 0,
+    paint: [254, 215, 102],
+    rules: {
+      type: 'add',
+      amount: 0.15,
+      blur: 36,
+    },
+  },
+  tree: {
+    paint: [40, 83, 48],
+  },
+  grass: {
+    order: 2,
+    paint: [121, 171, 95],
+    rules: {
+      type: 'subtract',
+      amount: 0.1,
+      blur: 24,
+    },
+  },
+  rock: {
+    paint: [94, 101, 114],
+  },
+}
+
 module.exports = {
   earthEngine: () =>
     Object.keys(earthEngine).reduce((acc, key) => {
       acc[key] = hexToRgb(earthEngine[key])
       return acc
     }, {}),
+  LANDCOVER_COLORS,
 }
 
 // convert hex to rgb

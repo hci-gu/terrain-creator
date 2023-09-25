@@ -28,13 +28,14 @@ const MapContainer = () => {
   const navigate = useNavigate()
   const map = useRef(null)
   const [mode, setMode] = useState(null)
+  const [zoomLevel, setZoomLevel] = useState(13)
   const tiles = useAtomValue(tilesAtom)
   const tile = useTile()
   const [tileOpacity, setTileOpacity] = useState(0.65)
   const [viewport, setViewport] = useState({
     longitude: 12.1172326,
     latitude: 57.301663,
-    zoom: 13,
+    zoom: zoomLevel,
   })
 
   const tilesLayerData = tiles.map((tile) => ({
@@ -86,6 +87,20 @@ const MapContainer = () => {
     })
   }, [tile, map.current])
 
+  useEffect(() => {
+    if (!map.current) return
+    const mapInstance = map.current.getMap()
+    mapInstance.showTileBoundaries = mode == CREATE_MODE
+  }, [map.current, mode])
+
+  useEffect(() => {
+    if (!map.current) return
+    const mapInstance = map.current.getMap()
+    mapInstance.flyTo({
+      zoom: zoomLevel,
+    })
+  }, [map.current, zoomLevel])
+
   return (
     <Container>
       <Map
@@ -129,6 +144,15 @@ const MapContainer = () => {
             step={0.05}
             onChange={setTileOpacity}
             value={tileOpacity}
+          />
+          Zoom
+          <Slider
+            w={200}
+            min={1}
+            max={15}
+            step={1}
+            onChange={setZoomLevel}
+            value={zoomLevel}
           />
           <Select
             label="Mode"

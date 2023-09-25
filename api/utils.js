@@ -28,6 +28,9 @@ const createFolder = (path) => {
   })
 }
 
+const convertToGrayScale = async (inputPath, outputPath) =>
+  sharp(inputPath).grayscale().toFile(outputPath)
+
 const writePixelsToPng = (pixels, width, height, fileName) => {
   return sharp(pixels, {
     raw: {
@@ -76,7 +79,7 @@ const getEdgePixels = async (imagePath, edge) => {
   // convert the image to raw pixel data
   const {
     data,
-    info: { width, height },
+    info: { width, height, channels },
   } = await sharp(imagePath).raw().toBuffer({ resolveWithObject: true })
   const pixels = new Uint8ClampedArray(data)
 
@@ -95,7 +98,7 @@ const getEdgePixels = async (imagePath, edge) => {
         // Calculate the index of the pixel in the buffer
         // This calculation assumes a grayscale image
         // For RGB images, the index should be (y * width + x) * 3
-        let index = (y * width + x) * 4
+        let index = (y * width + x) * channels
         // Add the pixel value to the array
         edgePixels.push(pixels[index])
       }
@@ -105,23 +108,8 @@ const getEdgePixels = async (imagePath, edge) => {
   return edgePixels
 }
 
-async function updatePixelValues(imagePath, amount) {
-  // load the image and convert to raw pixel data
-  const {
-    data,
-    info: { width, height, channels },
-  } = await sharp(imagePath).raw().toBuffer({ resolveWithObject: true })
-
-  // Traverse the buffer
-  for (let i = 0; i < width * height * channels; i += channels) {
-    // reduce r,g,b values by the reductionValue
-    data[i] = Math.max(0, data[i] + amount)
-    data[i + 1] = Math.max(0, data[i + 1] + amount)
-    data[i + 2] = Math.max(0, data[i + 2] + amount)
-  }
-
-  // write the modified data back to the image
-  return sharp(data, { raw: { width, height, channels } }).toFile(imagePath)
+async function updatePixelValues(inPath, outPath, amount) {
+  return sharp(inPath).linear(amount, 0).toFile(outPath)
 }
 
 const convertPngToHeightMap = (data) => {
@@ -161,7 +149,11 @@ const convertPngToHeightMap = (data) => {
     heightMapData[i * 4 + 3] = 255
   }
 
-  return heightMapData
+  return {
+    minHeight,
+    maxHeight,
+    heightMapData,
+  }
 }
 
 const mergeHeightmaps = (heightmap1, heightmap2, multiplier = 1) => {
@@ -180,7 +172,17 @@ const multiplyHeightmaps = (original, mask, options) => {
   const mergedHeightmap = new Float32Array(size * size)
 
   for (let i = 0; i < size * size; i++) {
-    mergedHeightmap[i] = original[i] * mask[i]
+    if (mask[i] === 0) {
+      mergedHeightmap[i] = original[i]
+      continue
+    }
+    if (options.type === 'multiply') {
+      mergedHeightmap[i] = original[i] * (options.amount * mask[i])
+    } else if (options.type === 'subtract') {
+      mergedHeightmap[i] = original[i] - options.amount * mask[i]
+    } else if (options.type === 'add') {
+      mergedHeightmap[i] = original[i] + options.amount * mask[i]
+    }
   }
 
   return mergedHeightmap
@@ -313,6 +315,61 @@ const minTilesForCoords = (coords) => {
 
 const tileToId = (tile) => sha1(tile.join('_'))
 
+const compareImageHeightsAndUpdate = async (
+  imagePath1,
+  imagePath2,
+  edge1,
+  edge2
+) => {
+  // get lightest pixel with its index from first edge
+  const edgePixels1 = await getEdgePixels(imagePath1, edge1)
+  let lightestPixel = Math.max(...edgePixels1)
+
+  // get same pixel from second edge
+  const edgePixels2 = await getEdgePixels(imagePath2, edge2)
+  const lightestPixel2 = Math.max(...edgePixels2)
+
+  let imageToDarken = imagePath1
+  let lightestPixelIndex = edgePixels1.indexOf(lightestPixel)
+  let comparablePixel = edgePixels2[lightestPixelIndex]
+  if (lightestPixel2 > lightestPixel) {
+    imageToDarken = imagePath2
+    lightestPixelIndex = edgePixels2.indexOf(lightestPixel2)
+    comparablePixel = edgePixels1[lightestPixelIndex]
+    lightestPixel = lightestPixel2
+  }
+
+  // calculate difference
+  const difference = lightestPixel - comparablePixel
+  const percentDifference = difference / 255
+
+  const updatedPath = imageToDarken.replace('.jpg', '_updated.jpg')
+  await updatePixelValues(imageToDarken, updatedPath, 1 - percentDifference)
+
+  return [
+    imageToDarken === imagePath1 ? updatedPath : imagePath1,
+    imageToDarken === imagePath2 ? updatedPath : imagePath2,
+  ]
+}
+
+const normalizeColorsBeforeStitching = async (imagePaths) => {
+  console.log(imagePaths)
+  const [updatedPath1, updatedPath2] = await compareImageHeightsAndUpdate(
+    imagePaths[1],
+    imagePaths[2],
+    'bottom',
+    'top'
+  )
+  const [updatedPath0, updatedPath3] = await compareImageHeightsAndUpdate(
+    imagePaths[0],
+    imagePaths[3],
+    'bottom',
+    'top'
+  )
+
+  return [updatedPath0, updatedPath1, updatedPath2, updatedPath3]
+}
+
 module.exports = {
   convertPngToHeightMap,
   writePixelsToPng,
@@ -330,4 +387,53 @@ module.exports = {
   tileToId,
   generateOutline,
   minTilesForCoords,
+  normalizeColorsBeforeStitching,
+  convertToGrayScale,
 }
+
+// const run = async () => {
+//   const path = './public/tiles/7cff2c615067bafdaf154ec56993c26cfc025140'
+
+//   // get all folders in path
+//   const folders = fs.readdirSync(path).filter((f) => {
+//     // take only folders
+//     return fs.statSync(`${path}/${f}`).isDirectory()
+//   })
+
+//   // get all heightmap files in each folder
+//   const heightMaps = folders.map((folder) => {
+//     const heightMapPath = `${path}/${folder}/heightmap.png`
+//     const tileJsonPath = `${path}/${folder}/tile.json`
+
+//     return {
+//       heightMapPath,
+//       tile: JSON.parse(fs.readFileSync(tileJsonPath, 'utf8')),
+//     }
+//   })
+//   console.log(heightMaps)
+
+//   // sort by index of tile
+//   heightMaps.sort((a, b) => {
+//     if (a.tile.index === b.tile.index) {
+//       return 0
+//     }
+//     return a.tile.index > b.tile.index ? 1 : -1
+//   })
+
+//   // map to only have image paths
+//   const imagePaths = heightMaps.map((h) => h.heightMapPath)
+
+//   // convert to grayscale
+//   await Promise.all(
+//     imagePaths.map((path) =>
+//       convertToGrayScale(path, path.replace('.png', '_grayscale.jpg'))
+//     )
+//   )
+//   console.log(imagePaths)
+
+//   normalizeColorsBeforeStitching(
+//     imagePaths.map((path) => path.replace('.png', '_grayscale.jpg'))
+//   )
+// }
+
+// run()

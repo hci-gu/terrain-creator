@@ -1,39 +1,58 @@
-import React, { useRef } from 'react'
+import React from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { Drawer, Button, Space, Text, Image, Flex } from '@mantine/core'
+import { Drawer, Space, Text, Flex } from '@mantine/core'
+import { Image as ImageComponent } from '@mantine/core'
 import { useTile } from '../state'
 import axios from 'axios'
 import DrawTools from './DrawTools'
 
-const Tile = () => {
-  const navigate = useNavigate()
-  const tile = useTile()
-  console.log(tile)
-  const { id } = useParams()
-
-  const onSave = (canvasInstance) => {
+const imageFromCanvas = (canvasInstance) => {
+  return new Promise((resolve) => {
     const drawnImageData = canvasInstance.getDataURL()
     const drawnImage = new Image()
-    drawnImage.src = drawnImageData
 
     const bgImageData = canvasInstance.canvas.grid.toDataURL('image/png')
     const bgImage = new Image()
+
+    // Counter for loaded images
+    let imagesLoaded = 0
+
+    // Once all images are loaded, draw them
+    const onImageLoaded = () => {
+      imagesLoaded++
+      if (imagesLoaded === 2) {
+        const canvas = document.createElement('canvas')
+        canvas.width = 1024
+        canvas.height = 1024
+        const ctx = canvas.getContext('2d')
+        ctx.drawImage(bgImage, 0, 0, 1024, 1024)
+        ctx.drawImage(drawnImage, 0, 0, 1024, 1024)
+        const image = canvas.toDataURL('image/png')
+        resolve(image)
+      }
+    }
+
+    // Set up the load events
+    drawnImage.onload = onImageLoaded
+    bgImage.onload = onImageLoaded
+
+    // Start loading the images
+    drawnImage.src = drawnImageData
     bgImage.src = bgImageData
-    // combine on new canvas
-    const canvas = document.createElement('canvas')
-    canvas.width = 512
-    canvas.height = 512
-    const ctx = canvas.getContext('2d')
-    ctx.drawImage(bgImage, 0, 0)
-    ctx.drawImage(drawnImage, 0, 0)
-    // console.log(canvas)
-    const image = canvas.toDataURL('image/png')
+  })
+}
+
+const Tile = () => {
+  const navigate = useNavigate()
+  const tile = useTile()
+  const { id } = useParams()
+
+  const onSave = async (canvasInstance) => {
+    const image = await imageFromCanvas(canvasInstance)
     axios.post(`http://localhost:3000/tile/${id}/landcover`, {
       image,
     })
   }
-
-  console.log(tile)
 
   return (
     <Drawer
@@ -52,9 +71,9 @@ const Tile = () => {
       />
       <Space h="md" />
       <Flex>
-        <Image src={tile.satellite} width={256} />
+        <ImageComponent src={tile.satellite} width={256} />
         <Space w="md" />
-        <Image src={tile.heightmap} width={256} />
+        <ImageComponent src={tile.heightmap} width={256} />
       </Flex>
     </Drawer>
   )
