@@ -3,3 +3,5 @@ public/tiles
 node_modules
 .DS_Store
 .env
+
+api/google-earth-engine/service_account.json
