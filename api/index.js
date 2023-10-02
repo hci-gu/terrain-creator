@@ -35,21 +35,9 @@ const getTile = (path, id) => {
     )
   }
 
-  const childTiles = fs
-    .readdirSync(`${path}/${id}`, { withFileTypes: true })
-    .filter((dir) => dir.isDirectory())
-
-  if (childTiles.length === 0) {
-    return {
-      id,
-      ...tileInfo,
-    }
-  }
-
   return {
     id,
     ...tileInfo,
-    tiles: childTiles.map((dir) => getTile(`${path}/${id}`, dir.name)),
   }
 }
 
@@ -93,11 +81,20 @@ app.get('/tiles', (req, res) => {
       landcoverFile = editedLandcoverFile
     }
 
+    const heightmapFile = `./public/tiles/${id}/heightmap_final.png`
+    const satelliteFile = `./public/tiles/${id}/sattelite.png`
+
     return {
       id,
-      landcover: landcoverFile.replace('./public', ''),
-      heightmap: `/tiles/${id}/heightmap_final.png`,
-      satellite: `/tiles/${id}/sattelite.png`,
+      landcover: fs.existsSync(landcoverFile)
+        ? landcoverFile.replace('./public', '')
+        : null,
+      heightmap: fs.existsSync(heightmapFile)
+        ? heightmapFile.replace('./public', '')
+        : null,
+      satellite: fs.existsSync(satelliteFile)
+        ? satelliteFile.replace('./public', '')
+        : null,
       bbox: overallBbox,
       center: [
         (overallBbox[0] + overallBbox[2]) / 2,
@@ -114,17 +111,22 @@ app.get('/tiles', (req, res) => {
 })
 
 app.post('/tile', async (req, res) => {
-  const { coords, zoom } = req.body
+  const { coords, zoom, islandMask } = req.body
   console.log('POST /tile', coords)
 
-  const tileId = await mapbox.getTile(coords, zoom)
-  await segmenter.getLandcoversForTile(tileId)
+  const tileId = await mapbox.createTile(coords, zoom)
+  res.send({
+    id: tileId,
+  })
+
+  await mapbox.getTileData(tileId)
+  if (islandMask) {
+    await segmenter.getLandcoversForTile(tileId)
+  }
   await combineLandcoverAndRecolor(tileId)
   await heightmap.modifyHeightmap(tileId)
 
   //   const file = await writeFile(tile)
-
-  res.send(tileId)
 })
 
 // route to accept posted image

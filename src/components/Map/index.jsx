@@ -4,10 +4,25 @@ import { Editor, DrawRectangleMode } from 'react-map-gl-draw'
 import '@mapbox/mapbox-gl-draw/dist/mapbox-gl-draw.css'
 import { useNavigate } from 'react-router-dom'
 import axios from 'axios'
-import { useAtomValue } from 'jotai'
-import { tilesAtom, useTile } from '../../state'
+import { useAtom, useAtomValue, useSetAtom } from 'jotai'
+import {
+  mapViewportAtom,
+  refreshTilesAtom,
+  tilesAtom,
+  useTile,
+} from '../../state'
 import styled from '@emotion/styled'
-import { Card, Select, Slider } from '@mantine/core'
+import {
+  Card,
+  Checkbox,
+  ScrollArea,
+  Select,
+  Slider,
+  Space,
+  Image as ImageComponent,
+  Flex,
+  Text,
+} from '@mantine/core'
 
 const API_URL = import.meta.env.VITE_API_URL
 const URL = import.meta.env.VITE_URL
@@ -26,13 +41,10 @@ const MapControlsContainer = styled.div`
 `
 
 const CREATE_MODE = new DrawRectangleMode()
+const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
 
 const MapWrapper = ({ children, onClick, mapRef }) => {
-  const [viewport, setViewport] = useState({
-    longitude: 12.1172326,
-    latitude: 57.301663,
-    zoom: 13,
-  })
+  const [viewport, setViewport] = useAtom(mapViewportAtom)
 
   return (
     <Map
@@ -51,18 +63,60 @@ const MapWrapper = ({ children, onClick, mapRef }) => {
   )
 }
 
+const TileList = () => {
+  const navigate = useNavigate()
+  const tiles = useAtomValue(tilesAtom)
+
+  return (
+    <ScrollArea h={400}>
+      <Text fz={24} fw={700}>
+        Tiles - {tiles.length}
+      </Text>
+      <Flex direction="column" s>
+        {tiles.map((tile) => (
+          <Card onClick={() => navigate(`/tile/${tile.id}`)} withBorder mb={16}>
+            <Flex>
+              <ImageComponent
+                src={tile.landcover}
+                width={100}
+                fallbackSrc={`${URL}/images/loading.png`}
+              />
+              {tile && tile.center && (
+                <Flex direction="column" p={8}>
+                  <Text>
+                    <strong>Lat:</strong>{' '}
+                    {tile.center[1].toString().slice(0, 5)}
+                  </Text>
+                  <Text>
+                    <strong>Lng:</strong>{' '}
+                    {tile.center[0].toString().slice(0, 5)}
+                  </Text>
+                </Flex>
+              )}
+            </Flex>
+          </Card>
+        ))}
+      </Flex>
+    </ScrollArea>
+  )
+}
+
 const MapContainer = () => {
   const navigate = useNavigate()
   const map = useRef(null)
   const [mode, setMode] = useState(null)
   const tiles = useAtomValue(tilesAtom)
+  const refreshTiles = useSetAtom(refreshTilesAtom)
   const tile = useTile()
   const [tileOpacity, setTileOpacity] = useState(0.65)
+  const [islandMask, setIslandMask] = useState(false)
 
   const tilesLayerData = tiles.map((tile) => ({
     id: tile.id,
     type: 'image',
-    url: `${URL}${tile.landcover}`,
+    url: tile.landcover
+      ? `${URL}${tile.landcover}`
+      : `${URL}/images/loading.png`,
     coordinates: [
       [tile.bbox[0], tile.bbox[3]],
       [tile.bbox[2], tile.bbox[3]],
@@ -94,20 +148,31 @@ const MapContainer = () => {
       const currentZoom = Math.round(mapInstance.getZoom())
       const coords = e.data[0].geometry.coordinates[0]
 
-      const data = await axios.post(`${API_URL}/tile`, {
+      const response = await axios.post(`${API_URL}/tile`, {
         coords,
         zoom: currentZoom,
+        islandMask,
       })
+      const tile = response.data
+
+      if (tile) {
+        refreshTiles()
+        await wait(500)
+        navigate(`/tile/${tile.id}`)
+      }
     }
   }
 
   useEffect(() => {
     if (!map.current || !tile) return
     const mapInstance = map.current.getMap()
-    const offsetCenter = [tile.center[0] + 0.05, tile.center[1]]
+    const diff = tile.center[0] - tile.bbox[0]
+    const offsetCenter = [tile.center[0] + diff * 2.25, tile.center[1]]
+    const tileChildrenZoom = tile.tiles.map((t) => t.tile[2])
+    const minZoom = Math.min(...tileChildrenZoom)
     mapInstance.flyTo({
       center: offsetCenter,
-      zoom: 13,
+      zoom: minZoom - 1,
     })
   }, [tile, map.current])
 
@@ -141,7 +206,7 @@ const MapContainer = () => {
         />
       </MapWrapper>
       <MapControlsContainer>
-        <Card h={300}>
+        <Card w={300}>
           Tile opacity
           <Slider
             w={200}
@@ -161,6 +226,15 @@ const MapContainer = () => {
             value={mode}
             dropdownPosition="bottom"
           />
+          <Space h="md" />
+          {mode === CREATE_MODE && (
+            <Checkbox
+              label="Mask out island"
+              value={islandMask}
+              onChange={(value) => setIslandMask(value)}
+            />
+          )}
+          {!mode && <TileList />}
         </Card>
       </MapControlsContainer>
     </Container>

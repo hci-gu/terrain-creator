@@ -14,6 +14,7 @@ const {
   minTilesForCoords,
   normalizeColorsBeforeStitching,
   convertToGrayScale,
+  updateTileProgress,
 } = require('./utils')
 const distanceTable = require('./mapbox_distance_table.json')
 const googleEarthEngine = require('./google-earth-engine')
@@ -96,17 +97,6 @@ const getTile = async (folder, tile, index) => {
   const tileId = tileToId(tile)
   const path = `${folder}/${tileId}`
 
-  if (fs.existsSync(path)) {
-    return [
-      `${path}/heightmap.png`,
-      `${path}/stitched.png`,
-      `${path}/landcover_grass.png`,
-    ]
-  } else {
-    // create folder
-    await createFolder(path)
-  }
-
   const rgbHeightMap = await downloadTile(tile, 'mapbox.terrain-rgb')
   await writeFile(rgbHeightMap, `${path}/terrain-rgb.png`)
   const rgbPixelData = await getPixelDataFromFile(`${path}/terrain-rgb.png`)
@@ -140,28 +130,62 @@ const getTile = async (folder, tile, index) => {
   ]
 }
 
+createTileFolder = async (parentPath, tile, index) => {
+  const tileId = tileToId(tile)
+  const path = `${parentPath}/${tileId}`
+
+  await createFolder(path)
+
+  fs.writeFileSync(
+    `${path}/tile.json`,
+    JSON.stringify({
+      tile,
+      index,
+    })
+  )
+}
+
+const getTilesFromFolder = (tileId) => {
+  const path = `./public/tiles/${tileId}`
+  const folders = fs
+    .readdirSync(path, { withFileTypes: true })
+    .filter((dirent) => dirent.isDirectory())
+    .map((dirent) => dirent.name)
+
+  return folders
+    .map((folder) => {
+      return JSON.parse(fs.readFileSync(`${path}/${folder}/tile.json`))
+    })
+    .sort((a, b) => a.index - b.index)
+    .map((tile) => tile.tile)
+}
+
 module.exports = {
   tileToBBOX: (tile) => tilebelt.tileToBBOX(tile),
   getMetersPerPixel,
-  getTile: async (coords, zoom) => {
+  createTile: async (coords, zoom) => {
     const tiles = minTilesForCoords(coords, zoom)
-
     const tileId = tileToId(tiles.flat())
     const path = `./public/tiles/${tileId}`
 
-    if (fs.existsSync(path)) {
-      return tileId
-    }
-
     await createFolder(path)
+    updateTileProgress(tileId, 0)
+
+    await promiseSeries(tiles, (tile, index) =>
+      createTileFolder(path, tile, index)
+    )
+
+    return tileId
+  },
+  getTileData: async (tileId) => {
+    const path = `./public/tiles/${tileId}`
+    const tiles = getTilesFromFolder(tileId)
+    console.log('tiles', tiles)
 
     const imagePaths = await promiseSeries(tiles, (tile, index) =>
       getTile(path, tile, index)
     )
-    console.log('authenticate google EE')
     const googleEEUrl = await googleEarthEngine.initEE()
-    console.log(googleEEUrl)
-
     const landcoverMaps = await promiseSeries(tiles, (tile) =>
       googleEarthEngine.downloadTile(googleEEUrl, tile)
     )

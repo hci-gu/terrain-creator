@@ -443,6 +443,19 @@ const createGeoTiff = async (pngPath, bbox, outputGeoTiffPath) => {
   fs.writeFileSync(outputGeoTiffPath, geotiffBuffer)
 }
 
+const updateTileProgress = (tileId, progress = 0) => {
+  let tileJson = {}
+  try {
+    tileJson = JSON.parse(fs.readFileSync(`./public/tiles/${tileId}/tile.json`))
+  } catch (e) {}
+  tileJson.progress = progress
+  fs.writeFile(
+    `./public/tiles/${tileId}/tile.json`,
+    JSON.stringify(tileJson),
+    () => {}
+  )
+}
+
 module.exports = {
   convertPngToHeightMap,
   writePixelsToPng,
@@ -464,4 +477,5 @@ module.exports = {
   convertToGrayScale,
   convertPngToRaw16Bit,
   createGeoTiff,
+  updateTileProgress,
 }
