@@ -6,6 +6,9 @@ import { useTile } from '../state'
 import axios from 'axios'
 import DrawTools from './DrawTools'
 
+const API_URL = import.meta.env.VITE_API_URL
+const URL = import.meta.env.VITE_URL
+
 const imageFromCanvas = (canvasInstance) => {
   return new Promise((resolve) => {
     const drawnImageData = canvasInstance.getDataURL()
@@ -49,7 +52,7 @@ const Tile = () => {
 
   const onSave = async (canvasInstance) => {
     const image = await imageFromCanvas(canvasInstance)
-    axios.post(`http://localhost:3000/tile/${id}/landcover`, {
+    axios.post(`${API_URL}/tile/${id}/landcover`, {
       image,
     })
   }
@@ -65,10 +68,7 @@ const Tile = () => {
       <Text>
         <strong>Tile ID:</strong> {id}
       </Text>
-      <DrawTools
-        imgSrc={`http://localhost:5173${tile.landcover}`}
-        onSave={onSave}
-      />
+      <DrawTools imgSrc={`${URL}${tile.landcover}`} onSave={onSave} />
       <Space h="md" />
       <Flex>
         <ImageComponent src={tile.satellite} width={256} />

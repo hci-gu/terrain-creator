@@ -9,6 +9,9 @@ import { tilesAtom, useTile } from '../../state'
 import styled from '@emotion/styled'
 import { Card, Select, Slider } from '@mantine/core'
 
+const API_URL = import.meta.env.VITE_API_URL
+const URL = import.meta.env.VITE_URL
+
 const Container = styled.div`
   position: relative;
   width: 100%;
@@ -59,7 +62,7 @@ const MapContainer = () => {
   const tilesLayerData = tiles.map((tile) => ({
     id: tile.id,
     type: 'image',
-    url: `http://localhost:5173${tile.landcover}`,
+    url: `${URL}${tile.landcover}`,
     coordinates: [
       [tile.bbox[0], tile.bbox[3]],
       [tile.bbox[2], tile.bbox[3]],
@@ -91,7 +94,7 @@ const MapContainer = () => {
       const currentZoom = Math.round(mapInstance.getZoom())
       const coords = e.data[0].geometry.coordinates[0]
 
-      const data = await axios.post('http://localhost:3000/tile', {
+      const data = await axios.post(`${API_URL}/tile`, {
         coords,
         zoom: currentZoom,
       })
