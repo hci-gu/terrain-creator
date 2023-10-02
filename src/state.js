@@ -5,7 +5,7 @@ import axios from 'axios'
 const API_URL = import.meta.env.VITE_API_URL
 
 export const tilesAtom = atom(async (get, { signal }) => {
-  const response = await axios.get(`http://localhost:3000/tiles`, { signal })
+  const response = await axios.get(`${API_URL}/tiles`, { signal })
 
   return response.data
 })
