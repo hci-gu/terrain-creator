@@ -1,6 +1,7 @@
 const sharp = require('sharp')
 const COLORS = require('./colors')
 const alea = require('alea')
+const fs = require('fs')
 const { createNoise2D } = require('simplex-noise')
 
 const generateOutline = async (image, size) => {
@@ -267,35 +268,52 @@ const invertColorsOfImage = (image) => {
     })
 }
 
-const combineLandcoverAndRecolor = async (landcoverTiles) => {
+const combineLandcoverAndRecolor = async (tileId) => {
+  const tileFolder = `./public/tiles/${tileId}`
+
+  const landCoverFile = `${tileFolder}/landcover.png`
+  const islandMaskFile = `${tileFolder}/island_mask.png`
+  const sandMaskFile = `${tileFolder}/landcover_sand.png`
+
   const eeColors = COLORS.earthEngine()
-  const [eeLandcover, island_mask, sand_mask] = landcoverTiles
 
-  const treeMask = await extractMask(eeLandcover.file, eeColors.trees)
-  const grassMask = await extractMask(eeLandcover.file, eeColors.grass)
-  const rockmask = await extractMask(eeLandcover.file, eeColors.shrub)
-  // read and scale down to 512
-  let sandMask = await sharp(sand_mask.file)
-  sandMask = await noiseOutlineOfImage(sandMask)
-  // read island mask, invert black/white and scale down to 512
-  const islandMask = sharp(island_mask.file)
+  const treeMask = await extractMask(landCoverFile, eeColors.trees)
+  const grassMask = await extractMask(landCoverFile, eeColors.grass)
+  const rockmask = await extractMask(landCoverFile, eeColors.shrub)
 
-  const oceanMask = await invertColorsOfImage(islandMask)
-  // .blur(50)
-  // .negate(false)
-
-  const masksToCombine = [
-    { image: oceanMask, color: COLORS.LANDCOVER_COLORS.ocean.paint },
-    { image: sandMask, color: COLORS.LANDCOVER_COLORS.sand.paint },
+  let masksToCombine = [
     { image: treeMask, color: COLORS.LANDCOVER_COLORS.tree.paint },
     { image: grassMask, color: COLORS.LANDCOVER_COLORS.grass.paint },
     { image: rockmask, color: COLORS.LANDCOVER_COLORS.rock.paint },
   ]
 
-  mergeAndColorize(masksToCombine, 1024, 1024)
+  // check if islandMaskFile exists
+  if (fs.existsSync(islandMaskFile)) {
+    let sandMask = await sharp(sandMaskFile)
+    sandMask = await noiseOutlineOfImage(sandMask)
+    const islandMask = sharp(islandMaskFile)
+    const oceanMask = await invertColorsOfImage(islandMask)
+    masksToCombine = [
+      ...masksToCombine,
+      { image: oceanMask, color: COLORS.LANDCOVER_COLORS.ocean.paint },
+      { image: sandMask, color: COLORS.LANDCOVER_COLORS.sand.paint },
+    ]
+  } else {
+    const oceanMask = await extractMask(landCoverFile, eeColors.water)
+
+    masksToCombine = [
+      ...masksToCombine,
+      { image: oceanMask, color: COLORS.LANDCOVER_COLORS.ocean.paint },
+    ]
+  }
+
+  console.log(masksToCombine)
+
+  return mergeAndColorize(masksToCombine, 1024, 1024)
     .then((combined) => {
+      console.log(combined)
       combined.toFile(
-        eeLandcover.file.replace('landcover', 'landcover_colors'),
+        landCoverFile.replace('landcover', 'landcover_colors'),
         (err, info) => {
           if (err) {
             console.error('Error saving combined image:', err)
@@ -313,29 +331,3 @@ const combineLandcoverAndRecolor = async (landcoverTiles) => {
 module.exports = {
   combineLandcoverAndRecolor,
 }
-
-const path = './public/tiles/7cff2c615067bafdaf154ec56993c26cfc025140'
-
-// combineLandcoverAndRecolor([
-//   {
-//     name: 'landcover',
-//     file: `${path}/landcover.png`,
-//     type: 'multiply',
-//     amount: 0.5,
-//     blur: 8,
-//   },
-//   {
-//     name: 'island_mask',
-//     file: `${path}/island_mask.png`,
-//     type: 'multiply',
-//     amount: 0.1,
-//     blur: 12,
-//   },
-//   {
-//     name: 'landcover_sand',
-//     file: `${path}/landcover_sand.png`,
-//     type: 'multiply',
-//     amount: 0.2,
-//     blur: 4,
-//   },
-// ])

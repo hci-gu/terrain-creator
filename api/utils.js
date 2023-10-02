@@ -3,6 +3,7 @@ const turf = require('@turf/turf')
 const cover = require('@mapbox/tile-cover')
 const sha1 = require('sha1')
 const sharp = require('sharp')
+// import { writeArrayToGeoTiff } from 'geotiff'
 
 const writeFile = (file, fileName) => {
   return new Promise((resolve, reject) => {
@@ -287,14 +288,14 @@ const promiseSeries = (items, method) => {
     .then(() => results)
 }
 
-const minTilesForCoords = (coords) => {
+const minTilesForCoords = (coords, initialZoom = 10) => {
   var line = turf.lineString(coords)
   var bbox = turf.bbox(line)
   const bboxPolygon = turf.bboxPolygon(bbox)
 
   const tiles = cover.tiles(bboxPolygon.geometry, {
-    min_zoom: 10,
-    max_zoom: 14,
+    min_zoom: initialZoom + 1,
+    max_zoom: initialZoom + 1,
   })
   // tile is [x, y, zoom]
   // sort the tiles by x and y
@@ -370,6 +371,78 @@ const normalizeColorsBeforeStitching = async (imagePaths) => {
   return [updatedPath0, updatedPath1, updatedPath2, updatedPath3]
 }
 
+const convertPngToRaw16Bit = async (inputPng, outputRaw) => {
+  const rawBuffer = await sharp(inputPng)
+    .ensureAlpha() // Ensure there's an alpha channel
+    .raw() // Get raw, uncompressed image data
+    .resize(1025, 1025)
+    .toBuffer({ resolveWithObject: true })
+
+  if (rawBuffer.info.channels !== 4) {
+    throw new Error(
+      'Expected the PNG to have 4 channels (RGBA) but found ' +
+        rawBuffer.info.channels
+    )
+  }
+
+  // Convert 8-bit data to 16-bit
+  const input = rawBuffer.data
+  const output = Buffer.alloc(input.length * 2) // 16 bits = 2 bytes
+
+  for (let i = 0, j = 0; i < input.length; i++, j += 2) {
+    const value16bit = (input[i] << 8) | input[i] // Repeat the 8-bit value in both high and low bytes for 16-bit
+    output.writeUInt16LE(value16bit, j)
+  }
+
+  // Write the 16-bit data to a raw file
+  fs.writeFileSync(outputRaw, output)
+}
+
+const createGeoTiff = async (pngPath, bbox, outputGeoTiffPath) => {
+  // Load PNG image and get its data
+  const pngBuffer = await sharp(pngPath)
+    .raw()
+    .toBuffer({ resolveWithObject: true })
+  const data = {
+    width: pngBuffer.info.width,
+    height: pngBuffer.info.height,
+    data: pngBuffer.data,
+  }
+
+  // Define GeoTIFF metadata
+  const geoKeys = {
+    GTModelTypeGeoKey: 2, // Represents Geographic latitude-longitude System
+    GTRasterTypeGeoKey: 1, // Represents RasterPixelIsArea
+    GeographicTypeGeoKey: 4326, // Represents WGS 84
+  }
+
+  const fileDirectory = {
+    ImageWidth: data.width,
+    ImageLength: data.height,
+    BitsPerSample: [8, 8, 8],
+    Compression: 1, // None
+    PhotometricInterpretation: 2, // RGB
+    StripOffsets: [0],
+    RowsPerStrip: data.height,
+    StripByteCounts: [data.data.length],
+    SamplesPerPixel: 3,
+    PlanarConfiguration: 1, // Chunky format
+    SampleFormat: [1, 1, 1], // Uint
+    ModelPixelScale: [
+      (bbox[2] - bbox[0]) / data.width,
+      (bbox[3] - bbox[1]) / data.height,
+    ],
+    ModelTiepoint: [0, 0, 0, bbox[0], bbox[3], 0],
+    GeoKeyDirectoryTag: geoKeys,
+  }
+
+  // Create GeoTIFF
+  const geotiffBuffer = writeArrayToGeoTiff(data.data, fileDirectory)
+
+  // Save GeoTIFF to file
+  fs.writeFileSync(outputGeoTiffPath, geotiffBuffer)
+}
+
 module.exports = {
   convertPngToHeightMap,
   writePixelsToPng,
@@ -389,51 +462,6 @@ module.exports = {
   minTilesForCoords,
   normalizeColorsBeforeStitching,
   convertToGrayScale,
+  convertPngToRaw16Bit,
+  createGeoTiff,
 }
-
-// const run = async () => {
-//   const path = './public/tiles/7cff2c615067bafdaf154ec56993c26cfc025140'
-
-//   // get all folders in path
-//   const folders = fs.readdirSync(path).filter((f) => {
-//     // take only folders
-//     return fs.statSync(`${path}/${f}`).isDirectory()
-//   })
-
-//   // get all heightmap files in each folder
-//   const heightMaps = folders.map((folder) => {
-//     const heightMapPath = `${path}/${folder}/heightmap.png`
-//     const tileJsonPath = `${path}/${folder}/tile.json`
-
-//     return {
-//       heightMapPath,
-//       tile: JSON.parse(fs.readFileSync(tileJsonPath, 'utf8')),
-//     }
-//   })
-//   console.log(heightMaps)
-
-//   // sort by index of tile
-//   heightMaps.sort((a, b) => {
-//     if (a.tile.index === b.tile.index) {
-//       return 0
-//     }
-//     return a.tile.index > b.tile.index ? 1 : -1
-//   })
-
-//   // map to only have image paths
-//   const imagePaths = heightMaps.map((h) => h.heightMapPath)
-
-//   // convert to grayscale
-//   await Promise.all(
-//     imagePaths.map((path) =>
-//       convertToGrayScale(path, path.replace('.png', '_grayscale.jpg'))
-//     )
-//   )
-//   console.log(imagePaths)
-
-//   normalizeColorsBeforeStitching(
-//     imagePaths.map((path) => path.replace('.png', '_grayscale.jpg'))
-//   )
-// }
-
-// run()

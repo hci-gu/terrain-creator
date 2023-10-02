@@ -6,6 +6,7 @@ const {
   writePixelsToPng,
   mergeHeightmaps,
   multiplyHeightmaps,
+  convertPngToRaw16Bit,
 } = require('../utils')
 const { LANDCOVER_COLORS } = require('../colors')
 const RESOLUTION = 1024
@@ -163,7 +164,7 @@ const heightMapToFile = async (heightmap, path) => {
   return path
 }
 
-const applyNoiseMap = async (heightmapFile) => {
+const applyNoiseMap = async (heightmapFile, outFile) => {
   const heightmap = await heightmapFromFile(heightmapFile)
 
   const noisemap = createNoisemap(RESOLUTION, 1.5)
@@ -172,7 +173,7 @@ const applyNoiseMap = async (heightmapFile) => {
 
   return heightMapToFile(
     heightmap,
-    heightmapFile.replace('.png', '_with_noise.png')
+    outFile ? outFile : heightmapFile.replace('.png', '_with_noise.png')
   )
 }
 
@@ -243,8 +244,10 @@ module.exports = {
       }
     }
 
-    // write currentFile to finalpath
     let finalpath = `${tileFolder}/heightmap_final.png`
-    await fs.copyFileSync(currentFile, finalpath)
+    await applyNoiseMap(currentFile, finalpath)
+
+    // save a copy as .raw
+    await convertPngToRaw16Bit(finalpath, finalpath.replace('.png', '.raw'))
   },
 }

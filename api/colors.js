@@ -43,6 +43,12 @@ const LANDCOVER_COLORS = {
   },
   rock: {
     paint: [94, 101, 114],
+    order: 3,
+    rules: {
+      type: 'add',
+      amount: 0.2,
+      blur: 12,
+    },
   },
 }
 

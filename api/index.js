@@ -114,12 +114,13 @@ app.get('/tiles', (req, res) => {
 })
 
 app.post('/tile', async (req, res) => {
-  const { coords } = req.body
+  const { coords, zoom } = req.body
   console.log('POST /tile', coords)
 
-  const tileId = await mapbox.getTile(coords)
-  const landcoverTiles = await segmenter.getLandcoversForTile(tileId)
-  await combineLandcoverAndRecolor(landcoverTiles)
+  // const tileId = await mapbox.getTile(coords, zoom)
+  const tileId = '7ea932e5c3e31e937f0d921ece943e2c9249a2a7'
+  // await segmenter.getLandcoversForTile(tileId)
+  await combineLandcoverAndRecolor(tileId)
   await heightmap.modifyHeightmap(tileId)
 
   //   const file = await writeFile(tile)

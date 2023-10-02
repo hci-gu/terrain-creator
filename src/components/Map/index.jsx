@@ -24,19 +24,37 @@ const MapControlsContainer = styled.div`
 
 const CREATE_MODE = new DrawRectangleMode()
 
+const MapWrapper = ({ children, onClick, mapRef }) => {
+  const [viewport, setViewport] = useState({
+    longitude: 12.1172326,
+    latitude: 57.301663,
+    zoom: 13,
+  })
+
+  return (
+    <Map
+      {...viewport}
+      ref={(ref) => (mapRef.current = ref)}
+      mapLib={import('mapbox-gl')}
+      mapboxApiAccessToken={import.meta.env.VITE_MAPBOX_ACCESS_TOKEN}
+      onViewportChange={setViewport}
+      width={'100%'}
+      height={'100%'}
+      mapStyle="mapbox://styles/mapbox/satellite-v9"
+      onClick={onClick}
+    >
+      {children}
+    </Map>
+  )
+}
+
 const MapContainer = () => {
   const navigate = useNavigate()
   const map = useRef(null)
   const [mode, setMode] = useState(null)
-  const [zoomLevel, setZoomLevel] = useState(13)
   const tiles = useAtomValue(tilesAtom)
   const tile = useTile()
   const [tileOpacity, setTileOpacity] = useState(0.65)
-  const [viewport, setViewport] = useState({
-    longitude: 12.1172326,
-    latitude: 57.301663,
-    zoom: zoomLevel,
-  })
 
   const tilesLayerData = tiles.map((tile) => ({
     id: tile.id,
@@ -68,17 +86,20 @@ const MapContainer = () => {
   const onDraw = async (e) => {
     if (!mode) return
     if (e.editType === 'addFeature') {
+      const mapInstance = map.current.getMap()
+      // get currentZoom
+      const currentZoom = Math.round(mapInstance.getZoom())
       const coords = e.data[0].geometry.coordinates[0]
 
       const data = await axios.post('http://localhost:3000/tile', {
         coords,
+        zoom: currentZoom,
       })
     }
   }
 
   useEffect(() => {
     if (!map.current || !tile) return
-    console.log('MAP', tile, map.current)
     const mapInstance = map.current.getMap()
     const offsetCenter = [tile.center[0] + 0.05, tile.center[1]]
     mapInstance.flyTo({
@@ -93,27 +114,9 @@ const MapContainer = () => {
     mapInstance.showTileBoundaries = mode == CREATE_MODE
   }, [map.current, mode])
 
-  useEffect(() => {
-    if (!map.current) return
-    const mapInstance = map.current.getMap()
-    mapInstance.flyTo({
-      zoom: zoomLevel,
-    })
-  }, [map.current, zoomLevel])
-
   return (
     <Container>
-      <Map
-        {...viewport}
-        ref={(ref) => (map.current = ref)}
-        mapLib={import('mapbox-gl')}
-        mapboxApiAccessToken={import.meta.env.VITE_MAPBOX_ACCESS_TOKEN}
-        onViewportChange={setViewport}
-        width={'100%'}
-        height={'100%'}
-        mapStyle="mapbox://styles/mapbox/satellite-v9"
-        onClick={handleMapClick}
-      >
+      <MapWrapper mapRef={map} onClick={handleMapClick}>
         {tilesLayerData.map((data) => (
           <Source {...data} key={`Tile_${data.id}`}>
             <Layer
@@ -133,7 +136,7 @@ const MapContainer = () => {
           onUpdate={onDraw}
           features={[]}
         />
-      </Map>
+      </MapWrapper>
       <MapControlsContainer>
         <Card h={300}>
           Tile opacity
@@ -144,15 +147,6 @@ const MapContainer = () => {
             step={0.05}
             onChange={setTileOpacity}
             value={tileOpacity}
-          />
-          Zoom
-          <Slider
-            w={200}
-            min={1}
-            max={15}
-            step={1}
-            onChange={setZoomLevel}
-            value={zoomLevel}
           />
           <Select
             label="Mode"

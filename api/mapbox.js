@@ -16,7 +16,7 @@ const {
   convertToGrayScale,
 } = require('./utils')
 const distanceTable = require('./mapbox_distance_table.json')
-const googleEarth = require('./google-earth')
+const googleEarthEngine = require('./google-earth-engine')
 const ACCESS_TOKEN = process.env.MAPBOX_ACCESS_TOKEN
 const MAPBOX_USERNAME = process.env.MAPBOX_USERNAME
 const MAPBOX_STYLE_ID = process.env.MAPBOX_STYLE_ID
@@ -143,8 +143,9 @@ const getTile = async (folder, tile, index) => {
 module.exports = {
   tileToBBOX: (tile) => tilebelt.tileToBBOX(tile),
   getMetersPerPixel,
-  getTile: async (coords) => {
-    const tiles = minTilesForCoords(coords)
+  getTile: async (coords, zoom) => {
+    const tiles = minTilesForCoords(coords, zoom)
+
     const tileId = tileToId(tiles.flat())
     const path = `./public/tiles/${tileId}`
 
@@ -157,8 +158,12 @@ module.exports = {
     const imagePaths = await promiseSeries(tiles, (tile, index) =>
       getTile(path, tile, index)
     )
+    console.log('authenticate google EE')
+    const googleEEUrl = await googleEarthEngine.initEE()
+    console.log(googleEEUrl)
+
     const landcoverMaps = await promiseSeries(tiles, (tile) =>
-      googleEarth.downloadTile(tile)
+      googleEarthEngine.downloadTile(googleEEUrl, tile)
     )
     const heightMaps = imagePaths.map((imagePath) => imagePath[0])
     const rasterMaps = imagePaths.map((imagePath) => imagePath[1])
