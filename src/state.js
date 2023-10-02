@@ -2,6 +2,8 @@ import { atom, useAtomValue } from 'jotai'
 import { useParams } from 'react-router-dom'
 import axios from 'axios'
 
+const API_URL = import.meta.env.VITE_API_URL
+
 export const tilesAtom = atom(async (get, { signal }) => {
   const response = await axios.get(`http://localhost:3000/tiles`, { signal })
 

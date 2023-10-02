@@ -145,6 +145,6 @@ app.post('/tile/:id/landcover', async (req, res) => {
   res.send('Image saved successfully')
 })
 
-app.listen(3000, () => {
-  console.log('Example app listening on port 3000!')
+app.listen(7777, () => {
+  console.log('Example app listening on port 7777!')
 })

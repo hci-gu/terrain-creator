@@ -8,9 +8,10 @@ const {
   resizeAndConvert,
   generateOutline,
 } = require('./utils')
+const SEGMENT_API_URL = process.env.SEGMENT_API_URL
 
 const segmentTile = async (imagePath, writePath, prompt) => {
-  const url = 'http://130.241.23.169:8765/segment'
+  const url = `${SEGMENT_API_URL}/segment`
   const formData = new FormData()
 
   formData.append('image', fs.createReadStream(imagePath))
