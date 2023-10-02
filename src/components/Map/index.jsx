@@ -230,8 +230,8 @@ const MapContainer = () => {
           {mode === CREATE_MODE && (
             <Checkbox
               label="Mask out island"
-              value={islandMask}
-              onChange={(value) => setIslandMask(value)}
+              checked={islandMask}
+              onChange={(e) => setIslandMask(e.target.checked)}
             />
           )}
           {!mode && <TileList />}

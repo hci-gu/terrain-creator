@@ -112,12 +112,16 @@ app.get('/tiles', (req, res) => {
 
 app.post('/tile', async (req, res) => {
   const { coords, zoom, islandMask } = req.body
-  console.log('POST /tile', coords)
+  console.log('POST /tile', coords, zoom, islandMask)
 
-  const tileId = await mapbox.createTile(coords, zoom)
+  const [tileId, alreadyExists] = await mapbox.createTile(coords, zoom)
   res.send({
     id: tileId,
   })
+
+  if (alreadyExists) {
+    return
+  }
 
   await mapbox.getTileData(tileId)
   if (islandMask) {

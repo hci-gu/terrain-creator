@@ -168,6 +168,10 @@ module.exports = {
     const tileId = tileToId(tiles.flat())
     const path = `./public/tiles/${tileId}`
 
+    if (fs.existsSync(path)) {
+      return [tileId, true]
+    }
+
     await createFolder(path)
     updateTileProgress(tileId, 0)
 
@@ -175,7 +179,7 @@ module.exports = {
       createTileFolder(path, tile, index)
     )
 
-    return tileId
+    return [tileId, false]
   },
   getTileData: async (tileId) => {
     const path = `./public/tiles/${tileId}`
