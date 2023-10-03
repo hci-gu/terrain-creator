@@ -62,7 +62,11 @@ const invertImage = async (imagePath) => {
 const resizeAndConvert = async (imagePath, toSize) => {
   const tmpPath = imagePath.replace('.png', '_tmp.png')
 
-  await sharp(imagePath).resize(toSize, toSize).png().toFile(tmpPath)
+  await sharp(imagePath)
+    .resize(toSize, toSize)
+    .ensureAlpha()
+    .png()
+    .toFile(tmpPath)
 
   // remove original file
   fs.unlinkSync(imagePath)
@@ -354,7 +358,9 @@ const compareImageHeightsAndUpdate = async (
 }
 
 const normalizeColorsBeforeStitching = async (imagePaths) => {
-  console.log(imagePaths)
+  if (imagePaths.length !== 4) {
+    return imagePaths
+  }
   const [updatedPath1, updatedPath2] = await compareImageHeightsAndUpdate(
     imagePaths[1],
     imagePaths[2],

@@ -15,6 +15,7 @@ const {
   normalizeColorsBeforeStitching,
   convertToGrayScale,
   updateTileProgress,
+  resizeAndConvert,
 } = require('./utils')
 const distanceTable = require('./mapbox_distance_table.json')
 const googleEarthEngine = require('./google-earth-engine')
@@ -207,6 +208,15 @@ module.exports = {
     const updatedHeightmapPaths = await normalizeColorsBeforeStitching(
       heightMaps.map((p) => p.replace('.png', '_grayscale.jpg'))
     )
+
+    if (imagePaths.length === 1) {
+      fs.copyFileSync(updatedHeightmapPaths[0], `${path}/heightmap.png`)
+      await resizeAndConvert(`${path}/heightmap.png`, 1024)
+      fs.copyFileSync(rasterMaps[0], `${path}/sattelite.png`)
+      await writeFile(landcoverMaps[0], `${path}/landcover.png`)
+      await resizeAndConvert(`${path}/landcover.png`, 512)
+      return tileId
+    }
 
     // stitch all images
     await stitchTileImages(updatedHeightmapPaths, `${path}/heightmap.png`)
