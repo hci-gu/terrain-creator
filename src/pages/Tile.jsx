@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { Drawer, Space, Text, Flex } from '@mantine/core'
+import { Drawer, Space, Text, Flex, Button } from '@mantine/core'
 import { Image as ImageComponent } from '@mantine/core'
 import { mapViewportAtom, refreshTilesAtom, useTile } from '../state'
 import axios from 'axios'
 import DrawTools from './DrawTools'
 import { useSetAtom } from 'jotai'
+import { IconDownload } from '@tabler/icons-react'
 
 const API_URL = import.meta.env.VITE_API_URL
 const URL = import.meta.env.VITE_URL
@@ -46,6 +47,34 @@ const imageFromCanvas = (canvasInstance) => {
   })
 }
 
+const DownloadButton = ({ type }) => {
+  const tile = useTile()
+  const download = () => {
+    const link = document.createElement('a')
+    link.download = `${tile.id}_${type}.png`
+    switch (type) {
+      case 'landcover':
+        link.href = tile.landcover
+        break
+      case 'heightmap':
+        link.href = tile.heightmap
+      default:
+        break
+    }
+    link.click()
+  }
+
+  const title = `${type[0].toUpperCase()}${type.slice(1)}`
+
+  return (
+    <Button variant="outline" onClick={() => download()}>
+      <Flex align="center" justify="space-between">
+        <IconDownload /> {title}
+      </Flex>
+    </Button>
+  )
+}
+
 const Tile = () => {
   const navigate = useNavigate()
   const refreshTiles = useSetAtom(refreshTilesAtom)
@@ -60,6 +89,13 @@ const Tile = () => {
     await axios.post(`${API_URL}/tile/${id}/landcover`, {
       image,
     })
+    setLoading(false)
+    refreshTiles()
+  }
+
+  const onDelete = async () => {
+    setLoading(true)
+    await axios.delete(`${API_URL}/tile/${id}/landcover`, {})
     setLoading(false)
     refreshTiles()
   }
@@ -96,23 +132,29 @@ const Tile = () => {
         <DrawTools
           imgSrc={`${URL}${tile.landcover}`}
           onSave={onSave}
+          onDelete={onDelete}
           loading={loading}
         />
       )}
       <Space h="md" />
-      <Flex>
+      <Flex gap="md">
         <ImageComponent
           src={tile.satellite}
           width={256}
           fallbackSrc={`${URL}/images/loading.png`}
         />
-        <Space w="md" />
         <ImageComponent
           src={tile.heightmap}
           width={256}
           key={`HM_${new Date()}`}
           fallbackSrc={`${URL}/images/loading.png`}
         />
+        <Flex direction="column" gap="md">
+          <Text>Download textures:</Text>
+          <DownloadButton type="heightmap" />
+          <DownloadButton type="landcover" />
+          <DownloadButton type="geotiff" />
+        </Flex>
       </Flex>
     </Drawer>
   )

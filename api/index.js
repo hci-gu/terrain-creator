@@ -128,9 +128,23 @@ app.post('/tile', async (req, res) => {
     await segmenter.getLandcoversForTile(tileId)
   }
   await combineLandcoverAndRecolor(tileId)
+  // create variants of landcoverFiles
+
   await heightmap.modifyHeightmap(tileId)
 
   //   const file = await writeFile(tile)
+})
+
+app.delete('/tile/:id/landcover', async (req, res) => {
+  const { id } = req.params
+
+  try {
+    fs.unlinkSync(`./public/tiles/${id}/landcover_colors_edited.png`)
+  } catch (e) {
+    console.log('error deleting file', e)
+  }
+
+  res.send('OK')
 })
 
 // route to accept posted image

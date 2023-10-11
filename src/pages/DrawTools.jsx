@@ -25,7 +25,7 @@ const availableColors = [
   },
 ]
 
-const DrawTools = ({ imgSrc, loading, onSave }) => {
+const DrawTools = ({ imgSrc, loading, onSave, onDelete }) => {
   const [value, onChange] = useState(availableColors[0].color)
   const [brushRadius, setBrushRadius] = useState(10)
 
@@ -83,9 +83,14 @@ const DrawTools = ({ imgSrc, loading, onSave }) => {
         </Flex>
       </Flex>
       <Space h="md" />
-      <Button loading={loading} onClick={() => onSave(ref.current)}>
-        Save
-      </Button>
+      <Flex gap="md">
+        <Button loading={loading} onClick={() => onSave(ref.current)}>
+          Save
+        </Button>
+        <Button color="red" loading={loading} onClick={() => onDelete()}>
+          Reset
+        </Button>
+      </Flex>
     </>
   )
 }
