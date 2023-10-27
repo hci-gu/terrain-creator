@@ -58,6 +58,13 @@ const DownloadButton = ({ type }) => {
         break
       case 'heightmap':
         link.href = tile.heightmap
+      case 'landcover texture':
+        link.href = tile.texture
+        break
+      case 'geoTiff':
+        link.download = `${tile.id}_${type}.tif`
+        link.href = tile.geoTiff
+        break
       default:
         break
     }
@@ -153,7 +160,8 @@ const Tile = () => {
           <Text>Download textures:</Text>
           <DownloadButton type="heightmap" />
           <DownloadButton type="landcover" />
-          <DownloadButton type="geotiff" />
+          <DownloadButton type="landcover texture" />
+          <DownloadButton type="geoTiff" />
         </Flex>
       </Flex>
     </Drawer>

@@ -1,11 +1,12 @@
-const fs = require('fs')
-const turf = require('@turf/turf')
-const cover = require('@mapbox/tile-cover')
-const sha1 = require('sha1')
-const sharp = require('sharp')
-// import { writeArrayToGeoTiff } from 'geotiff'
+import fs from 'fs'
+import * as turf from '@turf/turf'
+import cover from '@mapbox/tile-cover'
+import sha1 from 'sha1'
+import sharp from 'sharp'
+import { getMetersPerPixel, tileToBBOX } from './mapbox/utils.js'
+import { exec } from 'child_process'
 
-const writeFile = (file, fileName) => {
+export const writeFile = (file, fileName) => {
   return new Promise((resolve, reject) => {
     fs.writeFile(fileName, file, 'binary', (err) => {
       if (err) {
@@ -17,7 +18,7 @@ const writeFile = (file, fileName) => {
   })
 }
 
-const createFolder = (path) => {
+export const createFolder = (path) => {
   return new Promise((resolve, reject) => {
     fs.mkdir(path, (err) => {
       if (err) {
@@ -29,10 +30,10 @@ const createFolder = (path) => {
   })
 }
 
-const convertToGrayScale = async (inputPath, outputPath) =>
+export const convertToGrayScale = async (inputPath, outputPath) =>
   sharp(inputPath).grayscale().toFile(outputPath)
 
-const writePixelsToPng = (pixels, width, height, fileName) => {
+export const writePixelsToPng = (pixels, width, height, fileName) => {
   return sharp(pixels, {
     raw: {
       width,
@@ -44,7 +45,7 @@ const writePixelsToPng = (pixels, width, height, fileName) => {
     .toFile(fileName)
 }
 
-const invertImage = async (imagePath) => {
+export const invertImage = async (imagePath) => {
   const tmpPath = imagePath.replace('.png', '_inverted.png')
 
   await sharp(imagePath)
@@ -59,7 +60,7 @@ const invertImage = async (imagePath) => {
   fs.renameSync(tmpPath, imagePath)
 }
 
-const resizeAndConvert = async (imagePath, toSize) => {
+export const resizeAndConvert = async (imagePath, toSize) => {
   const tmpPath = imagePath.replace('.png', '_tmp.png')
 
   await sharp(imagePath)
@@ -74,13 +75,13 @@ const resizeAndConvert = async (imagePath, toSize) => {
   fs.renameSync(tmpPath, imagePath)
 }
 
-const getPixelDataFromFile = async (file) => {
+export const getPixelDataFromFile = async (file) => {
   const buffer = await sharp(file).raw().toBuffer()
 
   return new Uint8ClampedArray(buffer)
 }
 
-const getEdgePixels = async (imagePath, edge) => {
+export const getEdgePixels = async (imagePath, edge) => {
   // convert the image to raw pixel data
   const {
     data,
@@ -117,7 +118,7 @@ async function updatePixelValues(inPath, outPath, amount) {
   return sharp(inPath).linear(amount, 0).toFile(outPath)
 }
 
-const convertPngToHeightMap = (data) => {
+export const convertPngToHeightMap = (data) => {
   const heightMap = []
   let maxHeight = -Infinity
   let minHeight = Infinity
@@ -161,7 +162,7 @@ const convertPngToHeightMap = (data) => {
   }
 }
 
-const mergeHeightmaps = (heightmap1, heightmap2, multiplier = 1) => {
+export const mergeHeightmaps = (heightmap1, heightmap2, multiplier = 1) => {
   const size = Math.sqrt(heightmap1.length)
   const mergedHeightmap = new Float32Array(size * size)
 
@@ -172,7 +173,7 @@ const mergeHeightmaps = (heightmap1, heightmap2, multiplier = 1) => {
   return mergedHeightmap
 }
 
-const multiplyHeightmaps = (original, mask, options) => {
+export const multiplyHeightmaps = (original, mask, options) => {
   const size = Math.sqrt(original.length)
   const mergedHeightmap = new Float32Array(size * size)
 
@@ -193,7 +194,7 @@ const multiplyHeightmaps = (original, mask, options) => {
   return mergedHeightmap
 }
 
-const stitchTileImages = (images, outPath) => {
+export const stitchTileImages = (images, outPath) => {
   return Promise.all(images.map((image) => sharp(image).toBuffer()))
     .then((imageBuffers) => {
       // Get the metadata from the first image buffer,
@@ -237,7 +238,7 @@ const stitchTileImages = (images, outPath) => {
     .catch((err) => console.error(err))
 }
 
-const generateOutline = async (inputFile, outputFile) => {
+export const generateOutline = async (inputFile, outputFile) => {
   const original = await sharp(inputFile).toBuffer()
 
   // Dilate the shapes with a larger blur and threshold back to binary
@@ -269,7 +270,7 @@ const generateOutline = async (inputFile, outputFile) => {
   await sharp(final).threshold(128).toFile(outputFile)
 }
 
-const promiseSeries = (items, method) => {
+export const promiseSeries = (items, method) => {
   const results = []
 
   function runMethod(item, index) {
@@ -292,7 +293,7 @@ const promiseSeries = (items, method) => {
     .then(() => results)
 }
 
-const minTilesForCoords = (coords, initialZoom = 10) => {
+export const minTilesForCoords = (coords, initialZoom = 10) => {
   var line = turf.lineString(coords)
   var bbox = turf.bbox(line)
   const bboxPolygon = turf.bboxPolygon(bbox)
@@ -318,7 +319,7 @@ const minTilesForCoords = (coords, initialZoom = 10) => {
   return [...top, ...bottom]
 }
 
-const tileToId = (tile) => sha1(tile.join('_'))
+export const tileToId = (tile) => sha1(tile.join('_'))
 
 const compareImageHeightsAndUpdate = async (
   imagePath1,
@@ -357,7 +358,7 @@ const compareImageHeightsAndUpdate = async (
   ]
 }
 
-const normalizeColorsBeforeStitching = async (imagePaths) => {
+export const normalizeColorsBeforeStitching = async (imagePaths) => {
   if (imagePaths.length !== 4) {
     return imagePaths
   }
@@ -377,7 +378,7 @@ const normalizeColorsBeforeStitching = async (imagePaths) => {
   return [updatedPath0, updatedPath1, updatedPath2, updatedPath3]
 }
 
-const convertPngToRaw16Bit = async (inputPng, outputRaw) => {
+export const convertPngToRaw16Bit = async (inputPng, outputRaw) => {
   const rawBuffer = await sharp(inputPng)
     .ensureAlpha() // Ensure there's an alpha channel
     .raw() // Get raw, uncompressed image data
@@ -404,52 +405,17 @@ const convertPngToRaw16Bit = async (inputPng, outputRaw) => {
   fs.writeFileSync(outputRaw, output)
 }
 
-const createGeoTiff = async (pngPath, bbox, outputGeoTiffPath) => {
-  // Load PNG image and get its data
-  const pngBuffer = await sharp(pngPath)
-    .raw()
-    .toBuffer({ resolveWithObject: true })
-  const data = {
-    width: pngBuffer.info.width,
-    height: pngBuffer.info.height,
-    data: pngBuffer.data,
-  }
+export const createGeoTiff = async (pngPath, bbox, outputGeoTiffPath) => {
+  return new Promise((resolve) => {
+    const command = `gdal_translate -of GTiff -a_srs EPSG:4326 -a_ullr ${bbox[0]} ${bbox[3]} ${bbox[2]} ${bbox[1]} ${pngPath} ${outputGeoTiffPath}`
 
-  // Define GeoTIFF metadata
-  const geoKeys = {
-    GTModelTypeGeoKey: 2, // Represents Geographic latitude-longitude System
-    GTRasterTypeGeoKey: 1, // Represents RasterPixelIsArea
-    GeographicTypeGeoKey: 4326, // Represents WGS 84
-  }
-
-  const fileDirectory = {
-    ImageWidth: data.width,
-    ImageLength: data.height,
-    BitsPerSample: [8, 8, 8],
-    Compression: 1, // None
-    PhotometricInterpretation: 2, // RGB
-    StripOffsets: [0],
-    RowsPerStrip: data.height,
-    StripByteCounts: [data.data.length],
-    SamplesPerPixel: 3,
-    PlanarConfiguration: 1, // Chunky format
-    SampleFormat: [1, 1, 1], // Uint
-    ModelPixelScale: [
-      (bbox[2] - bbox[0]) / data.width,
-      (bbox[3] - bbox[1]) / data.height,
-    ],
-    ModelTiepoint: [0, 0, 0, bbox[0], bbox[3], 0],
-    GeoKeyDirectoryTag: geoKeys,
-  }
-
-  // Create GeoTIFF
-  const geotiffBuffer = writeArrayToGeoTiff(data.data, fileDirectory)
-
-  // Save GeoTIFF to file
-  fs.writeFileSync(outputGeoTiffPath, geotiffBuffer)
+    exec(command, (error, stdout, stderr) => {
+      resolve(outputGeoTiffPath)
+    })
+  })
 }
 
-const updateTileProgress = (tileId, progress = 0) => {
+export const updateTileProgress = (tileId, progress = 0) => {
   let tileJson = {}
   try {
     tileJson = JSON.parse(fs.readFileSync(`./public/tiles/${tileId}/tile.json`))
@@ -462,26 +428,56 @@ const updateTileProgress = (tileId, progress = 0) => {
   )
 }
 
-module.exports = {
-  convertPngToHeightMap,
-  writePixelsToPng,
-  invertImage,
-  resizeAndConvert,
-  writeFile,
-  createFolder,
-  getPixelDataFromFile,
-  getEdgePixels,
-  multiplyHeightmaps,
-  mergeHeightmaps,
-  updatePixelValues,
-  stitchTileImages,
-  promiseSeries,
-  tileToId,
-  generateOutline,
-  minTilesForCoords,
-  normalizeColorsBeforeStitching,
-  convertToGrayScale,
-  convertPngToRaw16Bit,
-  createGeoTiff,
-  updateTileProgress,
+const getTile = (path, id) => {
+  let tileInfo = {}
+  if (fs.existsSync(`${path}/${id}/tile.json`)) {
+    tileInfo = JSON.parse(fs.readFileSync(`${path}/${id}/tile.json`))
+    tileInfo = {
+      ...tileInfo,
+      bbox: tileToBBOX(tileInfo.tile),
+    }
+    const zoom = tileInfo.tile[2]
+    tileInfo.getMetersPerPixel = getMetersPerPixel(zoom, tileInfo.bbox[1])
+  }
+
+  return {
+    id,
+    ...tileInfo,
+  }
+}
+
+export const getCoverTileData = (id) => {
+  const tileFolders = fs
+    .readdirSync(`./public/tiles/${id}`, { withFileTypes: true })
+    .filter((dir) => dir.isDirectory())
+
+  const tiles = tileFolders.map((dir) =>
+    getTile(`./public/tiles/${id}`, dir.name)
+  )
+  const arrayOfBboxes = tiles.map((tile) => tile.bbox)
+
+  let bbox = [Infinity, Infinity, -Infinity, -Infinity]
+
+  // Iterate through the array of bboxes and expand the overall bbox
+  arrayOfBboxes.forEach((tileBBOX) => {
+    const [minX, minY, maxX, maxY] = tileBBOX
+    bbox = [
+      Math.min(minX, bbox[0]),
+      Math.min(minY, bbox[1]),
+      Math.max(maxX, bbox[2]),
+      Math.max(maxY, bbox[3]),
+    ]
+  })
+
+  const minHeight = Math.min(...tiles.map((tile) => tile.minHeight))
+  const maxHeight = Math.max(...tiles.map((tile) => tile.maxHeight))
+
+  return {
+    bbox,
+    minHeight,
+    maxHeight,
+    center: [(bbox[0] + bbox[2]) / 2, (bbox[1] + bbox[3]) / 2],
+    metersPerPixel: tiles[0].getMetersPerPixel,
+    tiles,
+  }
 }

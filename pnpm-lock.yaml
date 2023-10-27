@@ -20,7 +20,6 @@ specifiers:
   dotenv: ^16.3.1
   express: ^4.18.2
   form-data: ^4.0.0
-  geotiff: ^2.0.7
   jotai: ^2.3.1
   mapbox-gl: ^2.15.0
   mapbox-gl-draw-rectangle-mode: ^1.0.4
@@ -57,7 +56,6 @@ dependencies:
   dotenv: 16.3.1
   express: 4.18.2
   form-data: 4.0.0
-  geotiff: 2.0.7
   jotai: 2.4.2_react@18.2.0
   mapbox-gl: 2.15.0
   mapbox-gl-draw-rectangle-mode: 1.0.4
@@ -900,10 +898,6 @@ packages:
       geojson: 0.5.0
       lodash.throttle: 4.1.1
       viewport-mercator-project: 7.0.4
-    dev: false
-
-  /@petamoriken/float16/3.8.4:
-    resolution: {integrity: sha512-kB+NJ5Br56ZhElKsf0pM7/PQfrDdDVMRz8f0JM6eVOGE+L89z9hwcst9QvWBBnazzuqGTGtPsJNZoQ1JdNiGSQ==}
     dev: false
 
   /@radix-ui/number/1.0.0:
@@ -2939,19 +2933,6 @@ packages:
     engines: {node: '>= 0.10'}
     dev: false
 
-  /geotiff/2.0.7:
-    resolution: {integrity: sha512-FKvFTNowMU5K6lHYY2f83d4lS2rsCNdpUC28AX61x9ZzzqPNaWFElWv93xj0eJFaNyOYA63ic5OzJ88dHpoA5Q==}
-    engines: {node: '>=10.19'}
-    dependencies:
-      '@petamoriken/float16': 3.8.4
-      lerc: 3.0.0
-      pako: 2.1.0
-      parse-headers: 2.0.5
-      quick-lru: 6.1.2
-      web-worker: 1.2.0
-      xml-utils: 1.7.0
-    dev: false
-
   /get-intrinsic/1.2.1:
     resolution: {integrity: sha512-2DcsyfABl+gVHEfCOaTrWgyt+tb6MSEGmKq+kI5HwLbIYgjgmMcV8KQ41uaKz1xxUcn9tJtgFbQUEVcEbd0FYw==}
     dependencies:
@@ -3298,10 +3279,6 @@ packages:
     resolution: {integrity: sha512-xT/iSClTVi7vLoF8dCWTBhCuOWqsLXCMPa6ucVmVAk6hyNCM5JeS1NLhXqIrJktUg+caEYKlqSOUU4u3cpXzKg==}
     dev: false
 
-  /lerc/3.0.0:
-    resolution: {integrity: sha512-Rm4J/WaHhRa93nCN2mwWDZFoRVF18G1f47C+kvQWyHGEZxFpTUi73p7lMVSAndyxGt6lJ2/CFbOcf9ra5p8aww==}
-    dev: false
-
   /lines-and-columns/1.2.4:
     resolution: {integrity: sha512-7ylylesZQ/PV29jhEDl3Ufjo6ZX7gCqJr5F7PKrqc93v7fzSymt1BpwEU8nAUXs8qzzvqhbjhK5QZg6Mt/HkBg==}
     dev: false
@@ -3580,19 +3557,11 @@ packages:
       wrappy: 1.0.2
     dev: false
 
-  /pako/2.1.0:
-    resolution: {integrity: sha512-w+eufiZ1WuJYgPXbV/PO3NCMEc3xqylkKHzp8bxp1uW4qaSNQUkwmLLEc3kKsfz8lpV1F8Ht3U1Cm+9Srog2ug==}
-    dev: false
-
   /parent-module/1.0.1:
     resolution: {integrity: sha512-GQ2EWRpQV8/o+Aw8YqtfZZPfNRWZYkbidE9k5rpl/hC3vtHHBfGm2Ifi6qWV+coDGkrUKZAxE3Lot5kcsRlh+g==}
     engines: {node: '>=6'}
     dependencies:
       callsites: 3.1.0
-    dev: false
-
-  /parse-headers/2.0.5:
-    resolution: {integrity: sha512-ft3iAoLOB/MlwbNXgzy43SWGP6sQki2jQvAyBg/zDFAgr9bfNWZIUj42Kw2eJIl8kEi4PbgE6U1Zau/HwI75HA==}
     dev: false
 
   /parse-json/5.2.0:
@@ -3727,11 +3696,6 @@ packages:
 
   /queue-tick/1.0.1:
     resolution: {integrity: sha512-kJt5qhMxoszgU/62PLP1CJytzd2NKetjSRnyuj31fDd3Rlcz3fzlFdFLD1SItunPwyqEOkca6GbV612BWfaBag==}
-    dev: false
-
-  /quick-lru/6.1.2:
-    resolution: {integrity: sha512-AAFUA5O1d83pIHEhJwWCq/RQcRukCkn/NSm2QsTEMle5f2hP0ChI2+3Xb051PZCkLryI/Ir1MVKviT2FIloaTQ==}
-    engines: {node: '>=12'}
     dev: false
 
   /quickselect/1.1.1:
@@ -4520,10 +4484,6 @@ packages:
       pbf: 3.2.1
     dev: false
 
-  /web-worker/1.2.0:
-    resolution: {integrity: sha512-PgF341avzqyx60neE9DD+XS26MMNMoUQRz9NOZwW32nPQrF6p77f1htcnjBSEV8BGMKZ16choqUG4hyI0Hx7mA==}
-    dev: false
-
   /webidl-conversions/3.0.1:
     resolution: {integrity: sha512-2JAn3z8AR6rjK8Sm8orRC0h/bcl/DqL7tRPdGZ4I1CjdF+EaMLmYxBHyXuKL849eucPFhvBoxMsflfOb8kxaeQ==}
     dev: false
@@ -4547,10 +4507,6 @@ packages:
 
   /wrappy/1.0.2:
     resolution: {integrity: sha512-l4Sp/DRseor9wL6EvV2+TuQn63dMkPjZ/sp9XkghTEbV9KlPS1xUsZ3u7/IQO4wxtcFB4bgpQPRcR3QCvezPcQ==}
-    dev: false
-
-  /xml-utils/1.7.0:
-    resolution: {integrity: sha512-bWB489+RQQclC7A9OW8e5BzbT8Tu//jtAOvkYwewFr+Q9T9KDGvfzC1lp0pYPEQPEoPQLDkmxkepSC/2gIAZGw==}
     dev: false
 
   /xmlhttprequest/1.8.0:

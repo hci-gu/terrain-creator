@@ -1,8 +1,9 @@
-const sharp = require('sharp')
-const COLORS = require('./colors')
-const alea = require('alea')
-const fs = require('fs')
-const { createNoise2D } = require('simplex-noise')
+import sharp from 'sharp'
+import * as COLORS from './colors.js'
+import alea from 'alea'
+import fs from 'fs'
+import { createNoise2D } from 'simplex-noise'
+import { createGeoTiff, getCoverTileData } from './utils.js'
 
 const generateOutline = async (image, size) => {
   const original = await image.png().toBuffer()
@@ -268,7 +269,7 @@ const invertColorsOfImage = (image) => {
     })
 }
 
-const combineLandcoverAndRecolor = async (tileId) => {
+export const combineLandcoverAndRecolor = async (tileId) => {
   const tileFolder = `./public/tiles/${tileId}`
 
   const landCoverFile = `${tileFolder}/landcover.png`
@@ -328,6 +329,67 @@ const combineLandcoverAndRecolor = async (tileId) => {
     })
 }
 
-module.exports = {
-  combineLandcoverAndRecolor,
+export const convertLandcoverToRGBTexture = async (tileId) => {
+  const tileFolder = `./public/tiles/${tileId}`
+
+  let landCoverFile = `${tileFolder}/landcover_colors_edited.png`
+
+  if (!fs.existsSync(landCoverFile)) {
+    landCoverFile = `${tileFolder}/landcover_colors.png`
+  }
+
+  const landCoverColors = Object.keys(COLORS.LANDCOVER_COLORS).map(
+    (key) => COLORS.LANDCOVER_COLORS[key]
+  )
+
+  const maskImage = await sharp(landCoverFile)
+    .raw()
+    .toBuffer({ resolveWithObject: true })
+
+  const { data, info } = maskImage
+  const width = info.width
+  const height = info.height
+  const channels = info.channels
+
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      const idx = (y * width + x) * channels
+
+      const r = data[idx]
+      const g = data[idx + 1]
+      const b = data[idx + 2]
+
+      const currentColor = [r, g, b]
+      for (let i = 0; i < landCoverColors.length; i++) {
+        const color = landCoverColors[i]
+        if (colorDistance(color.paint, currentColor) <= 55) {
+          data[idx] = color.texture[0]
+          data[idx + 1] = color.texture[1]
+          data[idx + 2] = color.texture[2]
+          data[idx + 3] = color.texture[3]
+        }
+      }
+    }
+  }
+  const textureFilePath = `${tileFolder}/landcover_texture.png`
+
+  // Save the mask
+  await sharp(data, {
+    width: width,
+    height: height,
+    channels: channels,
+    raw: {
+      width: width,
+      height: height,
+      channels: channels,
+    },
+  }).toFile(textureFilePath)
+
+  const tileData = getCoverTileData(tileId)
+
+  await createGeoTiff(
+    textureFilePath,
+    tileData.bbox,
+    textureFilePath.replace('.png', '.tif')
+  )
 }

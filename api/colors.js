@@ -1,4 +1,4 @@
-const earthEngine = {
+const EE_COLORS = {
   water: '#419BDF',
   trees: '#397D49',
   grass: '#A3C254',
@@ -10,10 +10,11 @@ const earthEngine = {
   snow: '#B39FE1',
 }
 
-const LANDCOVER_COLORS = {
+export const LANDCOVER_COLORS = {
   ocean: {
     order: 1,
     paint: [138, 196, 255],
+    texture: [255, 255, 0, 255],
     rules: {
       type: 'subtract',
       amount: 0.75,
@@ -23,6 +24,7 @@ const LANDCOVER_COLORS = {
   sand: {
     order: 0,
     paint: [254, 215, 102],
+    texture: [255, 255, 0, 255],
     rules: {
       type: 'add',
       amount: 0.15,
@@ -31,10 +33,12 @@ const LANDCOVER_COLORS = {
   },
   tree: {
     paint: [40, 83, 48],
+    texture: [255, 0, 0, 255],
   },
   grass: {
     order: 2,
     paint: [121, 171, 95],
+    texture: [0, 255, 0, 255],
     rules: {
       type: 'subtract',
       amount: 0.1,
@@ -44,6 +48,7 @@ const LANDCOVER_COLORS = {
   rock: {
     paint: [94, 101, 114],
     order: 3,
+    texture: [0, 0, 0, 255],
     rules: {
       type: 'add',
       amount: 0.2,
@@ -52,14 +57,11 @@ const LANDCOVER_COLORS = {
   },
 }
 
-module.exports = {
-  earthEngine: () =>
-    Object.keys(earthEngine).reduce((acc, key) => {
-      acc[key] = hexToRgb(earthEngine[key])
-      return acc
-    }, {}),
-  LANDCOVER_COLORS,
-}
+export const earthEngine = () =>
+  Object.keys(EE_COLORS).reduce((acc, key) => {
+    acc[key] = hexToRgb(EE_COLORS[key])
+    return acc
+  }, {})
 
 // convert hex to rgb
 const hexToRgb = (hex) => {

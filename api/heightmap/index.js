@@ -1,14 +1,14 @@
-const fs = require('fs')
-const { createNoise2D } = require('simplex-noise')
-const alea = require('alea')
-const {
+import fs from 'fs'
+import { createNoise2D } from 'simplex-noise'
+import alea from 'alea'
+import {
   getPixelDataFromFile,
   writePixelsToPng,
   mergeHeightmaps,
   multiplyHeightmaps,
   convertPngToRaw16Bit,
-} = require('../utils')
-const { LANDCOVER_COLORS } = require('../colors')
+} from '../utils.js'
+import { LANDCOVER_COLORS } from '../colors.js'
 const RESOLUTION = 1024
 
 const createNoisemap = (resolution, scale) => {
@@ -205,49 +205,44 @@ const applyMask = async (heightmapFile, mask) => {
   )
 }
 
-module.exports = {
-  modifyHeightmap: async (tileId) => {
-    const tileFolder = `./public/tiles/${tileId}`
-    const heightmapFile = `${tileFolder}/heightmap.png`
+export const modifyHeightmap = async (tileId) => {
+  const tileFolder = `./public/tiles/${tileId}`
+  const heightmapFile = `${tileFolder}/heightmap.png`
 
-    const blurred = await blurHeightmap(heightmapFile)
+  const blurred = await blurHeightmap(heightmapFile)
 
-    const withNoise = await applyNoiseMap(blurred)
+  const withNoise = await applyNoiseMap(blurred)
 
-    // check if file exists
-    let filepath = `${tileFolder}/landcover_colors_edited.png`
-    if (!fs.existsSync(filepath)) {
-      filepath = `${tileFolder}/landcover_colors.png`
+  // check if file exists
+  let filepath = `${tileFolder}/landcover_colors_edited.png`
+  if (!fs.existsSync(filepath)) {
+    filepath = `${tileFolder}/landcover_colors.png`
+  }
+
+  // extract all masks from colors
+  const masks = Object.keys(LANDCOVER_COLORS)
+    .map((key) => ({
+      ...LANDCOVER_COLORS[key],
+      name: key,
+    }))
+    .sort((a, b) => a.order - b.order)
+
+  let currentFile = withNoise
+  for (let mask of masks) {
+    let maskData = await extractHeightmapFromFileAndColor(filepath, mask.paint)
+    if (mask.rules) {
+      maskData = applyGaussianFilter(maskData, RESOLUTION, mask.rules.blur)
     }
-
-    // extract all masks from colors
-    const masks = Object.keys(LANDCOVER_COLORS)
-      .map((key) => ({
-        ...LANDCOVER_COLORS[key],
-        name: key,
-      }))
-      .sort((a, b) => a.order - b.order)
-
-    let currentFile = withNoise
-    for (let mask of masks) {
-      let maskData = await extractHeightmapFromFileAndColor(
-        filepath,
-        mask.paint
-      )
-      if (mask.rules) {
-        maskData = applyGaussianFilter(maskData, RESOLUTION, mask.rules.blur)
-      }
-      mask.file = `${tileFolder}/${mask.name}_mask.png`
-      await heightMapToFile(maskData, mask.file)
-      if (mask.rules) {
-        currentFile = await applyMask(currentFile, mask)
-      }
+    mask.file = `${tileFolder}/${mask.name}_mask.png`
+    await heightMapToFile(maskData, mask.file)
+    if (mask.rules) {
+      currentFile = await applyMask(currentFile, mask)
     }
+  }
 
-    let finalpath = `${tileFolder}/heightmap_final.png`
-    await applyNoiseMap(currentFile, finalpath)
+  let finalpath = `${tileFolder}/heightmap_final.png`
+  await applyNoiseMap(currentFile, finalpath)
 
-    // save a copy as .raw
-    await convertPngToRaw16Bit(finalpath, finalpath.replace('.png', '.raw'))
-  },
+  // save a copy as .raw
+  await convertPngToRaw16Bit(finalpath, finalpath.replace('.png', '.raw'))
 }
