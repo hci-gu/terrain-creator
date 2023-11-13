@@ -13,6 +13,7 @@ import {
   convertLandcoverToRGBTexture,
 } from './landcover.js'
 import { createGeoTiff, getCoverTileData } from './utils.js'
+import { createArea } from './area.js'
 
 const app = express()
 
@@ -115,6 +116,12 @@ app.delete('/tile/:id/landcover', async (req, res) => {
   }
 
   res.send('OK')
+})
+
+app.post('/area', async (req, res) => {
+  const { coords, zoom } = req.body
+
+  createArea({ coords, zoom })
 })
 
 // route to accept posted image

@@ -41,6 +41,7 @@ const MapControlsContainer = styled.div`
 `
 
 const CREATE_MODE = new DrawRectangleMode()
+const AREA_MODE = new DrawRectangleMode()
 const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
 
 const MapWrapper = ({ children, onClick, mapRef }) => {
@@ -130,6 +131,7 @@ const MapContainer = () => {
   const [mode, setMode] = useState(null)
   const tiles = useAtomValue(tilesAtom)
   const refreshTiles = useSetAtom(refreshTilesAtom)
+  const setViewPort = useSetAtom(mapViewportAtom)
   const tile = useTile()
   const [tileOpacity, setTileOpacity] = useState(0.65)
   const [islandMask, setIslandMask] = useState(false)
@@ -171,12 +173,20 @@ const MapContainer = () => {
       const currentZoom = Math.round(mapInstance.getZoom())
       const coords = e.data[0].geometry.coordinates[0]
 
-      const response = await axios.post(`${API_URL}/tile`, {
-        coords,
-        zoom: currentZoom,
-        islandMask,
-      })
-      const tile = response.data
+      if (mode == CREATE_MODE) {
+        const response = await axios.post(`${API_URL}/tile`, {
+          coords,
+          zoom: currentZoom,
+          islandMask,
+        })
+        const tile = response.data
+      } else if (mode == AREA_MODE) {
+        const response = await axios.post(`${API_URL}/area`, {
+          coords,
+          zoom: currentZoom,
+        })
+        alert('Area creation queued')
+      }
 
       if (tile) {
         refreshTiles()
@@ -202,7 +212,16 @@ const MapContainer = () => {
   useEffect(() => {
     if (!map.current) return
     const mapInstance = map.current.getMap()
-    mapInstance.showTileBoundaries = mode == CREATE_MODE
+    mapInstance.showTileBoundaries = mode == CREATE_MODE || mode == AREA_MODE
+    if (mode == AREA_MODE) {
+      setViewPort((s) => ({
+        ...s,
+        zoom: 9,
+      }))
+      mapInstance.flyTo({
+        zoom: 9,
+      })
+    }
   }, [map.current, mode])
 
   return (
@@ -245,6 +264,7 @@ const MapContainer = () => {
             data={[
               { value: null, label: 'View' },
               { value: CREATE_MODE, label: 'Create' },
+              { value: AREA_MODE, label: 'Area' },
             ]}
             onChange={(value) => setMode(value)}
             value={mode}

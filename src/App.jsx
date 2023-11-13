@@ -2,7 +2,7 @@ import React from 'react'
 import { createBrowserRouter, RouterProvider } from 'react-router-dom'
 import styled from '@emotion/styled'
 import DarkModeToggle from './components/DarkModeToggle'
-import { Title, Header } from '@mantine/core'
+import { Title, Header, NavLink, Flex } from '@mantine/core'
 import MapContainer from './components/Map'
 import { useAtomValue } from 'jotai'
 import { tilesAtom } from './state'
@@ -53,9 +53,17 @@ const App = () => {
           padding: '0 1rem',
         }}
       >
-        <Title>
-          Ecotwin <span style={{ color: '#F2C94C', fontWeight: 900 }}>Map</span>
-        </Title>
+        <div>
+          <Title>
+            Ecotwin{' '}
+            <span style={{ color: '#F2C94C', fontWeight: 900 }}>Map</span>
+          </Title>
+          <Flex gap={8}>
+            <a>Map</a>
+            <a>Tiles</a>
+          </Flex>
+        </div>
+
         <DarkModeToggle />
       </Header>
       <Container>
