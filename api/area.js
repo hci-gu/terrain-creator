@@ -48,6 +48,6 @@ export const createArea = async ({ coords, zoom }) => {
     await mapbox.getTileData(tileId)
     await combineLandcoverAndRecolor(tileId)
     await convertLandcoverToRGBTexture(tileId)
-    await heightmap.modifyHeightmap(tileId)
+    // await heightmap.modifyHeightmap(tileId)
   })
 }
