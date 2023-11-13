@@ -101,6 +101,29 @@ const TileList = () => {
   )
 }
 
+const MapZoomSlider = () => {
+  const [viewport, setViewport] = useAtom(mapViewportAtom)
+
+  return (
+    <>
+      Zoom
+      <Slider
+        w={200}
+        min={1}
+        max={15}
+        step={1}
+        onChange={(value) => {
+          setViewport({
+            ...viewport,
+            zoom: value,
+          })
+        }}
+        value={viewport.zoom}
+      />
+    </>
+  )
+}
+
 const MapContainer = () => {
   const navigate = useNavigate()
   const map = useRef(null)
@@ -216,6 +239,7 @@ const MapContainer = () => {
             onChange={setTileOpacity}
             value={tileOpacity}
           />
+          <MapZoomSlider />
           <Select
             label="Mode"
             data={[

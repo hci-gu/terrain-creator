@@ -11,7 +11,7 @@ const EE_COLORS = {
 }
 
 export const LANDCOVER_COLORS = {
-  ocean: {
+  water: {
     order: 1,
     paint: [138, 196, 255],
     texture: [255, 255, 0, 255],
@@ -31,9 +31,9 @@ export const LANDCOVER_COLORS = {
       blur: 36,
     },
   },
-  tree: {
+  trees: {
     paint: [40, 83, 48],
-    texture: [255, 0, 0, 255],
+    texture: [0, 255, 255, 255],
   },
   grass: {
     order: 2,
@@ -45,9 +45,39 @@ export const LANDCOVER_COLORS = {
       blur: 24,
     },
   },
-  rock: {
-    paint: [94, 101, 114],
+  flooded_vegetation: {
+    order: 2,
+    paint: [122, 135, 198],
+    texture: [255, 0, 0, 0],
+  },
+  crops: {
     order: 3,
+    paint: [228, 150, 53],
+    texture: [0, 255, 255, 0],
+  },
+  shrub: {
+    order: 4,
+    paint: [223, 195, 90],
+    texture: [255, 0, 255, 255],
+  },
+  built: {
+    order: 5,
+    paint: [196, 40, 27],
+    texture: [255, 0, 0, 255],
+  },
+  bare: {
+    order: 6,
+    paint: [165, 155, 143],
+    texture: [0, 255, 0, 0],
+  },
+  snow: {
+    order: 7,
+    paint: [179, 159, 225],
+    texture: [255, 255, 255, 255],
+  },
+  rock: {
+    order: 8,
+    paint: [94, 101, 114],
     texture: [0, 0, 0, 255],
     rules: {
       type: 'add',

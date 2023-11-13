@@ -1,3 +1,5 @@
+import dotenv from 'dotenv'
+dotenv.config()
 import fs from 'fs'
 import axios from 'axios'
 import tilebelt from '@mapbox/tilebelt'
@@ -31,11 +33,15 @@ const downloadTile = async (tile, type = 'mapbox.terrain-rgb') => {
     url = `https://api.mapbox.com/styles/v1/${MAPBOX_USERNAME}/${MAPBOX_STYLE_ID}/tiles/${zoom}/${x}/${y}?access_token=${ACCESS_TOKEN}&fresh=true`
   }
 
-  const response = await axios.get(url, {
-    responseType: 'arraybuffer',
-  })
+  try {
+    const response = await axios.get(url, {
+      responseType: 'arraybuffer',
+    })
 
-  return response.data
+    return response.data
+  } catch (e) {
+    console.log('Failed to download tile', e)
+  }
 }
 
 const getChildrenAndStitch = async (
@@ -101,13 +107,15 @@ const getTile = async (folder, tile, index) => {
   const landcoverGrassData = await downloadTile(tile, 'landcover-grass')
   await writeFile(landcoverGrassData, `${path}/landcover_grass.png`)
 
-  const children = tilebelt.getChildren(tile)
+  // TODO: make highres mode that does this part
+  // const children = tilebelt.getChildren(tile)
+  // const childrenFiles = await promiseSeries(children, (childTile) =>
+  //   getChildrenAndStitch(path, childTile, children.indexOf(childTile))
+  // )
 
-  const childrenFiles = await promiseSeries(children, (childTile) =>
-    getChildrenAndStitch(path, childTile, children.indexOf(childTile))
-  )
-
-  await stitchTileImages(childrenFiles, `${path}/stitched.png`)
+  // await stitchTileImages(childrenFiles, `${path}/stitched.png`)
+  const tileImage = await downloadTile(tile, 'mapbox.satellite')
+  await writeFile(tileImage, `${path}/stitched.png`)
   fs.writeFileSync(
     `${path}/tile.json`,
     JSON.stringify({
@@ -177,7 +185,6 @@ export const createTile = async (coords, zoom) => {
 export const getTileData = async (tileId) => {
   const path = `./public/tiles/${tileId}`
   const tiles = getTilesFromFolder(tileId)
-  console.log('tiles', tiles)
 
   const imagePaths = await promiseSeries(tiles, (tile, index) =>
     getTile(path, tile, index)

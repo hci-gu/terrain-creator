@@ -33,6 +33,7 @@ app.get('/tiles', (req, res) => {
 
   const tiles = tileIds.map((id) => {
     const tileData = getCoverTileData(id)
+    // const coverageData =
 
     // check if edited versions exist
     const editedLandcoverFile = `./public/tiles/${id}/landcover_colors_edited.png`
@@ -46,6 +47,15 @@ app.get('/tiles', (req, res) => {
     const textureFile = `./public/tiles/${id}/landcover_texture.png`
     const geoTiffFile = `./public/tiles/${id}/landcover_texture.tif`
     const satelliteFile = `./public/tiles/${id}/sattelite.png`
+
+    // read coverage data
+
+    let coverage = {}
+    try {
+      coverage = JSON.parse(
+        fs.readFileSync(`./public/tiles/${id}/coverage.json`, 'utf8')
+      )
+    } catch (_) {}
 
     return {
       id,
@@ -64,6 +74,7 @@ app.get('/tiles', (req, res) => {
       geoTiff: fs.existsSync(geoTiffFile)
         ? geoTiffFile.replace('./public', '')
         : null,
+      coverage,
       ...tileData,
     }
   })
@@ -90,7 +101,7 @@ app.post('/tile', async (req, res) => {
   }
   await combineLandcoverAndRecolor(tileId)
 
-  await convertLandcoverToRGBTexture(id)
+  await convertLandcoverToRGBTexture(tileId)
   await heightmap.modifyHeightmap(tileId)
 })
 
@@ -121,7 +132,7 @@ app.post('/tile/:id/landcover', async (req, res) => {
 
   await convertLandcoverToRGBTexture(id)
 
-  await heightmap.modifyHeightmap(id)
+  // await heightmap.modifyHeightmap(id)
   res.send('Image saved successfully')
 })
 

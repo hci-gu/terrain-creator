@@ -7,6 +7,7 @@ import MapContainer from './components/Map'
 import { useAtomValue } from 'jotai'
 import { tilesAtom } from './state'
 import Tile from './pages/Tile'
+import Tiles from './pages/Tiles'
 
 const Container = styled.div`
   margin: 0 auto;
@@ -26,6 +27,10 @@ const router = createBrowserRouter([
   {
     path: '/',
     element: <MapContainer />,
+  },
+  {
+    path: '/tiles',
+    element: <Tiles />,
   },
   {
     path: '/tile/:id',

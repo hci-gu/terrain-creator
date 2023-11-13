@@ -278,15 +278,15 @@ export const combineLandcoverAndRecolor = async (tileId) => {
 
   const eeColors = COLORS.earthEngine()
 
-  const treeMask = await extractMask(landCoverFile, eeColors.trees)
-  const grassMask = await extractMask(landCoverFile, eeColors.grass)
-  const rockmask = await extractMask(landCoverFile, eeColors.shrub)
+  let masksToCombine = []
+  for (let key in eeColors) {
+    const mask = await extractMask(landCoverFile, eeColors[key])
 
-  let masksToCombine = [
-    { image: treeMask, color: COLORS.LANDCOVER_COLORS.tree.paint },
-    { image: grassMask, color: COLORS.LANDCOVER_COLORS.grass.paint },
-    { image: rockmask, color: COLORS.LANDCOVER_COLORS.rock.paint },
-  ]
+    masksToCombine.push({
+      image: mask,
+      color: COLORS.LANDCOVER_COLORS[key].paint,
+    })
+  }
 
   // check if islandMaskFile exists
   if (fs.existsSync(islandMaskFile)) {
@@ -296,37 +296,19 @@ export const combineLandcoverAndRecolor = async (tileId) => {
     const oceanMask = await invertColorsOfImage(islandMask)
     masksToCombine = [
       ...masksToCombine,
-      { image: oceanMask, color: COLORS.LANDCOVER_COLORS.ocean.paint },
+      { image: oceanMask, color: COLORS.LANDCOVER_COLORS.water.paint },
       { image: sandMask, color: COLORS.LANDCOVER_COLORS.sand.paint },
-    ]
-  } else {
-    const oceanMask = await extractMask(landCoverFile, eeColors.water)
-
-    masksToCombine = [
-      ...masksToCombine,
-      { image: oceanMask, color: COLORS.LANDCOVER_COLORS.ocean.paint },
     ]
   }
 
-  console.log(masksToCombine)
+  const combined = await mergeAndColorize(masksToCombine, 1024, 1024)
 
-  return mergeAndColorize(masksToCombine, 1024, 1024)
-    .then((combined) => {
-      console.log(combined)
-      combined.toFile(
-        landCoverFile.replace('landcover', 'landcover_colors'),
-        (err, info) => {
-          if (err) {
-            console.error('Error saving combined image:', err)
-          } else {
-            console.log('Combined image saved successfully:', info)
-          }
-        }
-      )
-    })
-    .catch((error) => {
-      console.error('Error during combination:', error)
-    })
+  return new Promise((resolve) => {
+    combined.toFile(
+      landCoverFile.replace('landcover', 'landcover_colors'),
+      () => resolve()
+    )
+  })
 }
 
 export const convertLandcoverToRGBTexture = async (tileId) => {
@@ -338,18 +320,27 @@ export const convertLandcoverToRGBTexture = async (tileId) => {
     landCoverFile = `${tileFolder}/landcover_colors.png`
   }
 
-  const landCoverColors = Object.keys(COLORS.LANDCOVER_COLORS).map(
-    (key) => COLORS.LANDCOVER_COLORS[key]
-  )
+  const landCoverColors = Object.keys(COLORS.LANDCOVER_COLORS).map((key) => ({
+    name: key,
+    ...COLORS.LANDCOVER_COLORS[key],
+  }))
 
-  const maskImage = await sharp(landCoverFile)
-    .raw()
-    .toBuffer({ resolveWithObject: true })
+  const maskImage = await sharp(landCoverFile).raw().toBuffer({
+    resolveWithObject: true,
+  })
 
   const { data, info } = maskImage
   const width = info.width
   const height = info.height
   const channels = info.channels
+
+  const coverageMap = Object.keys(COLORS.LANDCOVER_COLORS).reduce(
+    (acc, key) => {
+      acc[key] = 0
+      return acc
+    },
+    {}
+  )
 
   for (let y = 0; y < height; y++) {
     for (let x = 0; x < width; x++) {
@@ -358,19 +349,44 @@ export const convertLandcoverToRGBTexture = async (tileId) => {
       const r = data[idx]
       const g = data[idx + 1]
       const b = data[idx + 2]
-
-      const currentColor = [r, g, b]
+      let matchedColor = false
       for (let i = 0; i < landCoverColors.length; i++) {
         const color = landCoverColors[i]
-        if (colorDistance(color.paint, currentColor) <= 55) {
+        if (r == color.paint[0] && g == color.paint[1] && b == color.paint[2]) {
           data[idx] = color.texture[0]
           data[idx + 1] = color.texture[1]
           data[idx + 2] = color.texture[2]
           data[idx + 3] = color.texture[3]
+          matchedColor = true
+          coverageMap[color.name]++
+          break
+        }
+      }
+      if (!matchedColor) {
+        for (let i = 0; i < landCoverColors.length; i++) {
+          const color = landCoverColors[i]
+          if (colorDistance([r, g, b], color.paint) <= 100) {
+            data[idx] = color.texture[0]
+            data[idx + 1] = color.texture[1]
+            data[idx + 2] = color.texture[2]
+            data[idx + 3] = color.texture[3]
+            coverageMap[color.name]++
+            break
+          }
         }
       }
     }
   }
+  // convet coverageMap to percentages
+  const totalPixels = width * height
+  for (let key in coverageMap) {
+    coverageMap[key] = coverageMap[key] / totalPixels
+  }
+  fs.writeFileSync(
+    `${tileFolder}/coverage.json`,
+    JSON.stringify(coverageMap, null, 2)
+  )
+
   const textureFilePath = `${tileFolder}/landcover_texture.png`
 
   // Save the mask
@@ -386,6 +402,23 @@ export const convertLandcoverToRGBTexture = async (tileId) => {
   }).toFile(textureFilePath)
 
   const tileData = getCoverTileData(tileId)
+
+  // create a smaller version that is 100x100 pixels but keep the exakt colors
+  await sharp(textureFilePath)
+    .resize(100, 100, {
+      kernel: sharp.kernel.nearest,
+      fit: 'contain',
+      position: 'center',
+    })
+    .toFile(textureFilePath.replace('.png', '_100.png'))
+
+  await sharp(landCoverFile)
+    .resize(100, 100, {
+      kernel: sharp.kernel.nearest,
+      fit: 'contain',
+      position: 'center',
+    })
+    .toFile(landCoverFile.replace('.png', '_100.png'))
 
   await createGeoTiff(
     textureFilePath,

@@ -1,32 +1,21 @@
 import { Button, ColorPicker, Flex, Slider, Space, Text } from '@mantine/core'
 import { useRef, useState } from 'react'
 import CanvasDraw from 'react-canvas-draw'
+import { useTile, landcovers } from '../state'
 
-const availableColors = [
-  {
-    color: '#8ac5ff',
-    name: 'Ocean',
-  },
-  {
-    color: '#fed766',
-    name: 'Sand',
-  },
-  {
-    color: '#285330',
-    name: 'Forest',
-  },
-  {
-    color: '#79ab5f',
-    name: 'Grass',
-  },
-  {
-    color: '#5e6572',
-    name: 'Rock',
-  },
-]
+const colorNameToKey = (name) => name.toLowerCase().replace(' ', '_')
+const coverageForColor = (tile, color) => {
+  const value = tile.coverage[colorNameToKey(color.name)]
+
+  if (value === undefined) {
+    return 0
+  }
+  return (value * 100).toFixed(2)
+}
 
 const DrawTools = ({ imgSrc, loading, onSave, onDelete }) => {
-  const [value, onChange] = useState(availableColors[0].color)
+  const tile = useTile()
+  const [value, onChange] = useState(landcovers[0].color)
   const [brushRadius, setBrushRadius] = useState(10)
 
   const ref = useRef()
@@ -56,13 +45,13 @@ const DrawTools = ({ imgSrc, loading, onSave, onDelete }) => {
               value={value}
               onChange={onChange}
               withPicker={false}
-              swatches={availableColors.map((color) => color.color)}
+              swatches={landcovers.map((color) => color.color)}
               swatchesPerRow={1}
             />
             <Flex direction="column">
-              {availableColors.map((color) => (
+              {landcovers.map((color) => (
                 <Text mt={10} ml={8}>
-                  {color.name}
+                  {color.name} - {coverageForColor(tile, color)}%
                 </Text>
               ))}
             </Flex>
