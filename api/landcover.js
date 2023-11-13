@@ -420,9 +420,9 @@ export const convertLandcoverToRGBTexture = async (tileId) => {
     })
     .toFile(landCoverFile.replace('.png', '_100.png'))
 
-  await createGeoTiff(
-    textureFilePath,
-    tileData.bbox,
-    textureFilePath.replace('.png', '.tif')
-  )
+  // await createGeoTiff(
+  //   textureFilePath,
+  //   tileData.bbox,
+  //   textureFilePath.replace('.png', '.tif')
+  // )
 }
