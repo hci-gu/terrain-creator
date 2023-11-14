@@ -39,13 +39,16 @@ app.get('/tiles', (req, res) => {
     // check if edited versions exist
     const editedLandcoverFile = `./public/tiles/${id}/landcover_colors_edited.png`
     let landcoverFile = `./public/tiles/${id}/landcover_colors.png`
+    let landcoverFileSmall = `./public/tiles/${id}/landcover_colors_100.png`
 
     if (fs.existsSync(editedLandcoverFile)) {
       landcoverFile = editedLandcoverFile
+      landcoverFileSmall = editedLandcoverFile.replace('.png', '_100.png')
     }
 
     const heightmapFile = `./public/tiles/${id}/heightmap_final.png`
     const textureFile = `./public/tiles/${id}/landcover_texture.png`
+    const textureFileSmall = `./public/tiles/${id}/landcover_texture_100.png`
     const geoTiffFile = `./public/tiles/${id}/landcover_texture.tif`
     const satelliteFile = `./public/tiles/${id}/sattelite.png`
 
@@ -63,6 +66,9 @@ app.get('/tiles', (req, res) => {
       landcover: fs.existsSync(landcoverFile)
         ? landcoverFile.replace('./public', '')
         : null,
+      landcoverSmall: fs.existsSync(landcoverFileSmall)
+        ? landcoverFileSmall.replace('./public', '')
+        : null,
       heightmap: fs.existsSync(heightmapFile)
         ? heightmapFile.replace('./public', '')
         : null,
@@ -71,6 +77,9 @@ app.get('/tiles', (req, res) => {
         : null,
       texture: fs.existsSync(textureFile)
         ? textureFile.replace('./public', '')
+        : null,
+      textureSmall: fs.existsSync(textureFileSmall)
+        ? textureFileSmall.replace('./public', '')
         : null,
       geoTiff: fs.existsSync(geoTiffFile)
         ? geoTiffFile.replace('./public', '')

@@ -9,6 +9,8 @@ import { Image, Slider, Table } from '@mantine/core'
 import { useState } from 'react'
 import { IconSortAscending, IconSortDescending } from '@tabler/icons-react'
 import styled from '@emotion/styled'
+import { IconDownload } from '@tabler/icons-react'
+import JSZip from 'jszip'
 
 const Container = styled.div`
   margin: 24px auto;
@@ -16,6 +18,25 @@ const Container = styled.div`
 
   > div {
     display: flex;
+  }
+
+  > header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    > div {
+      display: flex;
+      align-items: center;
+      cursor: pointer;
+      :hover {
+        text-decoration: underline;
+      }
+
+      > svg {
+        margin-left: 8px;
+      }
+    }
   }
 `
 
@@ -103,9 +124,39 @@ export default function Tiles() {
       : bCoverage - aCoverage
   })
 
+  const download = async () => {
+    const zip = new JSZip()
+    const texturesFolder = zip.folder('textures')
+    const landcoversFolder = zip.folder('landcovers')
+
+    for (let tile of tiles) {
+      const [texture, landcover] = await Promise.all([
+        fetch(tile.textureSmall).then((res) => res.blob()),
+        fetch(tile.landcoverSmall).then((res) => res.blob()),
+      ])
+      texturesFolder.file(`${tile.id}.png`, texture)
+      landcoversFolder.file(`${tile.id}.png`, landcover)
+    }
+
+    // download the zip
+    zip.generateAsync({ type: 'blob' }).then((content) => {
+      const url = window.URL.createObjectURL(content)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = 'tiles.zip'
+      a.click()
+    })
+  }
+
   return (
     <Container>
-      <h1>Tiles - {tiles.length}</h1>
+      <header>
+        <h1>Tiles - {tiles.length}</h1>
+        <div onClick={() => download()}>
+          Download
+          <IconDownload />
+        </div>
+      </header>
       <div>
         <Table
           withBorder
@@ -157,10 +208,20 @@ export default function Tiles() {
             {tiles.map((tile) => (
               <tr>
                 <td>
-                  <Image src={tile.satellite} height={100} width={100} />
+                  <Image
+                    key={`${tile.id}_satellite`}
+                    src={tile.satellite}
+                    max-height={100}
+                    max-width={100}
+                  />
                 </td>
                 <td>
-                  <Image src={tile.landcover} height={100} width={100} />
+                  <Image
+                    key={`${tile.id}_landcover`}
+                    src={tile.landcover}
+                    max-height={100}
+                    max-width={100}
+                  />
                 </td>
                 {landcovers.map((landCover) => (
                   <td key={`${landCover.name}_${tile.id}`}>
