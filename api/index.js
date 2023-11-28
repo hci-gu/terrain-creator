@@ -11,6 +11,7 @@ import cors from 'cors'
 import {
   combineLandcoverAndRecolor,
   convertLandcoverToRGBTexture,
+  recreateTextureAndGeoTiffForTile,
 } from './landcover.js'
 import { createGeoTiff, getCoverTileData } from './utils.js'
 import { createArea } from './area.js'

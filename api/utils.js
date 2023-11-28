@@ -407,7 +407,8 @@ export const convertPngToRaw16Bit = async (inputPng, outputRaw) => {
 
 export const createGeoTiff = async (pngPath, bbox, outputGeoTiffPath) => {
   return new Promise((resolve) => {
-    const command = `gdal_translate -of GTiff -a_srs EPSG:4326 -a_ullr ${bbox[0]} ${bbox[3]} ${bbox[2]} ${bbox[1]} ${pngPath} ${outputGeoTiffPath}`
+    // const command = `gdal_translate -of GTiff -a_srs EPSG:4326 -a_ullr ${bbox[0]} ${bbox[3]} ${bbox[2]} ${bbox[1]} ${pngPath} ${outputGeoTiffPath}`
+    const command = `gdal_translate -of GTiff -a_srs EPSG:4326 -a_ullr ${bbox[0]} ${bbox[3]} ${bbox[2]} ${bbox[1]} -co "COMPRESS=LZW" -co "TILED=YES" -co "PREDICTOR=2" ${pngPath} ${outputGeoTiffPath}`
 
     exec(command, (error, stdout, stderr) => {
       resolve(outputGeoTiffPath)
@@ -437,7 +438,7 @@ const getTile = (path, id) => {
       bbox: tileToBBOX(tileInfo.tile),
     }
     const zoom = tileInfo.tile[2]
-    tileInfo.getMetersPerPixel = getMetersPerPixel(zoom, tileInfo.bbox[1])
+    tileInfo.metersPerPixel = getMetersPerPixel(zoom, tileInfo.bbox[1])
   }
 
   return {
@@ -477,7 +478,7 @@ export const getCoverTileData = (id) => {
     minHeight,
     maxHeight,
     center: [(bbox[0] + bbox[2]) / 2, (bbox[1] + bbox[3]) / 2],
-    metersPerPixel: tiles[0].getMetersPerPixel,
+    metersPerPixel: tiles[0].metersPerPixel,
     tiles,
   }
 }

@@ -5,6 +5,6 @@ export const tileToBBOX = (tile) => tilebelt.tileToBBOX(tile)
 
 export const getMetersPerPixel = (zoom, latitude) => {
   // round for example 57.7 to 60
-  const roundedLatitude = Math.round(latitude / 10) * 10
+  const roundedLatitude = Math.round(latitude / 20) * 20
   return distanceTable[zoom][roundedLatitude]
 }

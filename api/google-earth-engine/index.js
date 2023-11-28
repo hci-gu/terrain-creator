@@ -16,8 +16,25 @@ export const downloadTile = async (url, tile) => {
   return response.data
 }
 
+let cachedEEInstance = {
+  date: null,
+  instance: null,
+}
 export const initEE = () => {
   return new Promise((resolve) => {
+    // if we have a cached instance and its less than 10 minutes old, use it
+    if (
+      cachedEEInstance.instance != null &&
+      cachedEEInstance.date &&
+      new Date() - cachedEEInstance.date < 600000
+    ) {
+      console.log('resolve cached instance')
+      resolve(cachedEEInstance.instance.urlFormat)
+      return
+    }
+
+    console.log('refresh cached instance')
+
     ee.data.authenticateViaPrivateKey(
       privateKey,
       () => {
@@ -47,6 +64,10 @@ export const initEE = () => {
             }
 
             classification.getMap(dwVisParams, function (map) {
+              cachedEEInstance = {
+                date: new Date(),
+                instance: map,
+              }
               resolve(map.urlFormat)
             })
           },
