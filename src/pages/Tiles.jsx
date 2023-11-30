@@ -3,10 +3,11 @@ import {
   filteredTilesAtom,
   landcoverFiltersAtom,
   landcovers,
+  locationFilterAtom,
   locationFilterDistanceAtom,
   tilesAtom,
 } from '../state'
-import { Image, Slider, Table } from '@mantine/core'
+import { Image, RangeSlider, Slider, Table, Text } from '@mantine/core'
 import { Suspense, useState } from 'react'
 import { IconSortAscending, IconSortDescending } from '@tabler/icons-react'
 import styled from '@emotion/styled'
@@ -70,16 +71,20 @@ const ColorBlock = ({ color }) => {
 }
 
 const LocationDistanceSlider = () => {
+  const { location } = useAtomValue(locationFilterAtom)
   const [distance, setDistance] = useAtom(locationFilterDistanceAtom)
 
   return (
     <div>
-      Distance to location
+      <Text color={!!location ? 'black' : 'gray'}>Distance to location</Text>
       <Slider
-        min={0.01}
-        max={10}
-        step={0.01}
+        disabled={!location}
+        min={0}
+        max={1000}
+        step={10}
         value={distance}
+        // aprox lat/lng difference to km
+        label={(value) => `${value} km`}
         onChange={(value) => setDistance(value)}
       />
     </div>
@@ -89,21 +94,22 @@ const LocationDistanceSlider = () => {
 const LandCoverFilter = ({ name }) => {
   const [filters, setFilters] = useAtom(landcoverFiltersAtom)
 
+  // console.log(filters)
+
   return (
     <div>
       {name}
-      <Slider
+      <RangeSlider
         min={0}
-        max={1}
-        step={0.01}
+        max={100}
         value={filters[name]}
-        label={(value) => `${value * 100} %`}
-        onChange={(value) =>
+        label={(value) => `${value} %`}
+        onChange={(value) => {
           setFilters({
             ...filters,
             [name]: value,
           })
-        }
+        }}
       />
     </div>
   )
@@ -112,8 +118,14 @@ const LandCoverFilter = ({ name }) => {
 const LandcoverFilters = () => {
   return (
     <FiltersContainer>
+      <Text size="lg" fw="bolder">
+        Filters
+      </Text>
       {landcovers.map((landCover) => (
-        <LandCoverFilter name={landCover.name} />
+        <LandCoverFilter
+          name={landCover.name}
+          key={`Filter_${landCover.name}`}
+        />
       ))}
       <LocationDistanceSlider />
     </FiltersContainer>
@@ -247,29 +259,14 @@ const DownloadButton = () => {
 }
 
 export default function Tiles() {
-  // tiles.sort((a, b) => {
-  //   const aCoverage = a.coverage[nameToKey(selectedLandcover.name)]
-  //   const bCoverage = b.coverage[nameToKey(selectedLandcover.name)]
-
-  //   if (aCoverage === undefined) {
-  //     return 1
-  //   }
-
-  //   if (bCoverage === undefined) {
-  //     return -1
-  //   }
-
-  //   return selectedLandcover.direction === 'asc'
-  //     ? aCoverage - bCoverage
-  //     : bCoverage - aCoverage
-  // })
-
   return (
     <Container>
       <header>
         <h1>Tiles</h1>
         <SearchBox />
-        <DownloadButton />
+        <Suspense fallback={() => <div>Loading...</div>}>
+          <DownloadButton />
+        </Suspense>
       </header>
 
       <Suspense fallback={() => <div>Loading...</div>}>

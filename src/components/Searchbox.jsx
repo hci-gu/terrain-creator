@@ -51,7 +51,7 @@ function SearchBox() {
   }
 
   // Debounced function
-  const debouncedFetchResults = debounce(fetchSearchResults, 300)
+  const debouncedFetchResults = debounce(fetchSearchResults, 1000)
 
   // Handle input change
   const handleInputChange = (event) => {

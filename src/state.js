@@ -61,6 +61,24 @@ export const tilesAtom = atomWithDefault(async (get, { signal }) => {
   return response.data
 })
 
+function toRadians(degrees) {
+  return (degrees * Math.PI) / 180
+}
+
+function haversineDistance(lat1, lon1, lat2, lon2) {
+  const R = 6371 // Earth's radius in kilometers
+  const dLat = toRadians(lat2 - lat1)
+  const dLon = toRadians(lon2 - lon1)
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(toRadians(lat1)) *
+      Math.cos(toRadians(lat2)) *
+      Math.sin(dLon / 2) *
+      Math.sin(dLon / 2)
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+  return R * c // Distance in kilometers
+}
+
 export const filteredTilesAtom = atom(async (get) => {
   const tiles = await get(tilesAtom)
   const filters = get(landcoverFiltersAtom)
@@ -70,16 +88,25 @@ export const filteredTilesAtom = atom(async (get) => {
   return tiles.filter((tile) => {
     const coverage = tile.coverage || {}
     const filtered = Object.keys(filters).every((filter) => {
-      if (filters[filter] === 0) return true
+      if (filter[0] == 0 && filter[1] == 100) return true
 
-      return coverage[nameToKey(filter)] >= filters[filter]
+      return (
+        coverage[nameToKey(filter)] >= filters[filter][0] / 100 &&
+        coverage[nameToKey(filter)] <= filters[filter][1] / 100
+      )
     })
 
     if (location) {
       // check distance to location
-      const distance = Math.sqrt(
-        Math.pow(tile.center[0] - location[0], 2) +
-          Math.pow(tile.center[1] - location[1], 2)
+      // const distance = Math.sqrt(
+      //   Math.pow(tile.center[0] - location[0], 2) +
+      //     Math.pow(tile.center[1] - location[1], 2)
+      // )
+      const distance = haversineDistance(
+        tile.center[0],
+        tile.center[1],
+        location[0],
+        location[1]
       )
       return filtered && distance < locationDistance
     }
@@ -102,11 +129,11 @@ export const useTile = () => {
 
 export const locationFilterAtom = atom({})
 
-export const locationFilterDistanceAtom = atom(0.5)
+export const locationFilterDistanceAtom = atom(100)
 
 export const landcoverFiltersAtom = atom(
   landcovers.reduce((acc, cur) => {
-    acc[cur.name] = 0
+    acc[cur.name] = [0, 100]
     return acc
   }, {})
 )
