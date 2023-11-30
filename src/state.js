@@ -7,19 +7,15 @@ const API_URL = import.meta.env.VITE_API_URL
 
 export const landcovers = [
   {
-    color: '#8ac5ff',
+    color: '#419BDF',
     name: 'Water',
   },
   {
-    color: '#fed766',
-    name: 'Sand',
-  },
-  {
-    color: '#285330',
+    color: '#397D49',
     name: 'Trees',
   },
   {
-    color: '#79ab5f',
+    color: '#88B053',
     name: 'Grass',
   },
   {
@@ -64,9 +60,12 @@ export const tilesAtom = atomWithDefault(async (get, { signal }) => {
 
   return response.data
 })
+
 export const filteredTilesAtom = atom(async (get) => {
   const tiles = await get(tilesAtom)
   const filters = get(landcoverFiltersAtom)
+  const { location } = get(locationFilterAtom)
+  const locationDistance = get(locationFilterDistanceAtom)
 
   return tiles.filter((tile) => {
     const coverage = tile.coverage || {}
@@ -75,6 +74,15 @@ export const filteredTilesAtom = atom(async (get) => {
 
       return coverage[nameToKey(filter)] >= filters[filter]
     })
+
+    if (location) {
+      // check distance to location
+      const distance = Math.sqrt(
+        Math.pow(tile.center[0] - location[0], 2) +
+          Math.pow(tile.center[1] - location[1], 2)
+      )
+      return filtered && distance < locationDistance
+    }
 
     return filtered
   })
@@ -92,9 +100,27 @@ export const useTile = () => {
   return tiles.find((tile) => tile.id === id)
 }
 
+export const locationFilterAtom = atom({})
+
+export const locationFilterDistanceAtom = atom(0.5)
+
 export const landcoverFiltersAtom = atom(
   landcovers.reduce((acc, cur) => {
     acc[cur.name] = 0
     return acc
   }, {})
 )
+
+export const mapDrawModeAtom = atom('simple_select')
+export const VIEW_MODE = 'VIEW_MODE'
+export const CREATE_MODE = 'CREATE_MODE'
+export const mapModeAtom = atom((get) => {
+  const features = get(featuresAtom)
+  const mapDrawMode = get(mapDrawModeAtom)
+
+  return mapDrawMode != 'simple_select' || Object.keys(features).length > 0
+    ? CREATE_MODE
+    : VIEW_MODE
+})
+
+export const featuresAtom = atom({})

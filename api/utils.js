@@ -478,7 +478,7 @@ export const getCoverTileData = (id) => {
     minHeight,
     maxHeight,
     center: [(bbox[0] + bbox[2]) / 2, (bbox[1] + bbox[3]) / 2],
-    metersPerPixel: tiles[0].metersPerPixel,
+    metersPerPixel: tiles[0] ? tiles[0].metersPerPixel : -1,
     tiles,
   }
 }

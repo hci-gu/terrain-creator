@@ -2,7 +2,7 @@ import React from 'react'
 import { createBrowserRouter, RouterProvider } from 'react-router-dom'
 import styled from '@emotion/styled'
 import DarkModeToggle from './components/DarkModeToggle'
-import { Title, Header, NavLink, Flex } from '@mantine/core'
+import { Title, Header, NavLink, Flex, Anchor, Tabs } from '@mantine/core'
 import MapContainer from './components/Map'
 import { useAtomValue } from 'jotai'
 import { tilesAtom } from './state'
@@ -44,7 +44,7 @@ const App = () => {
   return (
     <>
       <Header
-        height={64}
+        height={88}
         sx={{
           margin: '0',
           display: 'flex',
@@ -58,10 +58,28 @@ const App = () => {
             Ecotwin{' '}
             <span style={{ color: '#F2C94C', fontWeight: 900 }}>Map</span>
           </Title>
-          <Flex gap={8}>
-            <a>Map</a>
-            <a>Tiles</a>
-          </Flex>
+          <Tabs
+            defaultValue={window.location.pathname == '/' ? 'map' : 'tiles'}
+          >
+            <Tabs.List>
+              <Tabs.Tab
+                value="map"
+                onClick={() => {
+                  window.location.href = '/'
+                }}
+              >
+                <Anchor href="/">Map</Anchor>
+              </Tabs.Tab>
+              <Tabs.Tab
+                value="tiles"
+                onClick={() => {
+                  window.location.href = '/tiles'
+                }}
+              >
+                <Anchor href="/tiles">Tiles</Anchor>
+              </Tabs.Tab>
+            </Tabs.List>
+          </Tabs>
         </div>
 
         <DarkModeToggle />

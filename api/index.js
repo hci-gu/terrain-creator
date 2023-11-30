@@ -11,9 +11,8 @@ import cors from 'cors'
 import {
   combineLandcoverAndRecolor,
   convertLandcoverToRGBTexture,
-  recreateTextureAndGeoTiffForTile,
 } from './landcover.js'
-import { createGeoTiff, getCoverTileData } from './utils.js'
+import { getCoverTileData } from './utils.js'
 import { createArea } from './area.js'
 
 const app = express()
@@ -51,6 +50,7 @@ app.get('/tiles', (req, res) => {
     const textureFile = `./public/tiles/${id}/landcover_texture.png`
     const textureFileSmall = `./public/tiles/${id}/landcover_texture_100.png`
     const geoTiffFile = `./public/tiles/${id}/landcover_texture.tif`
+    const geoTiffFileSmall = `./public/tiles/${id}/landcover_texture_100.tif`
     const satelliteFile = `./public/tiles/${id}/sattelite.png`
 
     // read coverage data
@@ -84,6 +84,9 @@ app.get('/tiles', (req, res) => {
         : null,
       geoTiff: fs.existsSync(geoTiffFile)
         ? geoTiffFile.replace('./public', '')
+        : null,
+      geoTiffSmall: fs.existsSync(geoTiffFileSmall)
+        ? geoTiffFileSmall.replace('./public', '')
         : null,
       coverage,
       ...tileData,
@@ -130,6 +133,8 @@ app.delete('/tile/:id/landcover', async (req, res) => {
 
 app.post('/area', async (req, res) => {
   const { coords, zoom } = req.body
+
+  console.log('POST /area', coords, zoom)
 
   createArea({ coords, zoom })
 })
