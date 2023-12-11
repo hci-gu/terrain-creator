@@ -4,6 +4,7 @@ import alea from 'alea'
 import fs from 'fs'
 import { createNoise2D } from 'simplex-noise'
 import { createGeoTiff, getCoverTileData } from './utils.js'
+import { landcoverQueue } from './queues.js'
 
 const generateOutline = async (image, size) => {
   const original = await image.png().toBuffer()
@@ -386,3 +387,12 @@ export const recreateTextureAndGeoTiffForTile = async (tileId) => {
     textureFilePath.replace('.png', '.tif')
   )
 }
+
+landcoverQueue.process(async (job, done) => {
+  const { tileId } = job.data
+
+  await combineLandcoverAndRecolor(tileId)
+  await convertLandcoverToRGBTexture(tileId)
+
+  done()
+})

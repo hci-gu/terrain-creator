@@ -1,6 +1,7 @@
 import axios from 'axios'
 import ee from '@google/earthengine'
 import privateKey from './service_account.json' assert { type: 'json' }
+import { earthEngineQueue } from '../queues'
 // ee.data.authenticateViaPrivateKey(privateKey)
 // ee.initialize()
 
@@ -78,3 +79,14 @@ export const initEE = () => {
     )
   })
 }
+
+earthEngineQueue.process(async (job, done) => {
+  const { tiles, path } = job.data
+
+  const googleEEUrl = await initEE()
+
+  const landcoverMaps = await promiseSeries(tiles, (tile) =>
+    googleEarthEngine.downloadTile(googleEEUrl, tile)
+  )
+  await stitchTileImages(landcoverMaps, `${path}/landcover.png`)
+})

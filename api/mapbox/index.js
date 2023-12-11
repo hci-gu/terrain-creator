@@ -13,13 +13,11 @@ import {
   stitchTileImages,
   promiseSeries,
   tileToId,
-  minTilesForCoords,
   normalizeColorsBeforeStitching,
   convertToGrayScale,
-  updateTileProgress,
   resizeAndConvert,
 } from '../utils.js'
-import * as googleEarthEngine from '../google-earth-engine/index.js'
+import { mapboxQueue } from '../queues.js'
 
 const ACCESS_TOKEN = process.env.MAPBOX_ACCESS_TOKEN
 const MAPBOX_USERNAME = process.env.MAPBOX_USERNAME
@@ -133,21 +131,6 @@ const getTile = async (folder, tile, index) => {
   ]
 }
 
-export const createTileFolder = async (parentPath, tile, index) => {
-  const tileId = tileToId(tile)
-  const path = `${parentPath}/${tileId}`
-
-  await createFolder(path)
-
-  fs.writeFileSync(
-    `${path}/tile.json`,
-    JSON.stringify({
-      tile,
-      index,
-    })
-  )
-}
-
 const getTilesFromFolder = (tileId) => {
   const path = `./public/tiles/${tileId}`
   const folders = fs
@@ -163,35 +146,12 @@ const getTilesFromFolder = (tileId) => {
     .map((tile) => tile.tile)
 }
 
-export const createTile = async (coords, zoom) => {
-  const tiles = minTilesForCoords(coords, zoom)
-  const tileId = tileToId(tiles.flat())
-  const path = `./public/tiles/${tileId}`
-
-  if (fs.existsSync(path)) {
-    return [tileId, true]
-  }
-
-  await createFolder(path)
-  updateTileProgress(tileId, 0)
-
-  await promiseSeries(tiles, (tile, index) =>
-    createTileFolder(path, tile, index)
-  )
-
-  return [tileId, false]
-}
-
 export const getTileData = async (tileId) => {
   const path = `./public/tiles/${tileId}`
   const tiles = getTilesFromFolder(tileId)
 
   const imagePaths = await promiseSeries(tiles, (tile, index) =>
     getTile(path, tile, index)
-  )
-  const googleEEUrl = await googleEarthEngine.initEE()
-  const landcoverMaps = await promiseSeries(tiles, (tile) =>
-    googleEarthEngine.downloadTile(googleEEUrl, tile)
   )
   const heightMaps = imagePaths.map((imagePath) => imagePath[0])
   const rasterMaps = imagePaths.map((imagePath) => imagePath[1])
@@ -220,7 +180,14 @@ export const getTileData = async (tileId) => {
   // stitch all images
   await stitchTileImages(updatedHeightmapPaths, `${path}/heightmap.png`)
   await stitchTileImages(rasterMaps, `${path}/sattelite.png`)
-  await stitchTileImages(landcoverMaps, `${path}/landcover.png`)
 
   return tileId
 }
+
+mapboxQueue.process(async (job, done) => {
+  const { tileId, tile, coords } = job.data
+
+  await getTileData(tileId)
+
+  done()
+})
