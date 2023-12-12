@@ -13,6 +13,7 @@ import {
   promiseSeries,
 } from './utils.js'
 import tilebelt from '@mapbox/tilebelt'
+import { tileQueue } from './queues.js'
 
 const getChildrenUntilZoom = (tiles, zoom) => {
   console.log(tiles.length, zoom)
@@ -28,10 +29,7 @@ const getChildrenUntilZoom = (tiles, zoom) => {
 export const createArea = async ({ coords, zoom }) => {
   const tiles = getChildrenUntilZoom(minTilesForCoords(coords, zoom), 13)
 
-  let progress = 0
-  const total = tiles.length
-  await promiseSeries(tiles, async (tile) => {
-    console.log(`Creating tile: ${progress++}/${total}`)
+  for (const tile of tiles) {
     const bbox = tilebelt.tileToBBOX(tile)
     const [minX, minY, maxX, maxY] = bbox
     const inset = 0.01
@@ -41,13 +39,23 @@ export const createArea = async ({ coords, zoom }) => {
     const bottomLeft = [minX + inset, minY + inset]
     const coords = [topLeft, topRight, bottomRight, bottomLeft, topLeft]
 
-    const [tileId, alreadyExists] = await mapbox.createTile(coords, 13)
-    if (alreadyExists) {
-      return
-    }
-    await mapbox.getTileData(tileId)
-    await combineLandcoverAndRecolor(tileId)
-    await convertLandcoverToRGBTexture(tileId)
-    // await heightmap.modifyHeightmap(tileId)
-  })
+    tileQueue.add({
+      tile,
+      coords,
+      zoom,
+    })
+  }
+
+  // await promiseSeries(tiles, async (tile) => {
+  //   console.log(`Creating tile: ${progress++}/${total}`)
+
+  //   const [tileId, alreadyExists] = await mapbox.createTile(coords, 13)
+  //   if (alreadyExists) {
+  //     return
+  //   }
+  //   await mapbox.getTileData(tileId)
+  //   await combineLandcoverAndRecolor(tileId)
+  //   await convertLandcoverToRGBTexture(tileId)
+  //   // await heightmap.modifyHeightmap(tileId)
+  // })
 }

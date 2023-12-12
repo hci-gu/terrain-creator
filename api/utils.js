@@ -3,7 +3,9 @@ import * as turf from '@turf/turf'
 import cover from '@mapbox/tile-cover'
 import sha1 from 'sha1'
 import sharp from 'sharp'
-import { getMetersPerPixel, tileToBBOX } from './mapbox/utils.js'
+import tilebelt from '@mapbox/tilebelt'
+import distanceTable from './mapbox/mapbox_distance_table.json' assert { type: 'json' }
+// import { getMetersPerPixel, tileToBBOX } from './mapbox/utils.js'
 import { exec } from 'child_process'
 
 export const writeFile = (file, fileName) => {
@@ -293,6 +295,12 @@ export const promiseSeries = (items, method) => {
     .then(() => results)
 }
 
+export const getMetersPerPixel = (zoom, latitude) => {
+  // round for example 57.7 to 60
+  const roundedLatitude = Math.round(latitude / 20) * 20
+  return distanceTable[zoom][roundedLatitude]
+}
+
 export const minTilesForCoords = (coords, initialZoom = 10) => {
   var line = turf.lineString(coords)
   var bbox = turf.bbox(line)
@@ -435,7 +443,7 @@ const getTile = (path, id) => {
     tileInfo = JSON.parse(fs.readFileSync(`${path}/${id}/tile.json`))
     tileInfo = {
       ...tileInfo,
-      bbox: tileToBBOX(tileInfo.tile),
+      bbox: tilebelt.tileToBBOX(tileInfo.tile),
     }
     const zoom = tileInfo.tile[2]
     tileInfo.metersPerPixel = getMetersPerPixel(zoom, tileInfo.bbox[1])

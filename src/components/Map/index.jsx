@@ -1,6 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 import Map, { Source, Layer } from 'react-map-gl'
-import MapboxDraw from '@mapbox/mapbox-gl-draw'
 import '@mapbox/mapbox-gl-draw/dist/mapbox-gl-draw.css'
 import { useNavigate } from 'react-router-dom'
 import axios from 'axios'
@@ -9,6 +8,7 @@ import {
   CREATE_MODE,
   VIEW_MODE,
   featuresAtom,
+  mapDrawModeAtom,
   mapModeAtom,
   mapViewportAtom,
   refreshTilesAtom,
@@ -30,6 +30,7 @@ import {
 } from '@mantine/core'
 import GeocoderControl from './Geocoder'
 import DrawControl from './DrawControl'
+import { map } from 'lodash'
 
 const API_URL = import.meta.env.VITE_API_URL
 const URL = import.meta.env.VITE_URL
@@ -48,6 +49,7 @@ const MapControlsContainer = styled.div`
 `
 
 const MapWrapper = ({ children, onClick, mapRef }) => {
+  const mapMode = useAtomValue(mapModeAtom)
   const [viewport, setViewport] = useAtom(mapViewportAtom)
 
   return (
@@ -62,6 +64,8 @@ const MapWrapper = ({ children, onClick, mapRef }) => {
         width: '100%',
         height: '100%',
       }}
+      scrollZoom={mapMode != CREATE_MODE}
+      doubleClickZoom={mapMode != CREATE_MODE}
       mapStyle="mapbox://styles/mapbox/satellite-v9"
       onClick={onClick}
     >
@@ -109,8 +113,20 @@ const TileList = () => {
 }
 
 const CreateTiles = ({ mapRef }) => {
+  const mapMode = useAtomValue(mapModeAtom)
+  const drawMode = useAtomValue(mapDrawModeAtom)
   const refreshTiles = useSetAtom(refreshTilesAtom)
   const [features, setFeatures] = useAtom(featuresAtom)
+
+  useEffect(() => {
+    if (!mapRef.current) return
+
+    mapRef.current.getMap().showTileBoundaries = mapMode == CREATE_MODE
+    if (mapMode == CREATE_MODE) {
+      // set zoom to 12, animate it
+      mapRef.current.getMap().setZoom(11)
+    }
+  }, [mapRef, drawMode])
 
   const onClick = async () => {
     if (!Object.keys(features).length || !mapRef.current) return
@@ -132,12 +148,19 @@ const CreateTiles = ({ mapRef }) => {
 
   const hasFeatures = Object.keys(features).length > 0
 
+  const title =
+    drawMode === 'draw_polygon' ? 'Create tiles' : 'Create detailed tile'
+  const description =
+    drawMode === 'draw_polygon'
+      ? 'Draw a shape to create tiles for it'
+      : 'Select a tile to create it'
+
   return (
     <Flex direction="column">
       <Text fz={24} fw={700}>
-        Create Tiles
+        {title}
       </Text>
-      <Text>Draw a shape to create tiles for it</Text>
+      <Text>{description}</Text>
       <Space h="md" />
       <Button onClick={onClick} disabled={!hasFeatures}>
         Create
@@ -224,6 +247,7 @@ const MapContainer = () => {
           controls={{
             polygon: true,
             trash: true,
+            // point: true,
           }}
         />
       </MapWrapper>

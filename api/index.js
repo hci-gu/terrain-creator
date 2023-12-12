@@ -7,6 +7,7 @@ import fs from 'fs'
 import * as mapbox from './mapbox/index.js'
 import * as segmenter from './segmenter.js'
 import * as heightmap from './heightmap/index.js'
+import * as googleEarthEngine from './google-earth-engine/index.js'
 import cors from 'cors'
 import {
   combineLandcoverAndRecolor,
@@ -14,6 +15,7 @@ import {
 } from './landcover.js'
 import { getCoverTileData } from './utils.js'
 import { createArea } from './area.js'
+googleEarthEngine.initEE()
 
 const app = express()
 
@@ -154,7 +156,7 @@ app.post('/tile/:id/landcover', async (req, res) => {
 
   await convertLandcoverToRGBTexture(id)
 
-  // await heightmap.modifyHeightmap(id)
+  await heightmap.modifyHeightmap(id)
   res.send('Image saved successfully')
 })
 
