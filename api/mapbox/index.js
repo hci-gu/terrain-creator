@@ -172,7 +172,7 @@ export const getTileData = async (tileId) => {
     fs.copyFileSync(updatedHeightmapPaths[0], `${path}/heightmap.png`)
     await resizeAndConvert(`${path}/heightmap.png`, 1024)
     fs.copyFileSync(rasterMaps[0], `${path}/sattelite.png`)
-    await writeFile(landcoverMaps[0], `${path}/landcover.png`)
+    // await writeFile(landcoverMaps[0], `${path}/landcover.png`)
     await resizeAndConvert(`${path}/landcover.png`, 512)
     return tileId
   }
@@ -184,10 +184,14 @@ export const getTileData = async (tileId) => {
   return tileId
 }
 
-mapboxQueue.process(async (job, done) => {
+mapboxQueue.process(4, async (job, done) => {
   const { tileId, tile, coords } = job.data
 
-  await getTileData(tileId)
-
-  done()
+  try {
+    await getTileData(tileId)
+    done()
+  } catch (e) {
+    console.log('Failed to process tile', e)
+    done(e)
+  }
 })

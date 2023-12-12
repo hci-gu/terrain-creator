@@ -1,9 +1,8 @@
 import axios from 'axios'
 import ee from '@google/earthengine'
 import privateKey from './service_account.json' assert { type: 'json' }
-import { earthEngineQueue } from '../queues'
-// ee.data.authenticateViaPrivateKey(privateKey)
-// ee.initialize()
+import { earthEngineQueue } from '../queues.js'
+import { promiseSeries, stitchTileImages } from '../utils.js'
 
 export const downloadTile = async (url, tile) => {
   const [x, y, zoom] = tile
@@ -80,13 +79,28 @@ export const initEE = () => {
   })
 }
 
-earthEngineQueue.process(async (job, done) => {
+earthEngineQueue.process(1, async (job, done) => {
   const { tiles, path } = job.data
 
   const googleEEUrl = await initEE()
+  console.log('googleEEUrl', googleEEUrl)
 
-  const landcoverMaps = await promiseSeries(tiles, (tile) =>
-    googleEarthEngine.downloadTile(googleEEUrl, tile)
-  )
-  await stitchTileImages(landcoverMaps, `${path}/landcover.png`)
+  let progress = 0
+  try {
+    const landcoverMaps = await promiseSeries(tiles, async (tile) => {
+      const image = await downloadTile(googleEEUrl, tile)
+      job.progress((progress++ / tiles.length) * 100)
+      return image
+    })
+    await stitchTileImages(landcoverMaps, `${path}/landcover.png`)
+
+    done()
+  } catch (e) {
+    // probably rate limited, pause the queue for 5 minutes and then restart
+    earthEngineQueue.pause()
+    setTimeout(() => {
+      job.retry()
+      earthEngineQueue.resume()
+    }, 60 * 5 * 1000)
+  }
 })

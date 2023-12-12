@@ -9,6 +9,7 @@ import {
   convertPngToRaw16Bit,
 } from '../utils.js'
 import { LANDCOVER_COLORS } from '../colors.js'
+import { heightmapQueue } from '../queues.js'
 const RESOLUTION = 1024
 
 const createNoisemap = (resolution, scale) => {
@@ -246,3 +247,14 @@ export const modifyHeightmap = async (tileId) => {
   // save a copy as .raw
   await convertPngToRaw16Bit(finalpath, finalpath.replace('.png', '.raw'))
 }
+
+heightmapQueue.process(4, async (job, done) => {
+  const { tileId } = job.data
+
+  try {
+    await modifyHeightmap(tileId)
+    done()
+  } catch (e) {
+    done(e)
+  }
+})

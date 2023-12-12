@@ -388,11 +388,14 @@ export const recreateTextureAndGeoTiffForTile = async (tileId) => {
   )
 }
 
-landcoverQueue.process(async (job, done) => {
+landcoverQueue.process(4, async (job, done) => {
   const { tileId } = job.data
 
-  await combineLandcoverAndRecolor(tileId)
-  await convertLandcoverToRGBTexture(tileId)
-
-  done()
+  try {
+    await combineLandcoverAndRecolor(tileId)
+    await convertLandcoverToRGBTexture(tileId)
+    done()
+  } catch (e) {
+    done(e)
+  }
 })

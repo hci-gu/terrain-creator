@@ -150,4 +150,10 @@ export const mapModeAtom = atom((get) => {
     : VIEW_MODE
 })
 
+export const showTileGridAtom = atom((get) => {
+  const drawMode = get(mapDrawModeAtom)
+
+  return drawMode == 'draw_point'
+})
+
 export const featuresAtom = atom({})

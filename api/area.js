@@ -42,6 +42,7 @@ export const createArea = async ({ coords, zoom }) => {
     tileQueue.add({
       tile,
       coords,
+      zoom,
     })
   }
 
