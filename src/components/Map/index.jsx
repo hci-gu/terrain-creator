@@ -48,6 +48,8 @@ const MapControlsContainer = styled.div`
   z-index: 1;
 `
 
+const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
+
 const MapWrapper = ({ children, onClick, mapRef }) => {
   const mapMode = useAtomValue(mapModeAtom)
   const [viewport, setViewport] = useAtom(mapViewportAtom)
@@ -139,6 +141,7 @@ const CreateTiles = ({ mapRef }) => {
       coords: feature.geometry.coordinates[0],
       zoom: currentZoom,
     })
+    await wait(1000)
     refreshTiles()
   }
 

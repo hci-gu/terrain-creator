@@ -139,6 +139,7 @@ app.post('/area', async (req, res) => {
   console.log('POST /area', coords, zoom)
 
   createArea({ coords, zoom })
+  res.send('OK')
 })
 
 // route to accept posted image

@@ -48,7 +48,7 @@ export const createTile = async (coords, zoom) => {
   return [tileId, tiles, false]
 }
 
-tileQueue.process(4, async (job, done) => {
+tileQueue.process(16, async (job, done) => {
   console.log('tileQueue', job.data)
   const { tile, zoom, coords } = job.data
 
