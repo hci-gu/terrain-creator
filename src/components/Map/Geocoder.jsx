@@ -5,7 +5,6 @@ import MapboxGeocoder from '@mapbox/mapbox-gl-geocoder'
 
 export default function GeocoderControl(props) {
   const [marker, setMarker] = useState(null)
-  console.log('GeocoderControl', props)
 
   const geocoder = useControl(
     () => {
@@ -18,24 +17,6 @@ export default function GeocoderControl(props) {
       ctrl.on('results', props.onResults)
       ctrl.on('result', (evt) => {
         props.onResult(evt)
-
-        // const { result } = evt
-        // const location =
-        //   result &&
-        //   (result.center ||
-        //     (result.geometry?.type === 'Point' && result.geometry.coordinates))
-        // if (location && props.marker) {
-        //   console.log('setMarker')
-        //   setMarker(
-        //     <Marker
-        //       {...props.marker}
-        //       longitude={location[0]}
-        //       latitude={location[1]}
-        //     />
-        //   )
-        // } else {
-        //   setMarker(null)
-        // }
       })
       ctrl.on('error', props.onError)
       return ctrl

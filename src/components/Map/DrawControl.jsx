@@ -41,7 +41,6 @@ export default function DrawControl(props) {
       map.on('draw.update', onUpdate)
       map.on('draw.delete', onDelete)
       map.on('draw.modechange', (e) => {
-        console.log('modechange', e)
         setMapMode(e.mode)
       })
     },

@@ -2,6 +2,7 @@ import { atom, useAtomValue } from 'jotai'
 import { atomWithDefault } from 'jotai/utils'
 import { useParams } from 'react-router-dom'
 import axios from 'axios'
+import _ from 'lodash'
 
 const API_URL = import.meta.env.VITE_API_URL
 
@@ -55,8 +56,30 @@ export const mapViewportAtom = atom({
   zoom: 13,
 })
 
-export const tilesAtom = atomWithDefault(async (get, { signal }) => {
+export const mapBoundsAtom = atom(null)
+
+const _boundsToQuery = (bounds) => {
+  const lat1 = bounds._sw.lat
+  const lon1 = bounds._sw.lng
+  const lat2 = bounds._ne.lat
+  const lon2 = bounds._ne.lng
+
+  return `bounds=${[lat1, lon1, lat2, lon2].join(',')}`
+}
+
+export const tilesAtom = atom(async (get, { signal }) => {
   const response = await axios.get(`${API_URL}/tiles`, { signal })
+
+  return response.data
+})
+
+export const mapTilesAtom = atom(async (get, { signal }) => {
+  const bounds = get(mapBoundsAtom)
+
+  if (!bounds) return []
+  const query = _boundsToQuery(bounds)
+
+  const response = await axios.get(`${API_URL}/tiles?${query}`, { signal })
 
   return response.data
 })

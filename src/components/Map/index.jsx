@@ -8,11 +8,12 @@ import {
   CREATE_MODE,
   VIEW_MODE,
   featuresAtom,
+  mapBoundsAtom,
   mapDrawModeAtom,
   mapModeAtom,
+  mapTilesAtom,
   mapViewportAtom,
   refreshTilesAtom,
-  tilesAtom,
   useTile,
 } from '../../state'
 import styled from '@emotion/styled'
@@ -30,7 +31,7 @@ import {
 } from '@mantine/core'
 import GeocoderControl from './Geocoder'
 import DrawControl from './DrawControl'
-import { map } from 'lodash'
+import { map, set } from 'lodash'
 
 const API_URL = import.meta.env.VITE_API_URL
 const URL = import.meta.env.VITE_URL
@@ -49,16 +50,47 @@ const MapControlsContainer = styled.div`
 `
 
 const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
+const boundsEqual = (a, b) => {
+  return (
+    a._sw.lat == b._sw.lat &&
+    a._sw.lng == b._sw.lng &&
+    a._ne.lat == b._ne.lat &&
+    a._ne.lng == b._ne.lng
+  )
+}
 
 const MapWrapper = ({ children, onClick, mapRef }) => {
+  const [initialLoad, setInitialLoad] = useState(false)
   const mapMode = useAtomValue(mapModeAtom)
+  const setBounds = useSetAtom(mapBoundsAtom)
   const [viewport, setViewport] = useAtom(mapViewportAtom)
+
+  useEffect(() => {
+    console.log('useEffect', initialLoad, mapRef.current)
+    if (!mapRef.current) return
+    console.log('hello?')
+
+    let prevBounds = null
+    let interval = setInterval(() => {
+      const bounds = mapRef.current.getMap().getBounds()
+      if (prevBounds && boundsEqual(bounds, prevBounds)) {
+        return
+      }
+      prevBounds = bounds
+      setBounds(bounds)
+    }, 600)
+
+    return () => clearInterval(interval)
+  }, [initialLoad, mapRef.current])
 
   return (
     <Map
       // {...viewport}
       initialViewState={viewport}
-      ref={(ref) => (mapRef.current = ref)}
+      ref={(ref) => {
+        mapRef.current = ref
+        setTimeout(() => setInitialLoad(true), 250)
+      }}
       mapLib={import('mapbox-gl')}
       mapboxAccessToken={import.meta.env.VITE_MAPBOX_ACCESS_TOKEN}
       // onViewportChange={setViewport}
@@ -78,7 +110,7 @@ const MapWrapper = ({ children, onClick, mapRef }) => {
 
 const TileList = () => {
   const navigate = useNavigate()
-  const tiles = useAtomValue(tilesAtom)
+  const tiles = useAtomValue(mapTilesAtom)
 
   return (
     <ScrollArea h={400}>
@@ -180,7 +212,7 @@ const MapContainer = () => {
   const navigate = useNavigate()
   const map = useRef(null)
   const mapMode = useAtomValue(mapModeAtom)
-  const tiles = useAtomValue(tilesAtom)
+  const tiles = useAtomValue(mapTilesAtom)
   const tile = useTile()
   const [tileOpacity, setTileOpacity] = useState(0.65)
   // const [islandMask, setIslandMask] = useState(false)
