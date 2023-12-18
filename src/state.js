@@ -1,5 +1,5 @@
 import { atom, useAtomValue } from 'jotai'
-import { atomWithDefault } from 'jotai/utils'
+import { atomFamily, atomWithDefault } from 'jotai/utils'
 import { useParams } from 'react-router-dom'
 import axios from 'axios'
 import _ from 'lodash'
@@ -143,12 +143,20 @@ export const refreshTilesAtom = atom(null, async (get, set, signal) => {
   set(tilesAtom, response.data)
 })
 
-export const useTile = () => {
-  const { id } = useParams()
-  const tiles = useAtomValue(tilesAtom)
+export const tileAtom = atomFamily((id) =>
+  atom(async () => {
+    const response = await axios.get(`${API_URL}/tile/${id}`)
+    return response.data
+  })
+)
 
-  return tiles.find((tile) => tile.id === id)
-}
+// export const useTile = () => {
+//   const [tile, setTile] = useState(null)
+//   const { id } = useParams()
+//   const tiles = useAtomValue(tilesAtom)
+
+//   return tiles.find((tile) => tile.id === id)
+// }
 
 export const locationFilterAtom = atom({})
 

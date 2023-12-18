@@ -2,10 +2,10 @@ import React, { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { Drawer, Space, Text, Flex, Button } from '@mantine/core'
 import { Image as ImageComponent } from '@mantine/core'
-import { mapViewportAtom, refreshTilesAtom, useTile } from '../state'
+import { mapViewportAtom, refreshTilesAtom, tileAtom } from '../state'
 import axios from 'axios'
 import DrawTools from './DrawTools'
-import { useSetAtom } from 'jotai'
+import { useAtomValue, useSetAtom } from 'jotai'
 import { IconDownload } from '@tabler/icons-react'
 
 const API_URL = import.meta.env.VITE_API_URL
@@ -47,8 +47,7 @@ const imageFromCanvas = (canvasInstance) => {
   })
 }
 
-const DownloadButton = ({ type }) => {
-  const tile = useTile()
+const DownloadButton = ({ type, tile }) => {
   const download = () => {
     const link = document.createElement('a')
     link.download = `${tile.id}_${type}.png`
@@ -86,8 +85,8 @@ const Tile = () => {
   const navigate = useNavigate()
   const refreshTiles = useSetAtom(refreshTilesAtom)
   const setViewport = useSetAtom(mapViewportAtom)
-  const tile = useTile()
   const { id } = useParams()
+  const tile = useAtomValue(tileAtom(id))
   const [loading, setLoading] = useState(false)
 
   const onSave = async (canvasInstance) => {
@@ -121,6 +120,8 @@ const Tile = () => {
     }, 3000)
   }, [])
 
+  if (!tile) return <div>Loading...</div>
+
   return (
     <Drawer
       opened
@@ -138,6 +139,7 @@ const Tile = () => {
       {tile.landcover && (
         <DrawTools
           imgSrc={`${URL}${tile.landcover}`}
+          tile={tile}
           onSave={onSave}
           onDelete={onDelete}
           loading={loading}
@@ -158,10 +160,10 @@ const Tile = () => {
         />
         <Flex direction="column" gap="md">
           <Text>Download textures:</Text>
-          <DownloadButton type="heightmap" />
-          <DownloadButton type="landcover" />
-          <DownloadButton type="landcover texture" />
-          <DownloadButton type="geoTiff" />
+          <DownloadButton type="heightmap" tile={tile} />
+          <DownloadButton type="landcover" tile={tile} />
+          <DownloadButton type="landcover texture" tile={tile} />
+          <DownloadButton type="geoTiff" tile={tile} />
         </Flex>
       </Flex>
     </Drawer>

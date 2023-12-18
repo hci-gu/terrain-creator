@@ -1,7 +1,7 @@
 import { Button, ColorPicker, Flex, Slider, Space, Text } from '@mantine/core'
 import { useRef, useState } from 'react'
 import CanvasDraw from 'react-canvas-draw'
-import { useTile, landcovers } from '../state'
+import { landcovers } from '../state'
 
 const colorNameToKey = (name) => name.toLowerCase().replace(' ', '_')
 const coverageForColor = (tile, color) => {
@@ -13,8 +13,7 @@ const coverageForColor = (tile, color) => {
   return (value * 100).toFixed(2)
 }
 
-const DrawTools = ({ imgSrc, loading, onSave, onDelete }) => {
-  const tile = useTile()
+const DrawTools = ({ imgSrc, tile, loading, onSave, onDelete }) => {
   const [value, onChange] = useState(landcovers[0].color)
   const [brushRadius, setBrushRadius] = useState(10)
 

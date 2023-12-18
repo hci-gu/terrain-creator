@@ -14,7 +14,6 @@ import {
   mapTilesAtom,
   mapViewportAtom,
   refreshTilesAtom,
-  useTile,
 } from '../../state'
 import styled from '@emotion/styled'
 import {
@@ -213,7 +212,7 @@ const MapContainer = () => {
   const map = useRef(null)
   const mapMode = useAtomValue(mapModeAtom)
   const tiles = useAtomValue(mapTilesAtom)
-  const tile = useTile()
+  // const tile = useTile()
   const [tileOpacity, setTileOpacity] = useState(0.65)
   // const [islandMask, setIslandMask] = useState(false)
 
@@ -246,18 +245,18 @@ const MapContainer = () => {
     }
   }
 
-  useEffect(() => {
-    if (!map.current || !tile) return
-    const mapInstance = map.current.getMap()
-    const diff = tile.center[0] - tile.bbox[0]
-    const offsetCenter = [tile.center[0] + diff * 2.25, tile.center[1]]
-    const tileChildrenZoom = tile.tiles.map((t) => t.tile[2])
-    const minZoom = Math.min(...tileChildrenZoom)
-    mapInstance.flyTo({
-      center: offsetCenter,
-      zoom: minZoom - 1,
-    })
-  }, [tile, map.current])
+  // useEffect(() => {
+  //   if (!map.current || !tile) return
+  //   const mapInstance = map.current.getMap()
+  //   const diff = tile.center[0] - tile.bbox[0]
+  //   const offsetCenter = [tile.center[0] + diff * 2.25, tile.center[1]]
+  //   const tileChildrenZoom = tile.tiles.map((t) => t.tile[2])
+  //   const minZoom = Math.min(...tileChildrenZoom)
+  //   mapInstance.flyTo({
+  //     center: offsetCenter,
+  //     zoom: minZoom - 1,
+  //   })
+  // }, [tile, map.current])
 
   return (
     <Container>

@@ -16,6 +16,7 @@ import {
 } from './landcover.js'
 import { getCoverTileData } from './utils.js'
 import { createArea } from './area.js'
+import { updateTile } from './queues.js'
 googleEarthEngine.initEE()
 
 const app = express()
@@ -39,9 +40,14 @@ app.get('/tiles', (req, res) => {
   res.send(tiles.getAllTiles())
 })
 
+app.get('/tile/:id', (req, res) => {
+  const { id } = req.params
+  const tile = tiles.getTile(id)
+  res.send(tile)
+})
+
 app.post('/tile', async (req, res) => {
   const { coords, zoom, islandMask } = req.body
-  console.log('POST /tile', coords, zoom, islandMask)
 
   const [tileId, alreadyExists] = await mapbox.createTile(coords, zoom)
   res.send({
@@ -76,7 +82,6 @@ app.delete('/tile/:id/landcover', async (req, res) => {
 
 app.post('/area', async (req, res) => {
   const { coords, zoom } = req.body
-
   console.log('POST /area', coords, zoom)
 
   createArea({ coords, zoom })
@@ -96,9 +101,7 @@ app.post('/tile/:id/landcover', async (req, res) => {
   const outputPath = `./public/tiles/${id}/landcover_colors_edited.png`
   fs.writeFileSync(outputPath, binaryData, 'binary')
 
-  await convertLandcoverToRGBTexture(id)
-
-  await heightmap.modifyHeightmap(id)
+  updateTile(id)
   res.send('Image saved successfully')
 })
 

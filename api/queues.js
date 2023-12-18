@@ -48,6 +48,17 @@ export const createTile = async (coords, zoom) => {
   return [tileId, tiles, false]
 }
 
+export const updateTile = async (tileId) => {
+  const landcoverJob = await landcoverQueue.add({
+    tileId,
+  })
+  await landcoverJob.finished()
+  const heightmapJob = await heightmapQueue.add({
+    tileId,
+  })
+  await heightmapJob.finished()
+}
+
 tileQueue.process(16, async (job, done) => {
   console.log('tileQueue', job.data)
   const { tile, zoom, coords } = job.data
