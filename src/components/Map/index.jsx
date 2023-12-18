@@ -1,4 +1,10 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react'
+import React, {
+  startTransition,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from 'react'
 import Map, { Source, Layer } from 'react-map-gl'
 import '@mapbox/mapbox-gl-draw/dist/mapbox-gl-draw.css'
 import { useNavigate } from 'react-router-dom'
@@ -14,6 +20,7 @@ import {
   mapTilesAtom,
   mapViewportAtom,
   refreshTilesAtom,
+  tileAtom,
 } from '../../state'
 import styled from '@emotion/styled'
 import {
@@ -31,6 +38,7 @@ import {
 import GeocoderControl from './Geocoder'
 import DrawControl from './DrawControl'
 import { map, set } from 'lodash'
+import { useParams } from 'react-router-dom'
 
 const API_URL = import.meta.env.VITE_API_URL
 const URL = import.meta.env.VITE_URL
@@ -62,12 +70,10 @@ const MapWrapper = ({ children, onClick, mapRef }) => {
   const [initialLoad, setInitialLoad] = useState(false)
   const mapMode = useAtomValue(mapModeAtom)
   const setBounds = useSetAtom(mapBoundsAtom)
-  const [viewport, setViewport] = useAtom(mapViewportAtom)
+  const viewport = useAtomValue(mapViewportAtom)
 
   useEffect(() => {
-    console.log('useEffect', initialLoad, mapRef.current)
     if (!mapRef.current) return
-    console.log('hello?')
 
     let prevBounds = null
     let interval = setInterval(() => {
@@ -212,7 +218,8 @@ const MapContainer = () => {
   const map = useRef(null)
   const mapMode = useAtomValue(mapModeAtom)
   const tiles = useAtomValue(mapTilesAtom)
-  // const tile = useTile()
+  const { id } = useParams()
+  const tile = useAtomValue(tileAtom(id))
   const [tileOpacity, setTileOpacity] = useState(0.65)
   // const [islandMask, setIslandMask] = useState(false)
 
@@ -241,22 +248,22 @@ const MapContainer = () => {
     )
 
     if (tile) {
-      navigate(`/tile/${tile.id}`)
+      startTransition(() => navigate(`/tile/${tile.id}`))
     }
   }
 
-  // useEffect(() => {
-  //   if (!map.current || !tile) return
-  //   const mapInstance = map.current.getMap()
-  //   const diff = tile.center[0] - tile.bbox[0]
-  //   const offsetCenter = [tile.center[0] + diff * 2.25, tile.center[1]]
-  //   const tileChildrenZoom = tile.tiles.map((t) => t.tile[2])
-  //   const minZoom = Math.min(...tileChildrenZoom)
-  //   mapInstance.flyTo({
-  //     center: offsetCenter,
-  //     zoom: minZoom - 1,
-  //   })
-  // }, [tile, map.current])
+  useEffect(() => {
+    if (!map.current || !tile) return
+    const mapInstance = map.current.getMap()
+    const diff = tile.center[0] - tile.bbox[0]
+    const offsetCenter = [tile.center[0] + diff * 2.25, tile.center[1]]
+    const tileChildrenZoom = tile.tiles.map((t) => t.tile[2])
+    const minZoom = Math.min(...tileChildrenZoom)
+    mapInstance.flyTo({
+      center: offsetCenter,
+      zoom: minZoom - 1,
+    })
+  }, [tile, map.current])
 
   return (
     <Container>

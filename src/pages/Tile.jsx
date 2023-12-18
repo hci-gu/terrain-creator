@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { Suspense, useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { Drawer, Space, Text, Flex, Button } from '@mantine/core'
 import { Image as ImageComponent } from '@mantine/core'
@@ -120,53 +120,53 @@ const Tile = () => {
     }, 3000)
   }, [])
 
-  if (!tile) return <div>Loading...</div>
-
   return (
-    <Drawer
-      opened
-      position="right"
-      onClose={() => navigate('/')}
-      size={'60vw'}
-      overlayProps={{ opacity: 0.4, blur: 1 }}
-    >
-      <Text>
-        <strong>Tile ID:</strong> {id}
-      </Text>
-      {!tile.landcover && (
-        <Text>Creating tile, this can take a few minutes</Text>
-      )}
-      {tile.landcover && (
-        <DrawTools
-          imgSrc={`${URL}${tile.landcover}`}
-          tile={tile}
-          onSave={onSave}
-          onDelete={onDelete}
-          loading={loading}
-        />
-      )}
-      <Space h="md" />
-      <Flex gap="md">
-        <ImageComponent
-          src={tile.satellite}
-          width={256}
-          fallbackSrc={`${URL}/images/loading.png`}
-        />
-        <ImageComponent
-          src={tile.heightmap}
-          width={256}
-          key={`HM_${new Date()}`}
-          fallbackSrc={`${URL}/images/loading.png`}
-        />
-        <Flex direction="column" gap="md">
-          <Text>Download textures:</Text>
-          <DownloadButton type="heightmap" tile={tile} />
-          <DownloadButton type="landcover" tile={tile} />
-          <DownloadButton type="landcover texture" tile={tile} />
-          <DownloadButton type="geoTiff" tile={tile} />
+    <Suspense>
+      <Drawer
+        opened
+        position="right"
+        onClose={() => navigate('/')}
+        size={'60vw'}
+        overlayProps={{ opacity: 0.4, blur: 1 }}
+      >
+        <Text>
+          <strong>Tile ID:</strong> {id}
+        </Text>
+        {!tile.landcover && (
+          <Text>Creating tile, this can take a few minutes</Text>
+        )}
+        {tile.landcover && (
+          <DrawTools
+            imgSrc={`${URL}${tile.landcover}`}
+            tile={tile}
+            onSave={onSave}
+            onDelete={onDelete}
+            loading={loading}
+          />
+        )}
+        <Space h="md" />
+        <Flex gap="md">
+          <ImageComponent
+            src={tile.satellite}
+            width={256}
+            fallbackSrc={`${URL}/images/loading.png`}
+          />
+          <ImageComponent
+            src={tile.heightmap}
+            width={256}
+            key={`HM_${new Date()}`}
+            fallbackSrc={`${URL}/images/loading.png`}
+          />
+          <Flex direction="column" gap="md">
+            <Text>Download textures:</Text>
+            <DownloadButton type="heightmap" tile={tile} />
+            <DownloadButton type="landcover" tile={tile} />
+            <DownloadButton type="landcover texture" tile={tile} />
+            <DownloadButton type="geoTiff" tile={tile} />
+          </Flex>
         </Flex>
-      </Flex>
-    </Drawer>
+      </Drawer>
+    </Suspense>
   )
 }
 
