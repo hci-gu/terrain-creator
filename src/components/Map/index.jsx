@@ -1,44 +1,31 @@
-import React, {
-  startTransition,
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-} from 'react'
+import React, { startTransition, useEffect, useRef, useState } from 'react'
 import Map, { Source, Layer } from 'react-map-gl'
 import '@mapbox/mapbox-gl-draw/dist/mapbox-gl-draw.css'
 import { useNavigate } from 'react-router-dom'
-import axios from 'axios'
-import { useAtom, useAtomValue, useSetAtom } from 'jotai'
+import { useAtomValue, useSetAtom } from 'jotai'
 import {
   CREATE_MODE,
   VIEW_MODE,
-  featuresAtom,
   mapBoundsAtom,
-  mapDrawModeAtom,
   mapModeAtom,
   mapTilesAtom,
   mapViewportAtom,
-  refreshTilesAtom,
   tileAtom,
 } from '../../state'
 import styled from '@emotion/styled'
 import {
   Card,
-  Checkbox,
   ScrollArea,
-  Select,
   Slider,
   Space,
   Image as ImageComponent,
   Flex,
   Text,
-  Button,
 } from '@mantine/core'
 import GeocoderControl from './Geocoder'
 import DrawControl from './DrawControl'
-import { map, set } from 'lodash'
 import { useParams } from 'react-router-dom'
+import CreateTiles from './CreateTiles'
 
 const API_URL = import.meta.env.VITE_API_URL
 const URL = import.meta.env.VITE_URL
@@ -151,68 +138,6 @@ const TileList = () => {
   )
 }
 
-const CreateTiles = ({ mapRef }) => {
-  const mapMode = useAtomValue(mapModeAtom)
-  const drawMode = useAtomValue(mapDrawModeAtom)
-  const refreshTiles = useSetAtom(refreshTilesAtom)
-  const [features, setFeatures] = useAtom(featuresAtom)
-
-  useEffect(() => {
-    if (!mapRef.current) return
-
-    mapRef.current.getMap().showTileBoundaries = mapMode == CREATE_MODE
-    if (mapMode == CREATE_MODE) {
-      // set zoom to 12, animate it
-      mapRef.current.getMap().setZoom(11)
-    }
-  }, [mapRef, drawMode])
-
-  const onClick = async () => {
-    if (!Object.keys(features).length || !mapRef.current) return
-
-    const feature = Object.values(features)[0]
-    const mapInstance = mapRef.current.getMap()
-    const currentZoom = Math.round(mapInstance.getZoom())
-
-    await axios.post(`${API_URL}/area`, {
-      coords: feature.geometry.coordinates[0],
-      zoom: currentZoom,
-    })
-    await wait(1000)
-    refreshTiles()
-  }
-
-  const onClear = () => {
-    setFeatures({})
-  }
-
-  const hasFeatures = Object.keys(features).length > 0
-
-  const title =
-    drawMode === 'draw_polygon' ? 'Create tiles' : 'Create detailed tile'
-  const description =
-    drawMode === 'draw_polygon'
-      ? 'Draw a shape to create tiles for it'
-      : 'Select a tile to create it'
-
-  return (
-    <Flex direction="column">
-      <Text fz={24} fw={700}>
-        {title}
-      </Text>
-      <Text>{description}</Text>
-      <Space h="md" />
-      <Button onClick={onClick} disabled={!hasFeatures}>
-        Create
-      </Button>
-      <Space h="md" />
-      <Button onClick={onClear} disabled={!hasFeatures} variant="outline">
-        Clear
-      </Button>
-    </Flex>
-  )
-}
-
 const MapContainer = () => {
   const navigate = useNavigate()
   const map = useRef(null)
@@ -228,6 +153,8 @@ const MapContainer = () => {
     type: 'image',
     url: tile.landcover
       ? `${URL}${tile.landcover}`
+      : tile.heightmap
+      ? tile.heightmap
       : `${URL}/images/loading.png`,
     coordinates: [
       [tile.bbox[0], tile.bbox[3]],
