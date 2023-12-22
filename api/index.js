@@ -81,10 +81,16 @@ app.delete('/tile/:id/landcover', async (req, res) => {
 })
 
 app.post('/area', async (req, res) => {
-  const { coords, zoom } = req.body
-  console.log('POST /area', coords, zoom)
+  const {
+    coords,
+    zoom,
+    createHeightMap = true,
+    createLandcover = true,
+  } = req.body
+  console.log('POST /area', coords, zoom, createHeightMap, createLandcover)
 
-  createArea({ coords, zoom })
+  createArea({ coords, zoom, createHeightMap, createLandcover })
+  tiles.clearTiles()
   res.send('OK')
 })
 

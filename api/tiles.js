@@ -11,7 +11,7 @@ const publicFolder = `${__dirname.replace('/api', '')}public`
 const tilesFolder = `${publicFolder}/tiles`
 
 export const getAllTiles = () => {
-  if (cachedTiles && Date.now() - lastCacheRefresh < 1000 * 60 * 5) {
+  if (cachedTiles && Date.now() - lastCacheRefresh < 1000 * 15) {
     return cachedTiles
   }
   const tileIds = fs
@@ -106,4 +106,9 @@ export const getTile = (id) => {
   const tiles = getAllTiles()
 
   return tiles.find((tile) => tile.id === id)
+}
+
+export const clearTiles = () => {
+  cachedTiles = null
+  lastCacheRefresh = 0
 }

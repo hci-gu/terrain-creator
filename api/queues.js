@@ -6,6 +6,7 @@ import {
   promiseSeries,
   tileToId,
 } from './utils.js'
+import tilebelt from '@mapbox/tilebelt'
 
 export const mapboxQueue = new Bull('mapbox-queue')
 export const earthEngineQueue = new Bull('earth-engine-queue')
@@ -28,7 +29,7 @@ export const createTileFolder = async (parentPath, tile, index) => {
   )
 }
 
-export const createTile = async (coords, zoom) => {
+export const createDetailedTile = async (coords, zoom) => {
   const tiles = minTilesForCoords(coords, zoom)
   const tileId = tileToId(tiles.flat())
   const path = `./public/tiles/${tileId}`
@@ -39,10 +40,26 @@ export const createTile = async (coords, zoom) => {
 
   await createFolder(path)
 
-  console.log('create tiles', tiles)
-
   await promiseSeries(tiles, (tile, index) =>
     createTileFolder(path, tile, index)
+  )
+
+  return [tileId, tiles, false]
+}
+
+export const createTile = async (tile) => {
+  const tileId = tileToId(tile)
+  const path = `./public/tiles/${tileId}`
+
+  if (fs.existsSync(path)) {
+    return [tileId, true]
+  }
+
+  await createTileFolder('./public/tiles/', tile, 0)
+
+  const tiles = tilebelt.getChildren(tile)
+  await promiseSeries(tiles, (childTile, index) =>
+    createTileFolder(path, childTile, index)
   )
 
   return [tileId, tiles, false]
@@ -61,9 +78,9 @@ export const updateTile = async (tileId) => {
 
 tileQueue.process(16, async (job, done) => {
   console.log('tileQueue', job.data)
-  const { tile, zoom, coords } = job.data
+  const { tile, zoom, coords, createHeightMap, createLandcover } = job.data
 
-  const [tileId, tiles, alreadyExists] = await createTile(coords, 13)
+  const [tileId, tiles, alreadyExists] = await createTile(tile, zoom, coords)
   if (alreadyExists) {
     done()
     return
@@ -81,25 +98,29 @@ tileQueue.process(16, async (job, done) => {
     await mapboxJob.finished()
     job.progress(30)
 
-    const earthEngineJob = await earthEngineQueue.add({
-      path,
-      tiles,
-    })
-    await earthEngineJob.finished()
-    job.progress(50)
+    if (createLandcover) {
+      const earthEngineJob = await earthEngineQueue.add({
+        path,
+        tiles,
+      })
+      await earthEngineJob.finished()
+      job.progress(50)
 
-    const landcoverJob = await landcoverQueue.add({
-      ...job.data,
-      tileId,
-    })
-    await landcoverJob.finished()
+      const landcoverJob = await landcoverQueue.add({
+        ...job.data,
+        tileId,
+      })
+      await landcoverJob.finished()
+    }
     job.progress(75)
 
-    const heightmapJob = await heightmapQueue.add({
-      ...job.data,
-      tileId,
-    })
-    await heightmapJob.finished()
+    if (createHeightMap) {
+      const heightmapJob = await heightmapQueue.add({
+        ...job.data,
+        tileId,
+      })
+      await heightmapJob.finished()
+    }
     job.progress(100)
 
     done()

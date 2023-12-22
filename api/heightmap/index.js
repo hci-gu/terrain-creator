@@ -10,7 +10,7 @@ import {
 } from '../utils.js'
 import { LANDCOVER_COLORS } from '../colors.js'
 import { heightmapQueue } from '../queues.js'
-const RESOLUTION = 1024
+const RESOLUTION = 512
 
 const createNoisemap = (resolution, scale) => {
   const octaves = 4
@@ -181,7 +181,7 @@ const applyNoiseMap = async (heightmapFile, outFile) => {
 const blurHeightmap = async (heightmapFile) => {
   const heightmap = await heightmapFromFile(heightmapFile)
 
-  const modifiedHeightmap = applyGaussianFilter(heightmap, RESOLUTION, 16)
+  const modifiedHeightmap = applyGaussianFilter(heightmap, RESOLUTION, 8)
 
   return heightMapToFile(
     modifiedHeightmap,
@@ -212,40 +212,44 @@ export const modifyHeightmap = async (tileId) => {
 
   const blurred = await blurHeightmap(heightmapFile)
 
-  const withNoise = await applyNoiseMap(blurred)
-
   // check if file exists
   let filepath = `${tileFolder}/landcover_colors_edited.png`
-  if (!fs.existsSync(filepath)) {
+  let landcoverExists = fs.existsSync(filepath)
+  if (!landcoverExists) {
     filepath = `${tileFolder}/landcover_colors.png`
-  }
-
-  // extract all masks from colors
-  const masks = Object.keys(LANDCOVER_COLORS)
-    .map((key) => ({
-      ...LANDCOVER_COLORS[key],
-      name: key,
-    }))
-    .sort((a, b) => a.order - b.order)
-
-  let currentFile = withNoise
-  for (let mask of masks) {
-    let maskData = await extractHeightmapFromFileAndColor(filepath, mask.paint)
-    if (mask.rules) {
-      maskData = applyGaussianFilter(maskData, RESOLUTION, mask.rules.blur)
-    }
-    mask.file = `${tileFolder}/${mask.name}_mask.png`
-    await heightMapToFile(maskData, mask.file)
-    if (mask.rules) {
-      currentFile = await applyMask(currentFile, mask)
-    }
+    landcoverExists = fs.existsSync(filepath)
   }
 
   let finalpath = `${tileFolder}/heightmap_final.png`
-  await applyNoiseMap(currentFile, finalpath)
+  if (landcoverExists) {
+    // extract all masks from colors
+    const withNoise = await applyNoiseMap(blurred)
+    const masks = Object.keys(LANDCOVER_COLORS)
+      .map((key) => ({
+        ...LANDCOVER_COLORS[key],
+        name: key,
+      }))
+      .sort((a, b) => a.order - b.order)
 
-  // save a copy as .raw
-  await convertPngToRaw16Bit(finalpath, finalpath.replace('.png', '.raw'))
+    let currentFile = withNoise
+    for (let mask of masks) {
+      let maskData = await extractHeightmapFromFileAndColor(
+        filepath,
+        mask.paint
+      )
+      if (mask.rules) {
+        maskData = applyGaussianFilter(maskData, RESOLUTION, mask.rules.blur)
+      }
+      mask.file = `${tileFolder}/${mask.name}_mask.png`
+      await heightMapToFile(maskData, mask.file)
+      if (mask.rules) {
+        currentFile = await applyMask(currentFile, mask)
+      }
+    }
+    await applyNoiseMap(currentFile, finalpath)
+  } else {
+    await applyNoiseMap(blurred, finalpath)
+  }
 }
 
 heightmapQueue.process(4, async (job, done) => {

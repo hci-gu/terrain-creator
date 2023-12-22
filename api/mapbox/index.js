@@ -113,7 +113,7 @@ const getTile = async (folder, tile, index) => {
 
   // await stitchTileImages(childrenFiles, `${path}/stitched.png`)
   const tileImage = await downloadTile(tile, 'mapbox.satellite')
-  await writeFile(tileImage, `${path}/stitched.png`)
+  await writeFile(tileImage, `${path}/sattelite.png`)
   fs.writeFileSync(
     `${path}/tile.json`,
     JSON.stringify({
@@ -146,7 +146,7 @@ const getTilesFromFolder = (tileId) => {
     .map((tile) => tile.tile)
 }
 
-export const getTileData = async (tileId) => {
+export const getDetailedTileData = async (tileId) => {
   const path = `./public/tiles/${tileId}`
   const tiles = getTilesFromFolder(tileId)
 
@@ -184,8 +184,18 @@ export const getTileData = async (tileId) => {
   return tileId
 }
 
+export const getTileData = async (tileId) => {
+  const path = `./public/tiles/${tileId}`
+  const tileData = JSON.parse(fs.readFileSync(`${path}/tile.json`))
+  console.log('getTileData', tileData)
+
+  await getTile(`./public/tiles`, tileData.tile, tileData.index)
+
+  return tileId
+}
+
 mapboxQueue.process(4, async (job, done) => {
-  const { tileId, tile, coords } = job.data
+  const { tileId } = job.data
 
   try {
     await getTileData(tileId)

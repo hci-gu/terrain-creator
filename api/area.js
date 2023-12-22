@@ -25,7 +25,12 @@ const getChildrenUntilZoom = (tiles, zoom) => {
   return getChildrenUntilZoom(children, zoom)
 }
 
-export const createArea = async ({ coords, zoom }) => {
+export const createArea = async ({
+  coords,
+  zoom,
+  createHeightMap,
+  createLandcover,
+}) => {
   const tiles = getChildrenUntilZoom(minTilesForCoords(coords, zoom), 13)
 
   for (const tile of tiles) {
@@ -42,6 +47,8 @@ export const createArea = async ({ coords, zoom }) => {
       tile,
       coords,
       zoom,
+      createHeightMap,
+      createLandcover,
     })
   }
 }
