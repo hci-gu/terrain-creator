@@ -16,6 +16,7 @@ const API_URL = import.meta.env.VITE_API_URL
 const CreateTiles = ({ mapRef }) => {
   const [includeLandcover, setIncludeLandcover] = useState(true)
   const [includeHeightmap, setIncludeHeightmap] = useState(true)
+  const [highResMode, setHighResMode] = useState(false)
 
   const mapMode = useAtomValue(mapModeAtom)
   const drawMode = useAtomValue(mapDrawModeAtom)
@@ -28,9 +29,9 @@ const CreateTiles = ({ mapRef }) => {
     mapRef.current.getMap().showTileBoundaries = mapMode == CREATE_MODE
     if (mapMode == CREATE_MODE) {
       // set zoom to 12, animate it
-      mapRef.current.getMap().setZoom(11)
+      mapRef.current.getMap().setZoom(highResMode ? 13 : 11)
     }
-  }, [mapRef, drawMode])
+  }, [mapRef, highResMode, drawMode])
 
   const onClick = async () => {
     if (!Object.keys(features).length || !mapRef.current) return
@@ -55,8 +56,7 @@ const CreateTiles = ({ mapRef }) => {
 
   const hasFeatures = Object.keys(features).length > 0
 
-  const title =
-    drawMode === 'draw_polygon' ? 'Create tiles' : 'Create detailed tile'
+  const title = drawMode === 'draw_polygon' ? 'Create tiles' : 'Create tiles'
   const description =
     drawMode === 'draw_polygon'
       ? 'Draw a shape to create tiles for it'
@@ -68,7 +68,7 @@ const CreateTiles = ({ mapRef }) => {
         {title}
       </Text>
       <Text>{description}</Text>
-      <Space h="md" />
+      <Space h="sm" />
       <Flex align="center">
         <Checkbox
           checked={includeLandcover}
@@ -77,7 +77,7 @@ const CreateTiles = ({ mapRef }) => {
         <Space w="sm" />
         <Text fw={500}>Create landcover</Text>
       </Flex>
-      <Space h="md" />
+      <Space h="sm" />
       <Flex align="center">
         <Checkbox
           checked={includeHeightmap}
@@ -85,6 +85,15 @@ const CreateTiles = ({ mapRef }) => {
         />
         <Space w="sm" />
         <Text fw={500}>Create heightmap</Text>
+      </Flex>
+      <Space h="sm" />
+      <Flex align="center">
+        <Checkbox
+          checked={highResMode}
+          onChange={() => setHighResMode((v) => !v)}
+        />
+        <Space w="sm" />
+        <Text fw={500}>High res mode</Text>
       </Flex>
       <Space h="md" />
       <Button onClick={onClick} disabled={!hasFeatures}>

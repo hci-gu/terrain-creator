@@ -78,9 +78,12 @@ export const resizeAndConvert = async (imagePath, toSize) => {
 }
 
 export const getPixelDataFromFile = async (file) => {
-  const buffer = await sharp(file).raw().toBuffer()
+  // return buffer and width/height
+  const { data, info } = await sharp(file)
+    .raw()
+    .toBuffer({ resolveWithObject: true })
 
-  return new Uint8ClampedArray(buffer)
+  return [new Uint8ClampedArray(data), info.width]
 }
 
 export const getEdgePixels = async (imagePath, edge) => {

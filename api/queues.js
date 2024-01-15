@@ -25,20 +25,25 @@ export const createTileFolder = async (parentPath, tile, index) => {
     JSON.stringify({
       tile,
       index,
+      size: 512,
     })
   )
 }
 
-export const createDetailedTile = async (coords, zoom) => {
-  const tiles = minTilesForCoords(coords, zoom)
+export const createDetailedTile = async (tiles) => {
   const tileId = tileToId(tiles.flat())
   const path = `./public/tiles/${tileId}`
 
   if (fs.existsSync(path)) {
     return [tileId, tiles, true]
   }
-
   await createFolder(path)
+  fs.writeFileSync(
+    `${path}/tile.json`,
+    JSON.stringify({
+      size: 1024,
+    })
+  )
 
   await promiseSeries(tiles, (tile, index) =>
     createTileFolder(path, tile, index)
@@ -47,22 +52,25 @@ export const createDetailedTile = async (coords, zoom) => {
   return [tileId, tiles, false]
 }
 
-export const createTile = async (tile) => {
+export const createTile = async (tile, tiles) => {
+  if (tiles) return createDetailedTile(tiles)
+
   const tileId = tileToId(tile)
   const path = `./public/tiles/${tileId}`
 
   if (fs.existsSync(path)) {
-    return [tileId, true]
+    const childTiles = tilebelt.getChildren(tile)
+    return [tileId, childTiles, true]
   }
 
   await createTileFolder('./public/tiles/', tile, 0)
 
-  const tiles = tilebelt.getChildren(tile)
-  await promiseSeries(tiles, (childTile, index) =>
+  const childTiles = tilebelt.getChildren(tile)
+  await promiseSeries(childTiles, (childTile, index) =>
     createTileFolder(path, childTile, index)
   )
 
-  return [tileId, tiles, false]
+  return [tileId, childTiles, false]
 }
 
 export const updateTile = async (tileId) => {
@@ -78,9 +86,9 @@ export const updateTile = async (tileId) => {
 
 tileQueue.process(16, async (job, done) => {
   console.log('tileQueue', job.data)
-  const { tile, zoom, coords, createHeightMap, createLandcover } = job.data
+  const { tile, tiles, createHeightMap, createLandcover } = job.data
 
-  const [tileId, tiles, alreadyExists] = await createTile(tile, zoom, coords)
+  let [tileId, childTiles, alreadyExists] = await createTile(tile, tiles)
   if (alreadyExists) {
     done()
     return
@@ -93,6 +101,7 @@ tileQueue.process(16, async (job, done) => {
     const mapboxJob = await mapboxQueue.add({
       ...job.data,
       tileId,
+      tiles,
     })
 
     await mapboxJob.finished()
@@ -101,7 +110,7 @@ tileQueue.process(16, async (job, done) => {
     if (createLandcover) {
       const earthEngineJob = await earthEngineQueue.add({
         path,
-        tiles,
+        tiles: childTiles,
       })
       await earthEngineJob.finished()
       job.progress(50)

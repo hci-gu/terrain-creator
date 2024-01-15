@@ -81,9 +81,7 @@ export const initEE = () => {
 
 earthEngineQueue.process(1, async (job, done) => {
   const { tiles, path } = job.data
-
   const googleEEUrl = await initEE()
-  console.log('googleEEUrl', googleEEUrl)
 
   let progress = 0
   try {

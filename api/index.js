@@ -4,17 +4,9 @@ config()
 import express from 'express'
 import bodyParser from 'body-parser'
 import fs from 'fs'
-import * as mapbox from './mapbox/index.js'
-import * as segmenter from './segmenter.js'
-import * as heightmap from './heightmap/index.js'
 import * as googleEarthEngine from './google-earth-engine/index.js'
 import * as tiles from './tiles.js'
 import cors from 'cors'
-import {
-  combineLandcoverAndRecolor,
-  convertLandcoverToRGBTexture,
-} from './landcover.js'
-import { getCoverTileData } from './utils.js'
 import { createArea } from './area.js'
 import { updateTile } from './queues.js'
 googleEarthEngine.initEE()
@@ -44,28 +36,6 @@ app.get('/tile/:id', (req, res) => {
   const { id } = req.params
   const tile = tiles.getTile(id)
   res.send(tile)
-})
-
-app.post('/tile', async (req, res) => {
-  const { coords, zoom, islandMask } = req.body
-
-  const [tileId, alreadyExists] = await mapbox.createTile(coords, zoom)
-  res.send({
-    id: tileId,
-  })
-
-  if (alreadyExists) {
-    return
-  }
-
-  await mapbox.getTileData(tileId)
-  if (islandMask) {
-    await segmenter.getLandcoversForTile(tileId)
-  }
-  await combineLandcoverAndRecolor(tileId)
-
-  await convertLandcoverToRGBTexture(tileId)
-  await heightmap.modifyHeightmap(tileId)
 })
 
 app.delete('/tile/:id/landcover', async (req, res) => {

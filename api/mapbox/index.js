@@ -98,7 +98,7 @@ const getTile = async (folder, tile, index) => {
 
   const rgbHeightMap = await downloadTile(tile, 'mapbox.terrain-rgb')
   await writeFile(rgbHeightMap, `${path}/terrain-rgb.png`)
-  const rgbPixelData = await getPixelDataFromFile(`${path}/terrain-rgb.png`)
+  const [rgbPixelData] = await getPixelDataFromFile(`${path}/terrain-rgb.png`)
   const { heightMapData, minHeight, maxHeight } =
     convertPngToHeightMap(rgbPixelData)
   await writePixelsToPng(heightMapData, 512, 512, `${path}/heightmap.png`)
@@ -126,7 +126,7 @@ const getTile = async (folder, tile, index) => {
 
   return [
     `${path}/heightmap.png`,
-    `${path}/stitched.png`,
+    `${path}/sattelite.png`,
     `${path}/landcover_grass.png`,
   ]
 }
@@ -146,9 +146,8 @@ const getTilesFromFolder = (tileId) => {
     .map((tile) => tile.tile)
 }
 
-export const getDetailedTileData = async (tileId) => {
+export const getDetailedTileData = async (tileId, tiles) => {
   const path = `./public/tiles/${tileId}`
-  const tiles = getTilesFromFolder(tileId)
 
   const imagePaths = await promiseSeries(tiles, (tile, index) =>
     getTile(path, tile, index)
@@ -195,10 +194,14 @@ export const getTileData = async (tileId) => {
 }
 
 mapboxQueue.process(4, async (job, done) => {
-  const { tileId } = job.data
+  const { tileId, tiles } = job.data
 
   try {
-    await getTileData(tileId)
+    if (tiles) {
+      await getDetailedTileData(tileId, tiles)
+    } else {
+      await getTileData(tileId)
+    }
     done()
   } catch (e) {
     console.log('Failed to process tile', e)

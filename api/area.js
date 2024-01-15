@@ -15,40 +15,28 @@ import {
 import tilebelt from '@mapbox/tilebelt'
 import { tileQueue } from './queues.js'
 
-const getChildrenUntilZoom = (tiles, zoom) => {
-  const children = tiles.map((tile) => tilebelt.getChildren(tile)).flat()
-
-  if (children[0][2] >= zoom) {
-    return children
-  }
-
-  return getChildrenUntilZoom(children, zoom)
-}
-
 export const createArea = async ({
   coords,
   zoom,
   createHeightMap,
   createLandcover,
 }) => {
-  const tiles = getChildrenUntilZoom(minTilesForCoords(coords, zoom), 13)
-
-  for (const tile of tiles) {
-    const bbox = tilebelt.tileToBBOX(tile)
-    const [minX, minY, maxX, maxY] = bbox
-    const inset = 0.01
-    const topLeft = [minX + inset, maxY - inset]
-    const topRight = [maxX - inset, maxY - inset]
-    const bottomRight = [maxX - inset, minY + inset]
-    const bottomLeft = [minX + inset, minY + inset]
-    const coords = [topLeft, topRight, bottomRight, bottomLeft, topLeft]
-
+  const tiles = minTilesForCoords(coords, zoom)
+  if (zoom == 13) {
     tileQueue.add({
-      tile,
-      coords,
+      tiles,
       zoom,
       createHeightMap,
       createLandcover,
     })
+  } else {
+    for (const tile of tiles) {
+      tileQueue.add({
+        tile,
+        zoom,
+        createHeightMap,
+        createLandcover,
+      })
+    }
   }
 }
