@@ -78,6 +78,7 @@ app.post('/tile/:id/landcover', async (req, res) => {
   fs.writeFileSync(outputPath, binaryData, 'binary')
 
   updateTile(id)
+  tiles.clearTiles()
   res.send('Image saved successfully')
 })
 

@@ -3,8 +3,14 @@ import * as COLORS from './colors.js'
 import alea from 'alea'
 import fs from 'fs'
 import { createNoise2D } from 'simplex-noise'
-import { createGeoTiff, getCoverTileData } from './utils.js'
+import {
+  createGeoTiff,
+  getCoverTileData,
+  hslDistance,
+  rgbToHsl,
+} from './utils.js'
 import { landcoverQueue } from './queues.js'
+import { getTileData } from './mapbox/index.js'
 
 const generateOutline = async (image, size) => {
   const original = await image.png().toBuffer()
@@ -91,53 +97,6 @@ async function noiseOutlineOfImage(image) {
     .toBuffer()
 
   return sharp(processed)
-}
-
-// convert rgb to hsl
-function rgbToHsl([r, g, b]) {
-  // Convert RGB to a 0-1 range
-  r /= 255
-  g /= 255
-  b /= 255
-
-  const max = Math.max(r, g, b)
-  const min = Math.min(r, g, b)
-  let h,
-    s,
-    l = (max + min) / 2
-
-  if (max === min) {
-    h = s = 0 // achromatic
-  } else {
-    const d = max - min
-    s = l > 0.5 ? d / (2 - max - min) : d / (max + min)
-    switch (max) {
-      case r:
-        h = (g - b) / d + (g < b ? 6 : 0)
-        break
-      case g:
-        h = (b - r) / d + 2
-        break
-      case b:
-        h = (r - g) / d + 4
-        break
-    }
-    h /= 6
-  }
-
-  return [h * 360, s * 100, l * 100]
-}
-
-const hslDistance = (hsl1, hsl2) => {
-  const hDiff = hsl1[0] - hsl2[0]
-  const sDiff = hsl1[1] - hsl2[1]
-  const lDiff = hsl1[2] - hsl2[2]
-
-  return (
-    Math.sqrt(hDiff * hDiff) +
-    Math.sqrt(sDiff * sDiff) / 2 +
-    Math.sqrt(lDiff * lDiff) / 3
-  )
 }
 
 async function extractMask(inputPath, targetColor, name) {
@@ -248,13 +207,13 @@ const fixEELandcover = async (imagePath, outPath, resize, type = 'paint') => {
   }).toFile(outPath)
 }
 
-export const combineLandcoverAndRecolor = async (tileId) => {
+export const combineLandcoverAndRecolor = async (tileId, size = 512) => {
   const tileFolder = `./public/tiles/${tileId}`
 
   // first recolor and resize the landcover file
   const landCoverFile = `${tileFolder}/landcover.png`
   const landCoverFileColors = `${tileFolder}/landcover_colors.png`
-  await fixEELandcover(landCoverFile, landCoverFileColors, 1024)
+  await fixEELandcover(landCoverFile, landCoverFileColors, size)
 
   for (let key in COLORS.EE_COLORS) {
     await extractMask(
@@ -390,9 +349,11 @@ export const recreateTextureAndGeoTiffForTile = async (tileId) => {
 
 landcoverQueue.process(4, async (job, done) => {
   const { tileId } = job.data
+  const path = `./public/tiles/${tileId}`
+  const { size } = JSON.parse(fs.readFileSync(`${path}/tile.json`))
 
   try {
-    await combineLandcoverAndRecolor(tileId)
+    await combineLandcoverAndRecolor(tileId, size ?? 512)
     await convertLandcoverToRGBTexture(tileId)
     done()
   } catch (e) {

@@ -101,7 +101,7 @@ const getTile = async (folder, tile, index) => {
   const [rgbPixelData] = await getPixelDataFromFile(`${path}/terrain-rgb.png`)
   const { heightMapData, minHeight, maxHeight } =
     convertPngToHeightMap(rgbPixelData)
-  await writePixelsToPng(heightMapData, 512, 512, `${path}/heightmap.png`)
+  await writePixelsToPng(heightMapData, 512, `${path}/heightmap.png`)
   const landcoverGrassData = await downloadTile(tile, 'landcover-grass')
   await writeFile(landcoverGrassData, `${path}/landcover_grass.png`)
 
@@ -186,7 +186,6 @@ export const getDetailedTileData = async (tileId, tiles) => {
 export const getTileData = async (tileId) => {
   const path = `./public/tiles/${tileId}`
   const tileData = JSON.parse(fs.readFileSync(`${path}/tile.json`))
-  console.log('getTileData', tileData)
 
   await getTile(`./public/tiles`, tileData.tile, tileData.index)
 

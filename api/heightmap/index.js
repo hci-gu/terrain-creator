@@ -6,6 +6,9 @@ import {
   writePixelsToPng,
   mergeHeightmaps,
   multiplyHeightmaps,
+  rgbToHsl,
+  hslDistance,
+  useMask,
 } from '../utils.js'
 import { LANDCOVER_COLORS } from '../colors.js'
 import { heightmapQueue } from '../queues.js'
@@ -52,7 +55,7 @@ const createNoisemap = (resolution, scale) => {
   return map
 }
 
-const applyGaussianFilter = (heightmap, size, radius) => {
+const applyGaussianFilter = (heightmap, radius) => {
   const kernel = []
   const kernelSize = radius * 2 + 1
   const sigma = radius / 3
@@ -71,10 +74,11 @@ const applyGaussianFilter = (heightmap, size, radius) => {
     kernel[i] /= total
   }
 
-  const newHeightmap = new Float32Array(size * size)
+  const resolution = Math.sqrt(heightmap.length)
+  const newHeightmap = new Float32Array(heightmap.length)
 
-  for (let y = 0; y < size; y++) {
-    for (let x = 0; x < size; x++) {
+  for (let y = 0; y < resolution; y++) {
+    for (let x = 0; x < resolution; x++) {
       let value = 0
       for (let ky = -radius; ky <= radius; ky++) {
         for (let kx = -radius; kx <= radius; kx++) {
@@ -83,18 +87,18 @@ const applyGaussianFilter = (heightmap, size, radius) => {
 
           if (
             sampleX >= 0 &&
-            sampleX < size &&
+            sampleX < resolution &&
             sampleY >= 0 &&
-            sampleY < size
+            sampleY < resolution
           ) {
-            const sampleIndex = sampleY * size + sampleX
+            const sampleIndex = sampleY * resolution + sampleX
             const weight = kernel[ky + radius] * kernel[kx + radius]
             value += heightmap[sampleIndex] * weight
           }
         }
       }
 
-      newHeightmap[y * size + x] = value
+      newHeightmap[y * resolution + x] = value
     }
   }
 
@@ -115,38 +119,7 @@ const heightmapFromFile = async (heightmapFile) => {
   return [heightmap, resolution]
 }
 
-const euclideanDistance = (color1, color2) => {
-  let sum = 0
-  for (let i = 0; i < 3; i++) {
-    sum += Math.pow(color1[i] - color2[i], 2)
-  }
-  return Math.sqrt(sum)
-}
-
-const extractHeightmapFromFileAndColor = async (heightmapFile, color) => {
-  const [data, resolution] = await getPixelDataFromFile(heightmapFile)
-  const thresholdDistance = 255 * Math.sqrt(3) * 0.05
-
-  const heightmap = new Float32Array(resolution * resolution)
-  for (let y = 0; y < resolution; y++) {
-    for (let x = 0; x < resolution; x++) {
-      let index = (y * resolution + x) * 4
-      let distance = euclideanDistance(
-        [data[index], data[index + 1], data[index + 2]],
-        color
-      )
-      if (distance <= thresholdDistance) {
-        heightmap[y * resolution + x] = 1
-      } else {
-        heightmap[y * resolution + x] = 0
-      }
-    }
-  }
-
-  return [heightmap, resolution]
-}
-
-const heightMapToFile = async (heightmap, resolution, path) => {
+const heightMapToFile = async (heightmap, path) => {
   // write back heightmap to file
   const heightMapData = new Float32Array(heightmap.length * 4)
   for (let i = 0; i < heightmap.length; i++) {
@@ -158,99 +131,112 @@ const heightMapToFile = async (heightmap, resolution, path) => {
     heightMapData[i * 4 + 3] = 255
   }
 
-  await writePixelsToPng(heightMapData, resolution, resolution, path)
+  const resolution = Math.sqrt(heightmap.length)
+  await writePixelsToPng(heightMapData, resolution, path)
 
   return path
 }
 
-const applyNoiseMap = async (heightmapFile, outFile) => {
-  const [heightmap, resolution] = await heightmapFromFile(heightmapFile)
-
-  const noisemap = createNoisemap(resolution, 1.5)
+const applyNoiseMap = async (heightmap, filePath) => {
+  const noisemap = createNoisemap(Math.sqrt(heightmap.length), 1.5)
 
   mergeHeightmaps(heightmap, noisemap, 0.1)
 
-  return heightMapToFile(
-    heightmap,
-    resolution,
-    outFile ? outFile : heightmapFile.replace('.png', '_with_noise.png')
-  )
+  if (filePath) {
+    await heightMapToFile(heightmap, filePath)
+  }
+  return heightmap
 }
 
-const blurHeightmap = async (heightmapFile) => {
-  const [heightmap, resolution] = await heightmapFromFile(heightmapFile)
+const blurHeightmap = async (heightmap, blurAmount = 8, filePath) => {
+  const modifiedHeightmap = applyGaussianFilter(heightmap, blurAmount)
 
-  const modifiedHeightmap = applyGaussianFilter(heightmap, resolution, 8)
-
-  return heightMapToFile(
-    modifiedHeightmap,
-    resolution,
-    heightmapFile.replace('.png', '_with_blur.png')
-  )
+  if (filePath) {
+    await heightMapToFile(modifiedHeightmap, filePath)
+  }
+  return modifiedHeightmap
 }
 
-const applyMask = async (heightmapFile, mask) => {
-  const [heightmap, resolution] = await heightmapFromFile(heightmapFile)
-  const [maskmap] = await heightmapFromFile(mask.file)
+const applyMask = async (heightmap, mask) => {
+  // const [heightmap, resolution] = await heightmapFromFile(heightmapFile)
   // const maskMapWithBlur = applyGaussianFilter(
   //   maskmap,
   //   RESOLUTION,
   //   mask.rules.blur
   // )
 
-  const modifiedHeightmap = multiplyHeightmaps(heightmap, maskmap, mask.rules)
-
-  return heightMapToFile(
-    modifiedHeightmap,
-    resolution,
-    heightmapFile.replace('.png', `_${mask.name}.png`)
-  )
+  return multiplyHeightmaps(heightmap, mask.map, mask.rules)
 }
+
+// export const upscaleTo2048 = async (tileId) => {
+//   const tileFolder = `./public/tiles/${tileId}`
+//   const heightmapFile = `${tileFolder}/heightmap.png`
+
+//   const [heightmap, resolution] = await heightmapFromFile(heightmapFile)
+
+//   const heightMapData = new Float32Array(2048 * 2048)
+//   for (let i = 0; i < 2048; i++) {
+//     for (let j = 0; j < 2048; j++) {
+//       const x = Math.floor((i / 2048) * resolution)
+//       const y = Math.floor((j / 2048) * resolution)
+//       heightMapData[i * 2048 + j] = heightmap[y * resolution + x]
+//     }
+//   }
+
+//   await writePixelsToPng(
+//     heightMapData,
+//     2048,
+//     2048,
+//     heightmapFile.replace('.png', '_2048.png')
+//   )
+// }
 
 export const modifyHeightmap = async (tileId) => {
   const tileFolder = `./public/tiles/${tileId}`
   const heightmapFile = `${tileFolder}/heightmap.png`
 
-  const blurred = await blurHeightmap(heightmapFile)
-
-  // check if file exists
-  let filepath = `${tileFolder}/landcover_colors_edited.png`
-  let landcoverExists = fs.existsSync(filepath)
-  if (!landcoverExists) {
-    filepath = `${tileFolder}/landcover_colors.png`
-    landcoverExists = fs.existsSync(filepath)
-  }
+  const [heightmap] = await heightmapFromFile(heightmapFile)
+  const blurred = await blurHeightmap(heightmap)
 
   let finalpath = `${tileFolder}/heightmap_final.png`
-  if (landcoverExists) {
-    // extract all masks from colors
-    const withNoise = await applyNoiseMap(blurred)
-    const masks = Object.keys(LANDCOVER_COLORS)
-      .map((key) => ({
-        ...LANDCOVER_COLORS[key],
-        name: key,
-      }))
-      .sort((a, b) => a.order - b.order)
+  // extract all masks from colors
+  const withNoise = await applyNoiseMap(
+    blurred,
+    heightmapFile.replace('.png', '_with_noise.png')
+  )
+  const masks = Object.keys(LANDCOVER_COLORS)
+    .map((key) => ({
+      ...LANDCOVER_COLORS[key],
+      name: key,
+    }))
+    .sort((a, b) => a.order - b.order)
 
-    let currentFile = withNoise
-    for (let mask of masks) {
-      let [maskData, resolution] = await extractHeightmapFromFileAndColor(
-        filepath,
-        mask.paint
+  let currentFile = withNoise
+  for (let mask of masks) {
+    const maskPath = `${tileFolder}/${mask.name}_mask.png`
+    if (mask.name == 'water') {
+      let [maskData, resolution] = await heightmapFromFile(maskPath)
+      const noisemap = createNoisemap(resolution, 15)
+      const detailNoise = createNoisemap(resolution, 1.5)
+      mergeHeightmaps(noisemap, detailNoise, 0.2)
+      const oceanMap = await useMask(
+        noisemap,
+        applyGaussianFilter(maskData, 24)
       )
-      if (mask.rules) {
-        maskData = applyGaussianFilter(maskData, resolution, mask.rules.blur)
+      await heightMapToFile(oceanMap, `${tileFolder}/ocean_map.png`)
+      continue
+    } else {
+      if (!mask.rules) continue
+      let [maskData, resolution] = await heightmapFromFile(maskPath)
+      if (mask.rules.blur) {
+        maskData = applyGaussianFilter(maskData, mask.rules.blur)
       }
-      mask.file = `${tileFolder}/${mask.name}_mask.png`
-      await heightMapToFile(maskData, resolution, mask.file)
-      if (mask.rules) {
-        currentFile = await applyMask(currentFile, mask)
-      }
+      mask.map = maskData
+      currentFile = await applyMask(currentFile, mask)
     }
-    await applyNoiseMap(currentFile, finalpath)
-  } else {
-    await applyNoiseMap(blurred, finalpath)
   }
+
+  await applyNoiseMap(currentFile, finalpath)
 }
 
 heightmapQueue.process(4, async (job, done) => {
@@ -260,6 +246,7 @@ heightmapQueue.process(4, async (job, done) => {
     await modifyHeightmap(tileId)
     done()
   } catch (e) {
+    console.log(e)
     done(e)
   }
 })

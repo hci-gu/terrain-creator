@@ -35,11 +35,11 @@ export const createFolder = (path) => {
 export const convertToGrayScale = async (inputPath, outputPath) =>
   sharp(inputPath).grayscale().toFile(outputPath)
 
-export const writePixelsToPng = (pixels, width, height, fileName) => {
+export const writePixelsToPng = (pixels, resolution, fileName) => {
   return sharp(pixels, {
     raw: {
-      width,
-      height,
+      width: resolution,
+      height: resolution,
       channels: 4, // for RGBA
     },
   })
@@ -168,21 +168,29 @@ export const convertPngToHeightMap = (data) => {
 }
 
 export const mergeHeightmaps = (heightmap1, heightmap2, multiplier = 1) => {
-  const size = Math.sqrt(heightmap1.length)
-  const mergedHeightmap = new Float32Array(size * size)
+  const mergedHeightmap = new Float32Array(heightmap1.length)
 
-  for (let i = 0; i < size * size; i++) {
+  for (let i = 0; i < heightmap1.length; i++) {
     mergedHeightmap[i] = heightmap1[i] + heightmap2[i] * multiplier
   }
 
   return mergedHeightmap
 }
 
-export const multiplyHeightmaps = (original, mask, options) => {
-  const size = Math.sqrt(original.length)
-  const mergedHeightmap = new Float32Array(size * size)
+export const useMask = (original, mask) => {
+  const mergedHeightmap = new Float32Array(original.length)
 
-  for (let i = 0; i < size * size; i++) {
+  for (let i = 0; i < original.length; i++) {
+    mergedHeightmap[i] = original[i] * mask[i]
+  }
+
+  return mergedHeightmap
+}
+
+export const multiplyHeightmaps = (original, mask, options) => {
+  const mergedHeightmap = new Float32Array(original.length)
+
+  for (let i = 0; i < original.length; i++) {
     if (mask[i] === 0) {
       mergedHeightmap[i] = original[i]
       continue
@@ -492,4 +500,50 @@ export const getCoverTileData = (id) => {
     metersPerPixel: tiles[0] ? tiles[0].metersPerPixel : -1,
     tiles,
   }
+}
+
+export function rgbToHsl([r, g, b]) {
+  // Convert RGB to a 0-1 range
+  r /= 255
+  g /= 255
+  b /= 255
+
+  const max = Math.max(r, g, b)
+  const min = Math.min(r, g, b)
+  let h,
+    s,
+    l = (max + min) / 2
+
+  if (max === min) {
+    h = s = 0 // achromatic
+  } else {
+    const d = max - min
+    s = l > 0.5 ? d / (2 - max - min) : d / (max + min)
+    switch (max) {
+      case r:
+        h = (g - b) / d + (g < b ? 6 : 0)
+        break
+      case g:
+        h = (b - r) / d + 2
+        break
+      case b:
+        h = (r - g) / d + 4
+        break
+    }
+    h /= 6
+  }
+
+  return [h * 360, s * 100, l * 100]
+}
+
+export const hslDistance = (hsl1, hsl2) => {
+  const hDiff = hsl1[0] - hsl2[0]
+  const sDiff = hsl1[1] - hsl2[1]
+  const lDiff = hsl1[2] - hsl2[2]
+
+  return (
+    Math.sqrt(hDiff * hDiff) +
+    Math.sqrt(sDiff * sDiff) / 2 +
+    Math.sqrt(lDiff * lDiff) / 3
+  )
 }

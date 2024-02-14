@@ -1,11 +1,6 @@
 import Bull from 'bull'
 import fs from 'fs'
-import {
-  createFolder,
-  minTilesForCoords,
-  promiseSeries,
-  tileToId,
-} from './utils.js'
+import { createFolder, promiseSeries, tileToId } from './utils.js'
 import tilebelt from '@mapbox/tilebelt'
 
 export const mapboxQueue = new Bull('mapbox-queue')

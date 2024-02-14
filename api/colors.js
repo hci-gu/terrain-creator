@@ -16,21 +16,21 @@ export const LANDCOVER_COLORS = {
     paint: EE_COLORS.water,
     texture: [255, 255, 0, 255],
     rules: {
-      type: 'subtract',
-      amount: 0.75,
+      type: 'add',
+      amount: 1,
       blur: 18,
     },
   },
-  sand: {
-    order: 0,
-    paint: [254, 215, 102, 255],
-    texture: [255, 255, 0, 0],
-    rules: {
-      type: 'add',
-      amount: 0.15,
-      blur: 36,
-    },
-  },
+  // sand: {
+  //   order: 0,
+  //   paint: [254, 215, 102, 255],
+  //   texture: [255, 255, 0, 0],
+  //   rules: {
+  //     type: 'add',
+  //     amount: 0.15,
+  //     blur: 36,
+  //   },
+  // },
   trees: {
     paint: EE_COLORS.trees,
     texture: [0, 255, 255, 255],
@@ -39,11 +39,11 @@ export const LANDCOVER_COLORS = {
     order: 2,
     paint: EE_COLORS.grass,
     texture: [0, 255, 0, 255],
-    rules: {
-      type: 'subtract',
-      amount: 0.1,
-      blur: 24,
-    },
+    // rules: {
+    //   type: 'subtract',
+    //   amount: 0.1,
+    //   blur: 24,
+    // },
   },
   flooded_vegetation: {
     order: 2,
