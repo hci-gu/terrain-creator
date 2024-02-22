@@ -1,6 +1,5 @@
 import { useAtom, useAtomValue } from 'jotai'
 import {
-  filteredTilesAtom,
   landcoverFiltersAtom,
   landcovers,
   locationFilterAtom,
@@ -138,7 +137,7 @@ const TileList = () => {
     name: '',
   })
 
-  const tiles = useAtomValue(filteredTilesAtom)
+  const tiles = useAtomValue(tilesAtom)
 
   return (
     <div>
@@ -202,7 +201,7 @@ const TileList = () => {
               <td>
                 <Image
                   key={`${tile.id}_landcover`}
-                  src={tile.landcover}
+                  src={tile.landcover.url}
                   max-height={100}
                   max-width={100}
                 />
@@ -222,7 +221,7 @@ const TileList = () => {
 }
 
 const DownloadButton = () => {
-  const tiles = useAtomValue(filteredTilesAtom)
+  const tiles = useAtomValue(tilesAtom)
   const download = async () => {
     const zip = new JSZip()
     const texturesFolder = zip.folder('textures')

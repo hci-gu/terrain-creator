@@ -7,11 +7,9 @@ import {
   featuresAtom,
   mapDrawModeAtom,
   mapModeAtom,
-  refreshTilesAtom,
 } from '../../state'
 import { Checkbox, Space, Flex, Text, Button } from '@mantine/core'
-
-const API_URL = import.meta.env.VITE_API_URL
+import * as pocketbase from '../../../lib/pocketbase'
 
 const CreateTiles = ({ mapRef }) => {
   const [includeLandcover, setIncludeLandcover] = useState(true)
@@ -20,7 +18,6 @@ const CreateTiles = ({ mapRef }) => {
 
   const mapMode = useAtomValue(mapModeAtom)
   const drawMode = useAtomValue(mapDrawModeAtom)
-  const refreshTiles = useSetAtom(refreshTilesAtom)
   const [features, setFeatures] = useAtom(featuresAtom)
 
   useEffect(() => {
@@ -40,14 +37,23 @@ const CreateTiles = ({ mapRef }) => {
     const mapInstance = mapRef.current.getMap()
     const currentZoom = Math.round(mapInstance.getZoom())
 
-    await axios.post(`${API_URL}/area`, {
+    console.log({
       coords: feature.geometry.coordinates[0],
       zoom: currentZoom,
-      createHeightMap: includeHeightmap,
-      createLandcover: includeLandcover,
     })
-    await wait(1000)
-    refreshTiles()
+
+    pocketbase.createTiles({
+      coords: feature.geometry.coordinates[0],
+      zoom: currentZoom,
+    })
+
+    // await axios.post(`${API_URL}/area`, {
+    //   coords: feature.geometry.coordinates[0],
+    //   zoom: currentZoom,
+    //   createHeightMap: includeHeightmap,
+    //   createLandcover: includeLandcover,
+    // })
+    // await wait(1000)
   }
 
   const onClear = () => {

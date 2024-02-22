@@ -2,14 +2,36 @@ import React, { Suspense, useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { Drawer, Space, Text, Flex, Button } from '@mantine/core'
 import { Image as ImageComponent } from '@mantine/core'
-import { mapViewportAtom, refreshTilesAtom, tileAtom } from '../state'
+import { mapViewportAtom, tileAtom } from '../state'
 import axios from 'axios'
 import DrawTools from './DrawTools'
 import { useAtomValue, useSetAtom } from 'jotai'
 import { IconDownload } from '@tabler/icons-react'
+import * as pocketbase from '../../lib/pocketbase'
 
 const API_URL = import.meta.env.VITE_API_URL
 const URL = import.meta.env.VITE_URL
+
+const convertDataUrlToBlob = (dataUrl) => {
+  // Split the data URL at the comma to get the base64 encoded data
+  const parts = dataUrl.split(',')
+  const base64Data = parts[1]
+  const contentType = parts[0].split(':')[1].split(';')[0]
+
+  // Convert base64 to raw binary data held in a string
+  const byteCharacters = atob(base64Data)
+  const byteNumbers = new Array(byteCharacters.length)
+  for (let i = 0; i < byteCharacters.length; i++) {
+    byteNumbers[i] = byteCharacters.charCodeAt(i)
+  }
+
+  // Convert to an array of bytes
+  const byteArray = new Uint8Array(byteNumbers)
+
+  // Create a blob from the byte array
+  const blob = new Blob([byteArray], { type: contentType })
+  return blob
+}
 
 const imageFromCanvas = (canvasInstance) => {
   return new Promise((resolve) => {
@@ -83,42 +105,40 @@ const DownloadButton = ({ type, tile }) => {
 
 const Tile = () => {
   const navigate = useNavigate()
-  const refreshTiles = useSetAtom(refreshTilesAtom)
-  const setViewport = useSetAtom(mapViewportAtom)
   const { id } = useParams()
   const tile = useAtomValue(tileAtom(id))
-  const [loading, setLoading] = useState(false)
 
   const onSave = async (canvasInstance) => {
-    setLoading(true)
     const image = await imageFromCanvas(canvasInstance)
-    await axios.post(`${API_URL}/tile/${id}/landcover`, {
-      image,
+    const file = new File([convertDataUrlToBlob(image)], 'landcover.png', {
+      type: 'image/png',
     })
-    setLoading(false)
-    refreshTiles()
+    pocketbase.updateLandCover(tile.landcover.id, file)
+
+    // await axios.post(`${API_URL}/tile/${id}/landcover`, {
+    //   image,
+    // })
   }
 
   const onDelete = async () => {
-    setLoading(true)
-    await axios.delete(`${API_URL}/tile/${id}/landcover`, {})
-    setLoading(false)
-    refreshTiles()
+    pocketbase.updateLandCover(tile.landcover.id, null)
   }
 
-  useEffect(() => {
-    const diff = tile.center[0] - tile.bbox[0]
-    const offsetCenter = [tile.center[0] + diff * 2.25, tile.center[1]]
-    const tileChildrenZoom = tile.tiles.map((t) => t.tile[2])
-    const minZoom = Math.min(...tileChildrenZoom)
-    setTimeout(() => {
-      setViewport({
-        latitude: offsetCenter[1],
-        longitude: offsetCenter[0],
-        zoom: minZoom - 1,
-      })
-    }, 3000)
-  }, [])
+  // useEffect(() => {
+  //   const diff = tile.center[0] - tile.bbox[0]
+  //   const offsetCenter = [tile.center[0] + diff * 2.25, tile.center[1]]
+  //   const tileChildrenZoom = tile.tiles.map((t) => t.tile[2])
+  //   const minZoom = Math.min(...tileChildrenZoom)
+  //   setTimeout(() => {
+  //     setViewport({
+  //       latitude: offsetCenter[1],
+  //       longitude: offsetCenter[0],
+  //       zoom: minZoom - 1,
+  //     })
+  //   }, 3000)
+  // }, [])
+
+  if (!tile) return null
 
   return (
     <Suspense>
@@ -137,11 +157,10 @@ const Tile = () => {
         )}
         {tile.landcover && (
           <DrawTools
-            imgSrc={`${URL}${tile.landcover}`}
+            imgSrc={tile.landcover.url}
             tile={tile}
             onSave={onSave}
             onDelete={onDelete}
-            loading={loading}
           />
         )}
         <Space h="md" />
@@ -152,7 +171,7 @@ const Tile = () => {
             fallbackSrc={`${URL}/images/loading.png`}
           />
           <ImageComponent
-            src={tile.heightmap}
+            src={tile.heightmap.url}
             width={256}
             key={`HM_${new Date()}`}
             fallbackSrc={`${URL}/images/loading.png`}

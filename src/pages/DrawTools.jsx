@@ -5,12 +5,12 @@ import { landcovers } from '../state'
 
 const colorNameToKey = (name) => name.toLowerCase().replace(' ', '_')
 const coverageForColor = (tile, color) => {
-  const value = tile.coverage[colorNameToKey(color.name)]
+  const value = tile.landcover.coverage[colorNameToKey(color.name)]
 
   if (value === undefined) {
     return 0
   }
-  return (value * 100).toFixed(2)
+  return value.toFixed(2)
 }
 
 const DrawTools = ({ imgSrc, tile, loading, onSave, onDelete }) => {
@@ -75,7 +75,14 @@ const DrawTools = ({ imgSrc, tile, loading, onSave, onDelete }) => {
         <Button loading={loading} onClick={() => onSave(ref.current)}>
           Save
         </Button>
-        <Button color="red" loading={loading} onClick={() => onDelete()}>
+        <Button
+          color="red"
+          loading={loading}
+          onClick={() => {
+            ref.current.eraseAll()
+            onDelete()
+          }}
+        >
           Reset
         </Button>
       </Flex>

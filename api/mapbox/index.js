@@ -1,23 +1,7 @@
 import dotenv from 'dotenv'
 dotenv.config()
-import fs from 'fs'
 import axios from 'axios'
-import tilebelt from '@mapbox/tilebelt'
-import * as uuid from 'uuid'
-import {
-  convertPngToHeightMap,
-  writePixelsToPng,
-  writeFile,
-  getPixelDataFromFile,
-  createFolder,
-  stitchTileImages,
-  promiseSeries,
-  tileToId,
-  normalizeColorsBeforeStitching,
-  convertToGrayScale,
-  resizeAndConvert,
-} from '../utils.js'
-import { mapboxQueue } from '../queues.js'
+import * as pocketbase from '../../lib/pocketbase.js'
 
 const ACCESS_TOKEN = process.env.MAPBOX_ACCESS_TOKEN
 const MAPBOX_USERNAME = process.env.MAPBOX_USERNAME
@@ -42,168 +26,18 @@ const downloadTile = async (tile, type = 'mapbox.terrain-rgb') => {
   }
 }
 
-const getChildrenAndStitch = async (
-  parentPath,
-  tile,
-  index,
-  bottom = false
-) => {
-  const path = `${parentPath}/${tileToId(tile)}`
-  await createFolder(path)
+pocketbase.subscribe('tiles', '*', async ({ action, record }) => {
+  if (action == pocketbase.ACTIONS.CREATE) {
+    const tile = [record.x, record.y, record.zoom]
+    const imageData = await downloadTile(tile, 'mapbox.satellite')
+    const file = new File([imageData], 'satellite.png')
 
-  const children = tilebelt.getChildren(tile)
-
-  const stitchedPath = `${path}/stitched.png`
-  if (bottom) {
-    const childrenFiles = await promiseSeries(children, (childTile) =>
-      downloadTile(childTile, 'mapbox.satellite')
-    )
-    // save all children files
-    const filePaths = await Promise.all(
-      childrenFiles.map(async (childFile, index) => {
-        const filePath = `${path}/${uuid.v4()}.png`
-        await writeFile(childFile, filePath)
-        fs.writeFileSync(
-          `${path}/tile.json`,
-          JSON.stringify({
-            tile,
-            index,
-          })
-        )
-        return filePath
-      })
-    )
-    await stitchTileImages(filePaths, stitchedPath)
-  } else {
-    const childrenFilePaths = await promiseSeries(children, (childTile) =>
-      getChildrenAndStitch(path, childTile, children.indexOf(childTile), true)
-    )
-
-    fs.writeFileSync(
-      `${path}/tile.json`,
-      JSON.stringify({
-        tile,
-        index,
-      })
-    )
-    await stitchTileImages(childrenFilePaths, stitchedPath)
-  }
-
-  return stitchedPath
-}
-
-const getTile = async (folder, tile, index) => {
-  const tileId = tileToId(tile)
-  const path = `${folder}/${tileId}`
-
-  const rgbHeightMap = await downloadTile(tile, 'mapbox.terrain-rgb')
-  await writeFile(rgbHeightMap, `${path}/terrain-rgb.png`)
-  const [rgbPixelData] = await getPixelDataFromFile(`${path}/terrain-rgb.png`)
-  const { heightMapData, minHeight, maxHeight } =
-    convertPngToHeightMap(rgbPixelData)
-  await writePixelsToPng(heightMapData, 512, `${path}/heightmap.png`)
-  const landcoverGrassData = await downloadTile(tile, 'landcover-grass')
-  await writeFile(landcoverGrassData, `${path}/landcover_grass.png`)
-
-  // TODO: make highres mode that does this part
-  // const children = tilebelt.getChildren(tile)
-  // const childrenFiles = await promiseSeries(children, (childTile) =>
-  //   getChildrenAndStitch(path, childTile, children.indexOf(childTile))
-  // )
-
-  // await stitchTileImages(childrenFiles, `${path}/stitched.png`)
-  const tileImage = await downloadTile(tile, 'mapbox.satellite')
-  await writeFile(tileImage, `${path}/sattelite.png`)
-  fs.writeFileSync(
-    `${path}/tile.json`,
-    JSON.stringify({
-      tile,
-      index,
-      minHeight,
-      maxHeight,
+    await pocketbase.updateTile(record.id, {
+      satellite: file,
     })
-  )
 
-  return [
-    `${path}/heightmap.png`,
-    `${path}/sattelite.png`,
-    `${path}/landcover_grass.png`,
-  ]
-}
-
-const getTilesFromFolder = (tileId) => {
-  const path = `./public/tiles/${tileId}`
-  const folders = fs
-    .readdirSync(path, { withFileTypes: true })
-    .filter((dirent) => dirent.isDirectory())
-    .map((dirent) => dirent.name)
-
-  return folders
-    .map((folder) => {
-      return JSON.parse(fs.readFileSync(`${path}/${folder}/tile.json`))
-    })
-    .sort((a, b) => a.index - b.index)
-    .map((tile) => tile.tile)
-}
-
-export const getDetailedTileData = async (tileId, tiles) => {
-  const path = `./public/tiles/${tileId}`
-
-  const imagePaths = await promiseSeries(tiles, (tile, index) =>
-    getTile(path, tile, index)
-  )
-  const heightMaps = imagePaths.map((imagePath) => imagePath[0])
-  const rasterMaps = imagePaths.map((imagePath) => imagePath[1])
-  // const landcoverMaps = imagePaths.map((imagePath) => imagePath[2])
-
-  // fix heightmaps before stitching
-  await Promise.all(
-    heightMaps.map((p) =>
-      convertToGrayScale(p, p.replace('.png', '_grayscale.jpg'))
-    )
-  )
-
-  const updatedHeightmapPaths = await normalizeColorsBeforeStitching(
-    heightMaps.map((p) => p.replace('.png', '_grayscale.jpg'))
-  )
-
-  if (imagePaths.length === 1) {
-    fs.copyFileSync(updatedHeightmapPaths[0], `${path}/heightmap.png`)
-    await resizeAndConvert(`${path}/heightmap.png`, 1024)
-    fs.copyFileSync(rasterMaps[0], `${path}/sattelite.png`)
-    // await writeFile(landcoverMaps[0], `${path}/landcover.png`)
-    await resizeAndConvert(`${path}/landcover.png`, 512)
-    return tileId
-  }
-
-  // stitch all images
-  await stitchTileImages(updatedHeightmapPaths, `${path}/heightmap.png`)
-  await stitchTileImages(rasterMaps, `${path}/sattelite.png`)
-
-  return tileId
-}
-
-export const getTileData = async (tileId) => {
-  const path = `./public/tiles/${tileId}`
-  const tileData = JSON.parse(fs.readFileSync(`${path}/tile.json`))
-
-  await getTile(`./public/tiles`, tileData.tile, tileData.index)
-
-  return tileId
-}
-
-mapboxQueue.process(4, async (job, done) => {
-  const { tileId, tiles } = job.data
-
-  try {
-    if (tiles) {
-      await getDetailedTileData(tileId, tiles)
-    } else {
-      await getTileData(tileId)
-    }
-    done()
-  } catch (e) {
-    console.log('Failed to process tile', e)
-    done(e)
+    const rgbHeightMap = await downloadTile(tile, 'mapbox.terrain-rgb')
+    const hmFile = new File([rgbHeightMap], 'original.png')
+    await pocketbase.createHeightMap(record.id, hmFile)
   }
 })

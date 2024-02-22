@@ -5,7 +5,7 @@ import DarkModeToggle from './components/DarkModeToggle'
 import { Title, Header, NavLink, Flex, Anchor, Tabs } from '@mantine/core'
 import MapContainer from './components/Map'
 import { useAtomValue } from 'jotai'
-import { tilesAtom } from './state'
+import { tilesAtom, useInitTiles } from './state'
 import Tile from './pages/Tile'
 import Tiles from './pages/Tiles'
 
@@ -39,8 +39,7 @@ const router = createBrowserRouter([
 ])
 
 const App = () => {
-  useAtomValue(tilesAtom)
-
+  useInitTiles()
   return (
     <>
       <Header

@@ -1,7 +1,8 @@
 import axios from 'axios'
 import ee from '@google/earthengine'
 import privateKey from './service_account.json' assert { type: 'json' }
-import { earthEngineQueue } from '../queues.js'
+import tilebelt from '@mapbox/tilebelt'
+import * as pocketbase from '../../lib/pocketbase.js'
 import { promiseSeries, stitchTileImages } from '../utils.js'
 
 export const downloadTile = async (url, tile) => {
@@ -28,12 +29,9 @@ export const initEE = () => {
       cachedEEInstance.date &&
       new Date() - cachedEEInstance.date < 600000
     ) {
-      console.log('resolve cached instance')
       resolve(cachedEEInstance.instance.urlFormat)
       return
     }
-
-    console.log('refresh cached instance')
 
     ee.data.authenticateViaPrivateKey(
       privateKey,
@@ -79,26 +77,45 @@ export const initEE = () => {
   })
 }
 
-earthEngineQueue.process(1, async (job, done) => {
-  const { tiles, path } = job.data
+const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
+
+const tileToLandcover = async (id, tile) => {
+  requestInProgress = true
   const googleEEUrl = await initEE()
 
-  let progress = 0
-  try {
-    const landcoverMaps = await promiseSeries(tiles, async (tile) => {
-      const image = await downloadTile(googleEEUrl, tile)
-      job.progress((progress++ / tiles.length) * 100)
-      return image
-    })
-    await stitchTileImages(landcoverMaps, `${path}/landcover.png`)
+  const childTiles = tilebelt.getChildren(tile)
+  const landcoverMaps = await promiseSeries(childTiles, (t) =>
+    downloadTile(googleEEUrl, t)
+  )
+  const stitched = await stitchTileImages(landcoverMaps)
 
-    done()
-  } catch (e) {
-    // probably rate limited, pause the queue for 5 minutes and then restart
-    earthEngineQueue.pause()
-    setTimeout(() => {
-      job.retry()
-      earthEngineQueue.resume()
-    }, 60 * 5 * 1000)
+  const file = new File([stitched], 'landcover.png')
+  await pocketbase.createLandcover(id, file)
+  requestInProgress = false
+}
+
+let requestQueue = []
+let requestInProgress = false
+
+pocketbase.subscribe('tiles', '*', async ({ action, record }) => {
+  if (action == pocketbase.ACTIONS.CREATE) {
+    const tile = [record.x, record.y, record.zoom]
+    console.log('Create tile', tile)
+
+    if (!requestInProgress) {
+      console.log('go ahead')
+      await tileToLandcover(record.id, tile)
+      console.log('done, check queue')
+      while (requestQueue.length) {
+        console.log('run from queue')
+        await wait(2500)
+        const next = requestQueue.shift()
+        await tileToLandcover(next.id, next.tile)
+      }
+      console.log('queue drained')
+    } else {
+      console.log('push to queue')
+      requestQueue.push({ tile, id: record.id })
+    }
   }
 })
