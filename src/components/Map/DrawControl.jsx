@@ -2,8 +2,7 @@ import MapboxDraw from '@mapbox/mapbox-gl-draw'
 import { useAtom, useSetAtom } from 'jotai'
 import { useCallback, useEffect } from 'react'
 import { useControl } from 'react-map-gl'
-import { featuresAtom, mapDrawModeAtom, mapModeAtom } from '../../state'
-import axios from 'axios'
+import { featuresAtom, mapDrawModeAtom } from '../../state'
 
 export default function DrawControl(props) {
   const setMapMode = useSetAtom(mapDrawModeAtom)

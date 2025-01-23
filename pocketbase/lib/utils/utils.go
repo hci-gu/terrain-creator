@@ -5,7 +5,10 @@ import (
 	"image"
 	"image/color"
 	"math"
+	"os"
 	"path"
+	"strconv"
+	"strings"
 
 	"github.com/disintegration/imaging"
 	"github.com/pocketbase/pocketbase/models"
@@ -154,4 +157,39 @@ func GetImageForField(record *models.Record, collection *models.Collection, dir 
 	)
 
 	return src, newFilepath
+}
+
+func GetFilePathForField(record *models.Record, collection *models.Collection, dir string, fieldName string) string {
+	recordFolder := path.Join(dir, "storage", collection.GetId(), record.GetId())
+	if _, err := os.Stat(recordFolder); os.IsNotExist(err) {
+		os.MkdirAll(recordFolder, os.ModePerm)
+	}
+
+	filePath := path.Join(
+		recordFolder,
+		fieldName+".png",
+	)
+	return filePath
+}
+
+func GetFileNameForPath(filePath string) string {
+	return strings.Split(filePath, "/")[len(strings.Split(filePath, "/"))-1]
+}
+
+func CoordsFromBboxString(bboxString string) []float64 {
+	bboxString = strings.Replace(bboxString, "[", "", -1)
+	bboxString = strings.Replace(bboxString, "]", "", -1)
+
+	values := strings.Split(bboxString, ",")
+
+	coords := make([]float64, 0)
+	for _, value := range values {
+		coord, _ := strconv.ParseFloat(value, 64)
+		coords = append(coords, coord)
+	}
+	return coords
+}
+
+func GetCenterOfBbox(bbox []float64) (float64, float64) {
+	return (bbox[0] + bbox[2]) / 2, (bbox[1] + bbox[3]) / 2
 }

@@ -69,7 +69,7 @@ function SearchBox() {
   }
 
   return (
-    <Suspense fallback={<div>Loading...</div>}>
+    <Suspense fallback={<LoadingSpinner />}>
       <Menu
         shadow="md"
         width={200}

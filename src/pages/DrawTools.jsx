@@ -19,7 +19,7 @@ const DrawTools = ({ imgSrc, tile, loading, onSave, onDelete }) => {
 
   const ref = useRef()
   return (
-    <>
+    <Flex direction="column">
       <Flex>
         <CanvasDraw
           //   style={{ transform: 'scale(0.5)', 'transform-origin': '0 0' }}
@@ -34,12 +34,17 @@ const DrawTools = ({ imgSrc, tile, loading, onSave, onDelete }) => {
         />
         <Space w="md" />
         <Flex direction="column">
-          <Text fz={24} fw={700}>
-            Landcovers
-          </Text>
+          <Flex direction="column">
+            <Text fz={24} fw={700} lh={0.8}>
+              Landcovers
+            </Text>
+            <Text fz={16} fw={300}>
+              Percent Coverage
+            </Text>
+          </Flex>
           <Flex>
             <ColorPicker
-              w={32}
+              w={39}
               format="hex"
               value={value}
               onChange={onChange}
@@ -47,11 +52,21 @@ const DrawTools = ({ imgSrc, tile, loading, onSave, onDelete }) => {
               swatches={landcovers.map((color) => color.color)}
               swatchesPerRow={1}
             />
-            <Flex direction="column">
+            <Flex direction="column" mt={6}>
               {landcovers.map((color) => (
-                <Text mt={10} ml={8}>
-                  {color.name} - {coverageForColor(tile, color)}%
-                </Text>
+                <Flex
+                  key={`Color_${color.name}`}
+                  direction="column"
+                  mt={0}
+                  ml={4}
+                >
+                  <Text fz={15} fw={600}>
+                    {color.name}
+                  </Text>
+                  <Text fz={12} fw={300}>
+                    {coverageForColor(tile, color)}%
+                  </Text>
+                </Flex>
               ))}
             </Flex>
 
@@ -86,7 +101,7 @@ const DrawTools = ({ imgSrc, tile, loading, onSave, onDelete }) => {
           Reset
         </Button>
       </Flex>
-    </>
+    </Flex>
   )
 }
 
