@@ -91,7 +91,7 @@ const SimulationLineChart = ({ id }) => {
         >
           <XAxis
             dataKey="day"
-            tickFormatter={(val) => `Day ${val}`}
+            tickFormatter={(val) => `${val}`}
             stroke="#666"
             tick={{ fill: '#666', fontSize: 14, fontWeight: 700 }}
           />
@@ -148,12 +148,35 @@ export const SettingsPanel = ({ options, setOptions }) => {
         Simulation Settings
       </Text>
       <Card withBorder p="md">
+        <Text fw={500} mb="sm">
+          Max Steps
+        </Text>
+        <input
+          type="number"
+          value={options.maxSteps}
+          onChange={(e) =>
+            setOptions((prev) => ({
+              ...prev,
+              maxSteps: parseInt(e.target.value) || 0,
+            }))
+          }
+          min="0"
+          style={{
+            width: '100%',
+            padding: '8px',
+            borderRadius: '4px',
+            border: '1px solid #ced4da',
+          }}
+        />
+        <Space h="md" />
+      </Card>
+      <Card withBorder p="md">
+        <Text fw={500} mb="sm">
+          Fishing Amounts
+        </Text>
         {Object.entries(options.fishingAmounts).map(([species, amount]) => (
-          <div key={species}>
-            <Text>
-              Fishing Amount -{' '}
-              {species.charAt(0).toUpperCase() + species.slice(1)}
-            </Text>
+          <div key={`fishing_${species}`}>
+            <Text>{species.charAt(0).toUpperCase() + species.slice(1)}</Text>
             <Space h="xs" />
             <Slider
               value={amount}
@@ -167,17 +190,54 @@ export const SettingsPanel = ({ options, setOptions }) => {
                 }))
               }
               min={0}
-              max={100}
+              max={10}
+              step={0.01}
               label={(value) => `${value}%`}
               marks={[
                 { value: 0, label: '0%' },
-                { value: 50, label: '50%' },
-                { value: 100, label: '100%' },
+                { value: 0.5, label: '0.5%' },
+                { value: 2, label: '2%' },
+                { value: 5, label: '5%' },
+                { value: 10, label: '10%' },
               ]}
             />
             <Space h="md" />
           </div>
         ))}
+      </Card>
+      <Card withBorder p="md">
+        <Text fw={500} mb="sm">
+          Initial Population
+        </Text>
+        {Object.entries(options.initialPopulation).map(
+          ([species, population]) => (
+            <div key={`population_${species}`}>
+              <Text>{species.charAt(0).toUpperCase() + species.slice(1)}</Text>
+              <Space h="xs" />
+              <input
+                type="number"
+                value={population}
+                onChange={(e) =>
+                  setOptions((prev) => ({
+                    ...prev,
+                    initialPopulation: {
+                      ...prev.initialPopulation,
+                      [species]: parseInt(e.target.value) || 0,
+                    },
+                  }))
+                }
+                min="0"
+                style={{
+                  width: '100%',
+                  padding: '8px',
+                  borderRadius: '4px',
+                  border: '1px solid #ced4da',
+                }}
+              />
+              <Space h="md" />
+            </div>
+          )
+        )}
       </Card>
     </Stack>
   )
@@ -187,10 +247,16 @@ export const Simulations = ({ tile }) => {
   const [selected, setSelected] = useState(tile.simulations?.[0]?.id || null)
   const [showSettings, setShowSettings] = useState(false)
   const [simulationOptions, setSimulationOptions] = useState({
+    maxSteps: 1000,
     fishingAmounts: {
-      herring: 10,
-      spat: 10,
-      cod: 10,
+      herring: 0.26,
+      spat: 0.26,
+      cod: 0.5,
+    },
+    initialPopulation: {
+      herring: 760,
+      spat: 1525,
+      cod: 388,
     },
   })
 
