@@ -27,14 +27,6 @@ const TabContainer = () => {
         >
           <Anchor href="/tiles">Tiles</Anchor>
         </Tabs.Tab>
-        <Tabs.Tab
-          value="wasm"
-          onClick={() => {
-            window.location.href = '/wasm'
-          }}
-        >
-          <Anchor href="/wasm">Wasm</Anchor>
-        </Tabs.Tab>
       </Tabs.List>
     </Tabs>
   )
@@ -63,15 +55,6 @@ const router = createBrowserRouter([
     path: '/tile/:id',
     element: <Tile />,
   },
-
-  // {
-  //   path: '/wasm',
-  //   element: (
-  //     <>
-  //       <TabContainer />
-  //     </>
-  //   ),
-  // },
 ])
 
 const App = () => {

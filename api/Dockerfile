@@ -1,8 +1,10 @@
-FROM node:20-slim AS base
+FROM node:22.13.1-bullseye AS base
 
 COPY . /app
 WORKDIR /app
 
-RUN yarn install
+RUN apt update && apt install -y libvips-dev
 
-CMD [ "yarn", "start" ]
+RUN npm install -g pnpm && pnpm install
+
+CMD [ "pnpm", "start" ]

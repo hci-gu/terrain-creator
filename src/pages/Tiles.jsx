@@ -14,6 +14,7 @@ import styled from '@emotion/styled'
 import { IconDownload } from '@tabler/icons-react'
 import JSZip from 'jszip'
 import SearchBox from '../components/Searchbox'
+import LoadingSpinner from '../components/LoadingSpinner'
 
 const Container = styled.div`
   margin: 24px auto;

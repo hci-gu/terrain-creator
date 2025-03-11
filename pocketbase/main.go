@@ -6,11 +6,15 @@ import (
 	"image/color"
 	"log"
 	"math"
+	"net/http"
+	"net/http/httputil"
+	"net/url"
 	"os"
 	"strings"
 
 	_ "app/migrations"
 
+	"github.com/labstack/echo/v5"
 	"github.com/pocketbase/pocketbase"
 
 	"github.com/disintegration/imaging"
@@ -203,70 +207,49 @@ func main() {
 		return nil
 	})
 
-	// app.OnRecordBeforeDeleteRequest("simulations").Add(func(e *core.RecordDeleteEvent) error {
-	// 	collection, _ := app.Dao().FindCollectionByNameOrId("timesteps")
-	// 	timestepIds := e.Record.Get("timesteps")
+	// Set up reverse proxy
+	targetURL, err := url.Parse("http://130.241.23.169:5000")
+	if err != nil {
+		log.Fatal("Invalid target URL")
+	}
 
-	// 	for _, id := range timestepIds.([]string) {
-	// 		timestep, _ := app.Dao().FindRecordById(collection.GetId(), id)
-	// 		app.Dao().DeleteRecord(timestep)
-	// 	}
-	// 	return nil
-	// })
+	proxy := httputil.NewSingleHostReverseProxy(targetURL)
 
-	// app.OnRecordAfterCreateRequest("simulations").Add(func(e *core.RecordCreateEvent) error {
-	// 	go func(e *core.RecordCreateEvent) { // Start of the goroutine
-	// 		collection, _ := app.Dao().FindCollectionByNameOrId("timesteps")
-	// 		// loop 10 times
-	// 		wolfCount := 20
-	// 		sheepCount := 40
-	// 		for i := 0; i < 50; i++ {
-	// 			timestepWolf := models.NewRecord(collection)
-	// 			timestepWolf.Set("field", "wolves")
-	// 			timestepSheep := models.NewRecord(collection)
-	// 			timestepSheep.Set("field", "sheep")
-	// 			// 50% chance of increasing or decreasing the wolf count
-	// 			// if wolfCount is 0, only increas
-	// 			if wolfCount == 0 {
-	// 				wolfCount += 1
-	// 			} else if rand.Intn(2) == 0 {
-	// 				wolfCount += rand.Intn(3)
-	// 				sheepCount -= rand.Intn(5)
-	// 			} else {
-	// 				wolfCount -= rand.Intn(3)
-	// 				sheepCount += rand.Intn(5)
-	// 			}
+	proxy.ModifyResponse = func(resp *http.Response) error {
+		// Remove existing CORS header to avoid duplicates
+		resp.Header.Del("Access-Control-Allow-Origin")
+		return nil
+	}
 
-	// 			timestepWolf.Set("value", wolfCount)
-	// 			timestepSheep.Set("value", sheepCount)
-	// 			app.Dao().SaveRecord(timestepWolf)
-	// 			app.Dao().SaveRecord(timestepSheep)
+	app.OnBeforeServe().Add(func(e *core.ServeEvent) error {
+		e.Router.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
+			return func(c echo.Context) error {
+				log.Printf("Response status: %d", c.Response().Status)
+				if c.Request().Method == http.MethodOptions {
+					return c.NoContent(http.StatusOK)
+				}
+				return next(c)
+			}
+		})
 
-	// 			timesteps := e.Record.Get("timesteps").([]string)
+		e.Router.POST("/simulate/upload", func(c echo.Context) error {
+			log.Println("POST /simulate/upload")
 
-	// 			e.Record.Set("timesteps", append(timesteps, timestepWolf.Id, timestepSheep.Id))
-	// 			app.Dao().SaveRecord(e.Record)
+			proxy.ServeHTTP(c.Response(), c.Request())
+			return nil
+		})
 
-	// 			time.Sleep(200 * time.Millisecond) // Wait for 1 second.
-	// 			print("timestep created\n")
-	// 		}
-	// 	}(e)
+		e.Router.GET("/simulate/:id", func(c echo.Context) error {
+			proxy.ServeHTTP(c.Response(), c.Request())
+			return nil
+		})
 
-	// 	return nil
-	// })
+		return nil
+	})
 
-	// app.OnBeforeServe().Add(func(e *core.ServeEvent) error {
-	// 	scheduler := cron.New()
-
-	// 	// prints "Hello!" every 2 minutes
-	// 	scheduler.MustAdd("hello", "* * * * *", func() {
-	// 		log.Println("Hello!")
-	// 	})
-
-	// 	scheduler.Start()
-
-	// 	return nil
-	// })
+	if err := app.Start(); err != nil {
+		log.Fatal(err)
+	}
 
 	if err := app.Start(); err != nil {
 		log.Fatal(err)
