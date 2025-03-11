@@ -14,6 +14,7 @@ import styled from '@emotion/styled'
 import { IconDownload } from '@tabler/icons-react'
 import JSZip from 'jszip'
 import SearchBox from '../components/Searchbox'
+import LoadingSpinner from '../components/LoadingSpinner'
 
 const Container = styled.div`
   margin: 24px auto;
@@ -54,12 +55,15 @@ const FiltersContainer = styled.div`
 
 const nameToKey = (name) => name.toLowerCase().replace(' ', '_')
 const coverageForName = (tile, name) => {
+  if (!tile.coverage) {
+    return 0
+  }
   const value = tile.coverage[nameToKey(name)]
 
   if (value === undefined) {
     return 0
   }
-  return (value * 100).toFixed(2)
+  return value.toFixed(2)
 }
 
 const ColorBlock = ({ color }) => {
@@ -127,18 +131,16 @@ const LandcoverFilters = () => {
           key={`Filter_${landCover.name}`}
         />
       ))}
-      <LocationDistanceSlider />
+      {/* <LocationDistanceSlider /> */}
     </FiltersContainer>
   )
 }
 
-const TileList = () => {
+const TileList = ({ tiles }) => {
   const [selectedLandcover, setSelectedLandcover] = useState({
     direction: 'asc',
     name: '',
   })
-
-  const tiles = useAtomValue(filteredTilesAtom)
 
   return (
     <div>
@@ -195,21 +197,21 @@ const TileList = () => {
                 <Image
                   key={`${tile.id}_satellite`}
                   src={tile.satellite}
-                  max-height={100}
-                  max-width={100}
+                  max-height={50}
+                  max-width={50}
                 />
               </td>
               <td>
                 <Image
                   key={`${tile.id}_landcover`}
-                  src={tile.landcover}
-                  max-height={100}
-                  max-width={100}
+                  src={tile.landcover.url}
+                  max-height={50}
+                  max-width={50}
                 />
               </td>
               {landcovers.map((landCover) => (
                 <td key={`${landCover.name}_${tile.id}`}>
-                  {coverageForName(tile, landCover.name)}%
+                  {coverageForName(tile.landcover, landCover.name)}%
                 </td>
               ))}
             </tr>
@@ -221,23 +223,22 @@ const TileList = () => {
   )
 }
 
-const DownloadButton = () => {
-  const tiles = useAtomValue(filteredTilesAtom)
+const DownloadButton = ({ tiles }) => {
   const download = async () => {
     const zip = new JSZip()
-    const texturesFolder = zip.folder('textures')
-    const landcoversFolder = zip.folder('landcovers')
-    const geotiffsFolder = zip.folder('geotiffs')
+    const texturesFolder = zip.folder('landcovers')
+    const landcoversFolder = zip.folder('landcovers_small')
+    // const geotiffsFolder = zip.folder('geotiffs')
 
     for (let tile of tiles) {
-      const [texture, landcover, geoTiff] = await Promise.all([
-        fetch(tile.textureSmall).then((res) => res.blob()),
-        fetch(tile.landcoverSmall).then((res) => res.blob()),
-        fetch(tile.geoTiffSmall).then((res) => res.blob()),
+      const [landcover, landcover_small] = await Promise.all([
+        fetch(tile.landcover.url).then((res) => res.blob()),
+        fetch(tile.landcover.url_small).then((res) => res.blob()),
+        // fetch(tile.geoTiffSmall).then((res) => res.blob()),
       ])
-      texturesFolder.file(`${tile.id}.png`, texture)
-      landcoversFolder.file(`${tile.id}.png`, landcover)
-      geotiffsFolder.file(`${tile.id}.tif`, geoTiff)
+      texturesFolder.file(`${tile.id}.png`, landcover)
+      landcoversFolder.file(`${tile.id}.png`, landcover_small)
+      // geotiffsFolder.file(`${tile.id}.tif`, geoTiff)
     }
 
     // download the zip
@@ -259,18 +260,19 @@ const DownloadButton = () => {
 }
 
 export default function Tiles() {
+  const tiles = useAtomValue(filteredTilesAtom)
   return (
     <Container>
       <header>
-        <h1>Tiles</h1>
+        <h1>Tiles - {tiles.length}</h1>
         <SearchBox />
-        <Suspense fallback={() => <div>Loading...</div>}>
-          <DownloadButton />
+        <Suspense fallback={<LoadingSpinner />}>
+          <DownloadButton tiles={tiles} />
         </Suspense>
       </header>
 
-      <Suspense fallback={() => <div>Loading...</div>}>
-        <TileList />
+      <Suspense fallback={<LoadingSpinner />}>
+        <TileList tiles={tiles} />
       </Suspense>
     </Container>
   )

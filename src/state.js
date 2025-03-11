@@ -1,59 +1,109 @@
-import { atom, useAtomValue } from 'jotai'
-import { atomFamily, atomWithDefault } from 'jotai/utils'
-import { useParams } from 'react-router-dom'
-import axios from 'axios'
+import { atom, useSetAtom } from 'jotai'
+import { atomFamily } from 'jotai/utils'
 import _ from 'lodash'
-
-const API_URL = import.meta.env.VITE_API_URL
+import * as pocketbase from './pocketbase'
+import { useEffect, useMemo } from 'react'
 
 export const landcovers = [
   {
     color: '#419BDF',
     name: 'Water',
+    spawnSettings: {
+      sheep: 0.0,
+      fox: 0.0,
+      goat: 0.0,
+    },
   },
   {
     color: '#397D49',
     name: 'Trees',
+    spawnSettings: {
+      sheep: 0.25,
+      fox: 0.25,
+      goat: 0.1,
+    },
   },
   {
     color: '#88B053',
     name: 'Grass',
+    spawnSettings: {
+      sheep: 0.5,
+      fox: 0.5,
+      goat: 0.25,
+    },
   },
   {
     color: '#DFC35A',
     name: 'Shrub',
+    spawnSettings: {
+      sheep: 0.1,
+      fox: 0.25,
+      goat: 0.1,
+    },
   },
   {
     color: '#E49635',
     name: 'Crops',
+    spawnSettings: {
+      sheep: 0.1,
+      fox: 0.1,
+      goat: 0.1,
+    },
   },
   {
     color: '#C4281B',
     name: 'Built',
+    spawnSettings: {
+      sheep: 0,
+      fox: 0,
+      goat: 0,
+    },
   },
   {
     color: '#5e6572',
     name: 'Bare',
+    spawnSettings: {
+      sheep: 0.05,
+      fox: 0.05,
+      goat: 0.25,
+    },
   },
   {
     color: '#B39FE1',
     name: 'Snow',
+    spawnSettings: {
+      sheep: 0.05,
+      fox: 0.05,
+      goat: 0.25,
+    },
   },
   {
     color: '#7A87C6',
     name: 'Flooded vegetation',
+    spawnSettings: {
+      sheep: 0.05,
+      fox: 0.05,
+      goat: 0,
+    },
   },
 ]
+
+export const landcoverMap = _.keyBy(landcovers, 'name')
+
+export const defaultSpawnForLandcoverAndAnimal = (landcover, animal) => {
+  return landcoverMap[landcover].spawnSettings[animal]
+}
+
 const nameToKey = (name) => name.toLowerCase().replace(' ', '_')
 
 export const mapViewportAtom = atom({
-  longitude: 10.530891,
-  latitude: 46.450686,
+  longitude: 18.530891,
+  latitude: 56.450686,
   // longitude: 12.1172326,
   // latitude: 57.301663,
   // longitude: 12.327145,
   // latitude: 45.438759,
-  zoom: 13,
+  zoom: 5,
 })
 
 export const mapBoundsAtom = atom(null)
@@ -67,96 +117,167 @@ const _boundsToQuery = (bounds) => {
   return `bounds=${[lat1, lon1, lat2, lon2].join(',')}`
 }
 
-export const tilesAtom = atom(async (get, { signal }) => {
-  const response = await axios.get(`${API_URL}/tiles`, { signal })
+export const tilesAtom = atom([])
 
-  return response.data
-})
+export const filteredTilesAtom = atom((get) => {
+  const tiles = get(tilesAtom)
 
-export const mapTilesAtom = atom(async (get, { signal }) => {
-  const bounds = get(mapBoundsAtom)
+  const landcoverFilters = get(landcoverFiltersAtom)
 
-  if (!bounds) return []
-  const query = _boundsToQuery(bounds)
+  const filteredTiles = tiles.filter((tile) => {
+    const landcover = tile.landcover
+    if (!landcover || !landcover.coverage) return false
 
-  const response = await axios.get(`${API_URL}/tiles?${query}`, { signal })
-
-  return response.data
-})
-
-function toRadians(degrees) {
-  return (degrees * Math.PI) / 180
-}
-
-function haversineDistance(lat1, lon1, lat2, lon2) {
-  const R = 6371 // Earth's radius in kilometers
-  const dLat = toRadians(lat2 - lat1)
-  const dLon = toRadians(lon2 - lon1)
-  const a =
-    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos(toRadians(lat1)) *
-      Math.cos(toRadians(lat2)) *
-      Math.sin(dLon / 2) *
-      Math.sin(dLon / 2)
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
-  return R * c // Distance in kilometers
-}
-
-export const filteredTilesAtom = atom(async (get) => {
-  const tiles = await get(tilesAtom)
-  const filters = get(landcoverFiltersAtom)
-  const { location } = get(locationFilterAtom)
-  const locationDistance = get(locationFilterDistanceAtom)
-
-  return tiles.filter((tile) => {
-    const coverage = tile.coverage || {}
-    const filtered = Object.keys(filters).every((filter) => {
-      if (filter[0] == 0 && filter[1] == 100) return true
-
-      return (
-        coverage[nameToKey(filter)] >= filters[filter][0] / 100 &&
-        coverage[nameToKey(filter)] <= filters[filter][1] / 100
-      )
-    })
-
-    if (location) {
-      // check distance to location
-      // const distance = Math.sqrt(
-      //   Math.pow(tile.center[0] - location[0], 2) +
-      //     Math.pow(tile.center[1] - location[1], 2)
-      // )
-      const distance = haversineDistance(
-        tile.center[0],
-        tile.center[1],
-        location[0],
-        location[1]
-      )
-      return filtered && distance < locationDistance
+    let allow = true
+    for (const [name, [min, max]] of Object.entries(landcoverFilters)) {
+      const value = landcover.coverage[nameToKey(name)] ?? 0
+      if (value < min || value > max) {
+        allow = false
+      }
     }
 
-    return filtered
+    return allow
   })
-})
-export const refreshTilesAtom = atom(null, async (get, set, signal) => {
-  const response = await axios.get(`${API_URL}/tiles`, { signal })
 
-  set(tilesAtom, response.data)
+  console.log(filteredTiles.length, tiles.length, filteredTiles)
+
+  return filteredTiles
 })
+
+export const initializeTilesAtom = atom(
+  (get) => get(tilesAtom),
+  (get, set, action) => {
+    // Fetch initial tiles data
+    pocketbase.getTiles().then((tiles) => {
+      set(tilesAtom, tiles)
+    })
+
+    pocketbase.subscribe(
+      'tiles',
+      '*',
+      (e) => {
+        set(tilesAtom, (prevTiles) => {
+          switch (e.action) {
+            case 'create':
+              return [e.record, ...prevTiles]
+            case 'update':
+              return prevTiles.map((tile) =>
+                tile.id === e.record.id ? e.record : tile
+              )
+            case 'delete':
+              return prevTiles.filter((tile) => tile.id !== e.record.id)
+            default:
+              return prevTiles
+          }
+        })
+      },
+      true,
+      'landcover,heightmap,oceanData,simulations'
+    )
+
+    pocketbase.subscribe(
+      'landcovers',
+      '*',
+      (e) => {
+        set(tilesAtom, (prevTiles) => {
+          const tile = prevTiles.find(
+            (tile) => tile.landcover.id === e.record.id
+          )
+          if (!tile) return prevTiles
+
+          return prevTiles.map((t) =>
+            t.id === tile.id ? { ...tile, landcover: e.record } : t
+          )
+        })
+      },
+      true
+    )
+
+    // pocketbase.subscribe(
+    //   'simulations',
+    //   '*',
+    //   (e) => {
+    //     set(tilesAtom, (prevTiles) => {
+    //       const tile = prevTiles.find((tile) =>
+    //         tile.simulations?.find((s) => s.id === e.record.id)
+    //       )
+    //       if (!tile) return prevTiles
+
+    //       return prevTiles.map((t) => {
+    //         console.log('UPDATE TILE', t)
+    //         if (t.id === tile.id) {
+    //           let simulations = []
+    //           switch (e.action) {
+    //             case 'create':
+    //               simulations = [e.record, ...t.simulations]
+    //               break
+    //             case 'update':
+    //               simulations = t.simulations.map((s) =>
+    //                 s.id === e.record.id ? e.record : s
+    //               )
+    //               break
+    //             case 'delete':
+    //               simulations = t.simulations.filter(
+    //                 (s) => s.id !== e.record.id
+    //               )
+    //             default:
+    //           }
+    //           return { ...t, simulations }
+    //         }
+    //         return t
+    //       })
+    //     })
+    //   },
+    //   true,
+    //   'timesteps'
+    // )
+  }
+)
+
+export const useInitTiles = () => {
+  const initializeTiles = useSetAtom(initializeTilesAtom)
+  const memo = useMemo(() => ({ inited: false }), [])
+
+  useEffect(() => {
+    if (memo.inited) return
+    memo.inited = true
+    initializeTiles()
+  }, [memo])
+}
 
 export const tileAtom = atomFamily((id) =>
-  atom(async () => {
-    const response = await axios.get(`${API_URL}/tile/${id}`)
-    return response.data
+  atom((get) => {
+    return get(tilesAtom).find((tile) => tile.id === id)
   })
 )
 
-// export const useTile = () => {
-//   const [tile, setTile] = useState(null)
-//   const { id } = useParams()
-//   const tiles = useAtomValue(tilesAtom)
+export const spawnSettingsAtom = atom(
+  landcovers.reduce((acc, curr) => {
+    acc[curr.name] = curr.spawnSettings
+    return acc
+  }, {})
+)
+export const simulationAtom = atomFamily((id) =>
+  atom(async (get) => {
+    const tiles = get(tilesAtom)
+    const tile = tiles.find((tile) =>
+      tile.simulations?.find((sim) => sim.id === id)
+    )
 
-//   return tiles.find((tile) => tile.id === id)
-// }
+    if (!tile) return
+    console.log('simAtom, ', tile)
+
+    const sim = tile.simulations.find((sim) => sim.id === id)
+    return sim
+  })
+)
+
+export const timestepsAtom = atomFamily((id) =>
+  atom(async (_) => {
+    const timesteps = await pocketbase.timestepsForSimulation(id)
+    return timesteps
+  })
+)
 
 export const locationFilterAtom = atom({})
 

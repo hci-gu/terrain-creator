@@ -1,26 +1,22 @@
 import React, { useEffect, useState } from 'react'
 import '@mapbox/mapbox-gl-draw/dist/mapbox-gl-draw.css'
-import axios from 'axios'
-import { useAtom, useAtomValue, useSetAtom } from 'jotai'
+import { useAtom, useAtomValue } from 'jotai'
 import {
   CREATE_MODE,
   featuresAtom,
   mapDrawModeAtom,
   mapModeAtom,
-  refreshTilesAtom,
 } from '../../state'
-import { Checkbox, Space, Flex, Text, Button } from '@mantine/core'
-
-const API_URL = import.meta.env.VITE_API_URL
+import { Checkbox, Space, Flex, Text, Button, Slider } from '@mantine/core'
+import * as pocketbase from '../../pocketbase'
 
 const CreateTiles = ({ mapRef }) => {
   const [includeLandcover, setIncludeLandcover] = useState(true)
   const [includeHeightmap, setIncludeHeightmap] = useState(true)
-  const [highResMode, setHighResMode] = useState(false)
+  const [zoomLevel, setZoomLevel] = useState(11)
 
   const mapMode = useAtomValue(mapModeAtom)
   const drawMode = useAtomValue(mapDrawModeAtom)
-  const refreshTiles = useSetAtom(refreshTilesAtom)
   const [features, setFeatures] = useAtom(featuresAtom)
 
   useEffect(() => {
@@ -29,9 +25,9 @@ const CreateTiles = ({ mapRef }) => {
     mapRef.current.getMap().showTileBoundaries = mapMode == CREATE_MODE
     if (mapMode == CREATE_MODE) {
       // set zoom to 12, animate it
-      mapRef.current.getMap().setZoom(highResMode ? 13 : 11)
+      mapRef.current.getMap().setZoom(zoomLevel)
     }
-  }, [mapRef, highResMode, drawMode])
+  }, [mapRef, zoomLevel, drawMode])
 
   const onClick = async () => {
     if (!Object.keys(features).length || !mapRef.current) return
@@ -40,14 +36,15 @@ const CreateTiles = ({ mapRef }) => {
     const mapInstance = mapRef.current.getMap()
     const currentZoom = Math.round(mapInstance.getZoom())
 
-    await axios.post(`${API_URL}/area`, {
+    console.log({
       coords: feature.geometry.coordinates[0],
       zoom: currentZoom,
-      createHeightMap: includeHeightmap,
-      createLandcover: includeLandcover,
     })
-    await wait(1000)
-    refreshTiles()
+
+    pocketbase.createTiles({
+      coords: feature.geometry.coordinates[0],
+      zoom: currentZoom,
+    })
   }
 
   const onClear = () => {
@@ -87,13 +84,17 @@ const CreateTiles = ({ mapRef }) => {
         <Text fw={500}>Create heightmap</Text>
       </Flex>
       <Space h="sm" />
-      <Flex align="center">
-        <Checkbox
-          checked={highResMode}
-          onChange={() => setHighResMode((v) => !v)}
+      <Flex align="center" direction="column">
+        <Text fw={500}>ZoomLevel</Text>
+        <Space h="xs" />
+        <Slider
+          w={200}
+          value={zoomLevel}
+          onChange={(v) => setZoomLevel(parseInt(v))}
+          min={3}
+          max={15}
+          step={1}
         />
-        <Space w="sm" />
-        <Text fw={500}>High res mode</Text>
       </Flex>
       <Space h="md" />
       <Button onClick={onClick} disabled={!hasFeatures}>

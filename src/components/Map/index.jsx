@@ -8,9 +8,9 @@ import {
   VIEW_MODE,
   mapBoundsAtom,
   mapModeAtom,
-  mapTilesAtom,
   mapViewportAtom,
   tileAtom,
+  tilesAtom,
 } from '../../state'
 import styled from '@emotion/styled'
 import {
@@ -102,7 +102,7 @@ const MapWrapper = ({ children, onClick, mapRef }) => {
 
 const TileList = () => {
   const navigate = useNavigate()
-  const tiles = useAtomValue(mapTilesAtom)
+  const tiles = useAtomValue(tilesAtom)
 
   return (
     <ScrollArea h={400}>
@@ -111,13 +111,14 @@ const TileList = () => {
       </Text>
       <Flex direction="column" s>
         {tiles.map((tile) => (
-          <Card onClick={() => navigate(`/tile/${tile.id}`)} withBorder mb={16}>
+          <Card
+            onClick={() => navigate(`/tile/${tile.id}`)}
+            withBorder
+            mb={16}
+            key={`TileListItem_${tile.id}`}
+          >
             <Flex>
-              <ImageComponent
-                src={tile.landcover}
-                width={100}
-                fallbackSrc={`${URL}/images/loading.png`}
-              />
+              <ImageComponent src={tile.landcover.url} width={100} />
               {tile && tile.center && (
                 <Flex direction="column" p={8}>
                   <Text>
@@ -142,7 +143,7 @@ const MapContainer = () => {
   const navigate = useNavigate()
   const map = useRef(null)
   const mapMode = useAtomValue(mapModeAtom)
-  const tiles = useAtomValue(mapTilesAtom)
+  const tiles = useAtomValue(tilesAtom)
   const { id } = useParams()
   const tile = useAtomValue(tileAtom(id))
   const [tileOpacity, setTileOpacity] = useState(0.65)
@@ -151,11 +152,7 @@ const MapContainer = () => {
   const tilesLayerData = tiles.map((tile) => ({
     id: tile.id,
     type: 'image',
-    url: tile.landcover
-      ? `${URL}${tile.landcover}`
-      : tile.heightmap
-      ? tile.heightmap
-      : `${URL}/images/loading.png`,
+    url: tile.landcover.url,
     coordinates: [
       [tile.bbox[0], tile.bbox[3]],
       [tile.bbox[2], tile.bbox[3]],
@@ -184,11 +181,8 @@ const MapContainer = () => {
     const mapInstance = map.current.getMap()
     const diff = tile.center[0] - tile.bbox[0]
     const offsetCenter = [tile.center[0] + diff * 2.25, tile.center[1]]
-    const tileChildrenZoom = tile.tiles.map((t) => t.tile[2])
-    const minZoom = Math.min(...tileChildrenZoom)
     mapInstance.flyTo({
       center: offsetCenter,
-      zoom: minZoom - 1,
     })
   }, [tile, map.current])
 
@@ -239,7 +233,8 @@ const MapContainer = () => {
             />
           )} */}
           {mapMode == CREATE_MODE && <CreateTiles mapRef={map} />}
-          {mapMode == VIEW_MODE && <TileList />}
+          {mapMode == CREATE_MODE && <Space h="md" />}
+          <TileList />
         </Card>
       </MapControlsContainer>
     </Container>

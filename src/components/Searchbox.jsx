@@ -7,6 +7,7 @@ import axios from 'axios'
 import { useAtom, useSetAtom } from 'jotai'
 import { locationFilterAtom } from '../state'
 import { IconX } from '@tabler/icons-react'
+import LoadingSpinner from './LoadingSpinner'
 
 const StyledTextInput = styled(TextInput)`
   position: relative;
@@ -69,7 +70,7 @@ function SearchBox() {
   }
 
   return (
-    <Suspense fallback={<div>Loading...</div>}>
+    <Suspense fallback={<LoadingSpinner />}>
       <Menu
         shadow="md"
         width={200}
