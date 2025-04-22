@@ -4,11 +4,16 @@ import { useCallback, useEffect } from 'react'
 import { useControl } from 'react-map-gl'
 import { featuresAtom, mapDrawModeAtom } from '../../state'
 
-export default function DrawControl(props) {
+export default function DrawControl({
+  onCreate = () => {},
+  onUpdate = () => {},
+  onDelete = () => {},
+  ...props
+}) {
   const setMapMode = useSetAtom(mapDrawModeAtom)
   const [features, setFeatures] = useAtom(featuresAtom)
 
-  const onUpdate = useCallback((e) => {
+  const onUpdateCallback = useCallback((e) => {
     setFeatures((currFeatures) => {
       const newFeatures = { ...currFeatures }
       for (const f of e.features) {
@@ -18,7 +23,7 @@ export default function DrawControl(props) {
     })
   }, [])
 
-  const onDelete = useCallback((e) => {
+  const onDeleteCallback = useCallback((e) => {
     setFeatures((currFeatures) => {
       const newFeatures = { ...currFeatures }
       for (const f of e.features) {
@@ -31,17 +36,17 @@ export default function DrawControl(props) {
   const control = useControl(
     () => new MapboxDraw(props),
     ({ map }) => {
-      map.on('draw.create', onUpdate)
-      map.on('draw.update', onUpdate)
-      map.on('draw.delete', onDelete)
+      map.on('draw.create', onUpdateCallback)
+      map.on('draw.update', onUpdateCallback)
+      map.on('draw.delete', onDeleteCallback)
       map.on('draw.modechange', (e) => {
         setMapMode(e.mode)
       })
     },
     ({ map }) => {
-      map.off('draw.create', onUpdate)
-      map.off('draw.update', onUpdate)
-      map.off('draw.delete', onDelete)
+      map.off('draw.create', onUpdateCallback)
+      map.off('draw.update', onUpdateCallback)
+      map.off('draw.delete', onDeleteCallback)
     },
     {
       position: props.position,

@@ -3,8 +3,15 @@ import { useState } from 'react'
 import { useControl } from 'react-map-gl'
 import MapboxGeocoder from '@mapbox/mapbox-gl-geocoder'
 
-export default function GeocoderControl(props) {
-  const [marker, setMarker] = useState(null)
+export default function GeocoderControl({
+  marker = true,
+  onLoading = () => {},
+  onResults = () => {},
+  onResult = () => {},
+  onError = () => {},
+  ...props
+}) {
+  const [geocoderMarker, setMarker] = useState(null)
 
   const geocoder = useControl(
     () => {
@@ -13,12 +20,12 @@ export default function GeocoderControl(props) {
         marker: false,
         accessToken: import.meta.env.VITE_MAPBOX_ACCESS_TOKEN,
       })
-      ctrl.on('loading', props.onLoading)
-      ctrl.on('results', props.onResults)
+      ctrl.on('loading', onLoading)
+      ctrl.on('results', onResults)
       ctrl.on('result', (evt) => {
-        props.onResult(evt)
+        onResult(evt)
       })
-      ctrl.on('error', props.onError)
+      ctrl.on('error', onError)
       return ctrl
     },
     {
@@ -96,7 +103,7 @@ export default function GeocoderControl(props) {
     //   geocoder.setWorldview(props.worldview);
     // }
   }
-  return marker
+  return geocoderMarker
 }
 
 const noop = () => {}

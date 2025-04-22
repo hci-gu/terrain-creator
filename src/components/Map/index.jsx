@@ -109,7 +109,7 @@ const TileList = () => {
       <Text fz={24} fw={700}>
         Tiles - {tiles.length}
       </Text>
-      <Flex direction="column" s>
+      <Flex direction="column">
         {tiles.map((tile) => (
           <Card
             onClick={() => navigate(`/tile/${tile.id}`)}
@@ -211,6 +211,24 @@ const MapContainer = () => {
             trash: true,
             // point: true,
           }}
+          styles={[
+            // Default line style override for cold/hot state
+            {
+              id: 'gl-draw-line',
+              type: 'line',
+              filter: ['all', ['==', '$type', 'LineString'], ['!=', 'mode', 'static']],
+              layout: {
+                'line-cap': 'round',
+                'line-join': 'round',
+              },
+              paint: {
+                'line-color': '#D20C0C',
+                'line-dasharray': ['literal', [0.2, 2]], // Corrected format
+                'line-width': 2,
+              },
+            },
+            // Add other default styles if needed, or rely on MapboxDraw defaults for others
+          ]}
         />
       </MapWrapper>
       <MapControlsContainer>

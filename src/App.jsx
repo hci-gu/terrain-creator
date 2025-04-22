@@ -55,7 +55,12 @@ const router = createBrowserRouter([
     path: '/tile/:id',
     element: <Tile />,
   },
-])
+], {
+  future: {
+    v7_startTransition: true,
+    v7_relativeSplatPath: true
+  }
+})
 
 const App = () => {
   useInitTiles()
