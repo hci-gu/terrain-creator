@@ -11,6 +11,7 @@ import {
   mapViewportAtom,
   tileAtom,
   tilesAtom,
+  mapDrawModeAtom,
 } from '../../state'
 import styled from '@emotion/styled'
 import {
@@ -55,9 +56,12 @@ const boundsEqual = (a, b) => {
 
 const MapWrapper = ({ children, onClick, mapRef }) => {
   const [initialLoad, setInitialLoad] = useState(false)
-  const mapMode = useAtomValue(mapModeAtom)
+  const drawMode = useAtomValue(mapDrawModeAtom)
   const setBounds = useSetAtom(mapBoundsAtom)
   const viewport = useAtomValue(mapViewportAtom)
+  
+  // Disable dragging when in drawing mode
+  const isDrawing = drawMode === 'draw_polygon'
 
   useEffect(() => {
     if (!mapRef.current) return
@@ -90,8 +94,10 @@ const MapWrapper = ({ children, onClick, mapRef }) => {
         width: '100%',
         height: '100%',
       }}
-      scrollZoom={mapMode != CREATE_MODE}
-      doubleClickZoom={mapMode != CREATE_MODE}
+      scrollZoom={!isDrawing}
+      doubleClickZoom={!isDrawing}
+      dragPan={!isDrawing}
+      dragRotate={!isDrawing}
       mapStyle="mapbox://styles/mapbox/satellite-v9"
       onClick={onClick}
     >
@@ -188,7 +194,7 @@ const MapContainer = () => {
 
   return (
     <Container>
-      <MapWrapper mapRef={map} onClick={handleMapClick}>
+      <MapWrapper mapRef={map} onClick={mapMode !== CREATE_MODE ? handleMapClick : undefined}>
         {tilesLayerData.map((data) => (
           <Source {...data} key={`Tile_${data.id}`}>
             <Layer
@@ -211,24 +217,6 @@ const MapContainer = () => {
             trash: true,
             // point: true,
           }}
-          styles={[
-            // Default line style override for cold/hot state
-            {
-              id: 'gl-draw-line',
-              type: 'line',
-              filter: ['all', ['==', '$type', 'LineString'], ['!=', 'mode', 'static']],
-              layout: {
-                'line-cap': 'round',
-                'line-join': 'round',
-              },
-              paint: {
-                'line-color': '#D20C0C',
-                'line-dasharray': ['literal', [0.2, 2]], // Corrected format
-                'line-width': 2,
-              },
-            },
-            // Add other default styles if needed, or rely on MapboxDraw defaults for others
-          ]}
         />
       </MapWrapper>
       <MapControlsContainer>

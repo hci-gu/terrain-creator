@@ -10,7 +10,7 @@ export default function DrawControl({
   onDelete = () => {},
   ...props
 }) {
-  const setMapMode = useSetAtom(mapDrawModeAtom)
+  const setMapDrawMode = useSetAtom(mapDrawModeAtom)
   const [features, setFeatures] = useAtom(featuresAtom)
 
   const onUpdateCallback = useCallback((e) => {
@@ -34,13 +34,15 @@ export default function DrawControl({
   }, [])
 
   const control = useControl(
-    () => new MapboxDraw(props),
+    () => new MapboxDraw({
+      ...props
+    }),
     ({ map }) => {
       map.on('draw.create', onUpdateCallback)
       map.on('draw.update', onUpdateCallback)
       map.on('draw.delete', onDeleteCallback)
       map.on('draw.modechange', (e) => {
-        setMapMode(e.mode)
+        setMapDrawMode(e.mode)
       })
     },
     ({ map }) => {
