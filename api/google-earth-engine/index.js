@@ -174,10 +174,13 @@ const tileToOceanData = async (id, tile) => {
   )
   const depth = await generateElevationImage(tile)
 
+  // const oceanFloorData
+
   const oceanData = await pb.collection('oceanData').create({
     water_velocity: new File([waterVelocity], 'water_velocity.png'),
     water_temperature: new File([waterTemperature], 'water_temperature.png'),
     depth: new File([depth], 'depth.png'),
+    floor_features: new File([], 'floor_features.png'),
   })
   await pb.collection('tiles').update(id, { oceanData: oceanData.id })
 
