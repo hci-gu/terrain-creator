@@ -4,6 +4,21 @@ import _ from 'lodash'
 import * as pocketbase from './pocketbase'
 import { useEffect, useMemo } from 'react'
 
+export const oceancovers = [
+  {
+    color: '#FCFDAF',
+    name: 'Sand',
+  },
+  {
+    color: '#07243E',
+    name: 'Deep ocean',
+  },
+  {
+    color: '#419BDF',
+    name: 'Ocean',
+  },
+]
+
 export const landcovers = [
   {
     color: '#419BDF',
@@ -89,6 +104,22 @@ export const landcovers = [
 ]
 
 export const landcoverMap = _.keyBy(landcovers, 'name')
+const hexToRgb = (hex) => {
+  const r = parseInt(hex.substring(1, 3), 16)
+  const g = parseInt(hex.substring(3, 5), 16)
+  const b = parseInt(hex.substring(5, 7), 16)
+  return [r, g, b]
+}
+export const rgbForLandcoverType = (landcover) => {
+  const hexColor = landcoverMap[landcover].color
+
+  return hexToRgb(hexColor)
+}
+export const rgbForOceanType = (oceancover) => {
+  const hexColor = oceancovers.find((cover) => cover.name === oceancover).color
+
+  return hexToRgb(hexColor)
+}
 
 export const defaultSpawnForLandcoverAndAnimal = (landcover, animal) => {
   return landcoverMap[landcover].spawnSettings[animal]
@@ -138,8 +169,6 @@ export const filteredTilesAtom = atom((get) => {
 
     return allow
   })
-
-  console.log(filteredTiles.length, tiles.length, filteredTiles)
 
   return filteredTiles
 })
