@@ -81,7 +81,7 @@ const mapOceanData = (oceanData) => {
           oceanData.water_temperature
         ),
       }
-    : {}
+    : null
 }
 
 const mapTimestep = (timestep) => {
@@ -197,6 +197,14 @@ export const timestepsForSimulation = (id) =>
     filter: `simulation = "${id}"`,
   })
 
+export const getSimulationAgents = async () => {
+  const agentsResponse = await axios.get(`${SIMULATION_URL}/simulate/agents`)
+
+  console.log('agentsResponse', agentsResponse.data)
+
+  return agentsResponse.data
+}
+
 export const createSimulation = async (tile, simulationOptions) => {
   if (!tile?.landcover?.url_small || !tile?.oceanData?.depth_url) {
     throw new Error('Missing required tile data for simulation')
@@ -219,6 +227,9 @@ export const createSimulation = async (tile, simulationOptions) => {
   const formData = new FormData()
   formData.append('texture', textureFile)
   formData.append('depth', depthFile)
+  if (!simulationOptions.agent) {
+    delete simulationOptions.agent
+  }
   formData.append('options', JSON.stringify(simulationOptions))
 
   const uploadResponse = await axios.post(

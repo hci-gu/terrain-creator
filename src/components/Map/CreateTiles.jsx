@@ -23,11 +23,7 @@ const CreateTiles = ({ mapRef }) => {
     if (!mapRef.current) return
 
     mapRef.current.getMap().showTileBoundaries = mapMode == CREATE_MODE
-    if (mapMode == CREATE_MODE) {
-      // set zoom to 12, animate it
-      mapRef.current.getMap().setZoom(zoomLevel)
-    }
-  }, [mapRef, zoomLevel, drawMode])
+  }, [mapRef, drawMode])
 
   const onClick = async () => {
     if (!Object.keys(features).length || !mapRef.current) return

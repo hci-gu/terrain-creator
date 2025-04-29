@@ -22,6 +22,8 @@ import {
   Stack,
   Card,
   Slider,
+  NativeSelect,
+  Input,
 } from '@mantine/core'
 import { IconTrashFilled } from '@tabler/icons-react'
 import { useEffect } from 'react'
@@ -141,6 +143,35 @@ const SimulationLineChart = ({ id }) => {
   )
 }
 
+const AgentSelect = ({ options, setOptions }) => {
+  const [agents, setAgents] = useState([])
+
+  useEffect(() => {
+    pocketbase.getSimulationAgents().then((agents) => {
+      setAgents(agents)
+    })
+  }, [])
+
+  return (
+    <div>
+      <Text fw={500} mb="sm">
+        Select agent
+      </Text>
+      <NativeSelect
+        data={agents}
+        placeholder="Select agent"
+        value={options.agent}
+        onChange={(e) => {
+          setOptions((prev) => ({
+            ...prev,
+            agent: e.target.value,
+          }))
+        }}
+      />
+    </div>
+  )
+}
+
 export const SettingsPanel = ({ options, setOptions }) => {
   return (
     <Stack gap="md">
@@ -148,27 +179,26 @@ export const SettingsPanel = ({ options, setOptions }) => {
         Simulation Settings
       </Text>
       <Card withBorder p="md">
-        <Text fw={500} mb="sm">
-          Max Steps
-        </Text>
-        <input
-          type="number"
-          value={options.maxSteps}
-          onChange={(e) =>
-            setOptions((prev) => ({
-              ...prev,
-              maxSteps: parseInt(e.target.value) || 0,
-            }))
-          }
-          min="0"
-          style={{
-            width: '100%',
-            padding: '8px',
-            borderRadius: '4px',
-            border: '1px solid #ced4da',
-          }}
-        />
-        <Space h="md" />
+        <Flex>
+          <Flex direction="column">
+            <Text fw={500} mb="sm">
+              Max Steps
+            </Text>
+            <Input
+              type="number"
+              value={options.maxSteps}
+              onChange={(e) =>
+                setOptions((prev) => ({
+                  ...prev,
+                  maxSteps: parseInt(e.target.value) || 0,
+                }))
+              }
+              min="0"
+            />
+          </Flex>
+          <Space w="md" />
+          <AgentSelect options={options} setOptions={setOptions} />
+        </Flex>
       </Card>
       <Card withBorder p="md">
         <Text fw={500} mb="sm">
@@ -234,7 +264,6 @@ export const SettingsPanel = ({ options, setOptions }) => {
                   border: '1px solid #ced4da',
                 }}
               />
-              <Space h="md" />
             </div>
           )
         )}
@@ -247,6 +276,7 @@ export const Simulations = ({ tile }) => {
   const [selected, setSelected] = useState(tile.simulations?.[0]?.id || null)
   const [showSettings, setShowSettings] = useState(false)
   const [simulationOptions, setSimulationOptions] = useState({
+    agent: null,
     maxSteps: 1000,
     fishingAmounts: {
       herring: 0.26,
