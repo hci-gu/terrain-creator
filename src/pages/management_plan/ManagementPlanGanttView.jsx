@@ -1,11 +1,11 @@
-import { Gantt } from "wx-react-gantt";
+import { Gantt, Willow, WillowDark } from "wx-react-gantt";
 import "wx-react-gantt/dist/gantt.css";
 import { data } from "./data";
 import { config } from "./config";
 import { useRef, useEffect, useState } from "react";
 import TerrainModificationEditor from "./TerrainModificationEditor";
 import { useNavigate, useParams } from "react-router-dom";
-import { Button, Container, Flex } from "@mantine/core";
+import { Button, Container, Flex, useMantineColorScheme } from "@mantine/core";
 import { IconArrowLeft } from "@tabler/icons-react";
 
 export const GanttView = () => {
@@ -14,6 +14,7 @@ export const GanttView = () => {
   const [tasks, setTasks] = useState(null);
   const navigate = useNavigate();
   const { id } = useParams();
+  const { colorScheme } = useMantineColorScheme();
 
   useEffect(() => {
     if (apiRef.current) {
@@ -99,26 +100,53 @@ export const GanttView = () => {
           Back to Tile
         </Button>
         <div style={{ flex: 1 }}>
-          <Gantt
-            init={(api) => {
-              apiRef.current = api
-              setTasks(api.getState().tasks)
-              api.on('update-task', () => setTasks(api.getState().tasks))
-              api.on('add-task', () => setTasks(api.getState().tasks))
-              api.on('delete-task', () => setTasks(api.getState().tasks))
-            }}
-            start={config.start}
-            end={config.end}
-            lengthUnit={config.lengthUnit}
-            scales={config.scales}
-            zoom={true}
-            cellWidth={config.cellWidth}
-            columns={config.columns}
-            taskTypes={config.taskTypes}
-            taskTemplate={config.MyTaskContent}
-            tasks={data.tasks}
-            links={data.links}
-          />
+          {colorScheme === 'dark' ? (
+            <WillowDark>
+              <Gantt
+                init={(api) => {
+                  apiRef.current = api
+                  setTasks(api.getState().tasks)
+                  api.on('update-task', () => setTasks(api.getState().tasks))
+                  api.on('add-task', () => setTasks(api.getState().tasks))
+                  api.on('delete-task', () => setTasks(api.getState().tasks))
+                }}
+                start={config.start}
+                end={config.end}
+                lengthUnit={config.lengthUnit}
+                scales={config.scales}
+                zoom={true}
+                cellWidth={config.cellWidth}
+                columns={config.columns}
+                taskTypes={config.taskTypes}
+                taskTemplate={config.MyTaskContent}
+                tasks={data.tasks}
+                links={data.links}
+              />
+            </WillowDark>
+          ) : (
+            <Willow>
+              <Gantt
+                init={(api) => {
+                  apiRef.current = api
+                  setTasks(api.getState().tasks)
+                  api.on('update-task', () => setTasks(api.getState().tasks))
+                  api.on('add-task', () => setTasks(api.getState().tasks))
+                  api.on('delete-task', () => setTasks(api.getState().tasks))
+                }}
+                start={config.start}
+                end={config.end}
+                lengthUnit={config.lengthUnit}
+                scales={config.scales}
+                zoom={true}
+                cellWidth={config.cellWidth}
+                columns={config.columns}
+                taskTypes={config.taskTypes}
+                taskTemplate={config.MyTaskContent}
+                tasks={data.tasks}
+                links={data.links}
+              />
+            </Willow>
+          )}
         </div>
       </Flex>
       {taskToEdit && (
@@ -129,7 +157,7 @@ export const GanttView = () => {
         />
       )}
     </Container>
-  )
+  );
 };
 
 export default GanttView;

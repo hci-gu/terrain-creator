@@ -1,12 +1,25 @@
 import { useMantineColorScheme, ActionIcon, Group } from '@mantine/core'
 import { IconSun, IconMoonStars } from '@tabler/icons-react'
+import { useAtom } from 'jotai'
+import { colorSchemeAtom } from '../state'
+import { useEffect } from 'react'
 
 const DarkModeToggle = () => {
-  const { colorScheme, toggleColorScheme } = useMantineColorScheme()
+  const { colorScheme: mantineColorScheme, toggleColorScheme } = useMantineColorScheme()
+  const [colorScheme, setColorScheme] = useAtom(colorSchemeAtom)
+
+  // Sync Mantine's color scheme with our atom
+  useEffect(() => {
+    setColorScheme(mantineColorScheme)
+  }, [mantineColorScheme, setColorScheme])
+
+  const handleToggle = () => {
+    toggleColorScheme()
+  }
 
   return (
     <ActionIcon
-      onClick={() => toggleColorScheme()}
+      onClick={handleToggle}
       size="lg"
       sx={(theme) => ({
         backgroundColor:
@@ -19,7 +32,7 @@ const DarkModeToggle = () => {
             : theme.colors.blue[6],
       })}
     >
-      {colorScheme === 'dark' ? (
+      {mantineColorScheme === 'dark' ? (
         <IconSun size="1.2rem" />
       ) : (
         <IconMoonStars size="1.2rem" />

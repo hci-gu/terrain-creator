@@ -1,5 +1,7 @@
 import React from 'react';
 import { capitalize } from 'lodash';
+import { SimpleGrid, Box, Text, Title } from '@mantine/core';
+
 const landcoverTypes = [
   { name: 'water', color: '#419BDF' },
   { name: 'trees', color: '#397D49' },
@@ -14,27 +16,37 @@ const landcoverTypes = [
 
 export const LandcoverSwatches = ({ selectedType, onSelect }) => {
   return (
-    <div className="flex flex-col gap-2">
-      <div className="flex flex-col">
-        <p className="text-2xl font-bold">Landcovers</p>
-      </div>
-      <div className="grid grid-cols-3 gap-4">
+    <Box>
+      <SimpleGrid cols={3} spacing="md">
         {landcoverTypes.map((type) => (
-          <div key={type.name} className="flex flex-col items-center gap-1">
-            <button
-              className={`w-10 h-10 rounded-sm border ${
-                selectedType === type.name ? 'ring-2 ring-primary' : ''
-              }`}
-              style={{ backgroundColor: type.color }}
+          <Box key={type.name} ta="center">
+            <Box
+              w={40}
+              h={40}
+              mx="auto"
+              style={{
+                backgroundColor: type.color,
+                borderRadius: 'var(--mantine-radius-md)',
+                cursor: 'pointer',
+                border: selectedType === type.name 
+                  ? '2px solid var(--mantine-color-blue-6)'
+                  : '1px solid var(--mantine-color-gray-3)',
+                transition: 'transform 150ms ease',
+                '&:hover': {
+                  transform: 'scale(1.05)',
+                },
+              }}
               onClick={() => onSelect(type.name)}
               aria-label={type.name}
             />
-            <p className="text-sm font-medium text-center">{capitalize(type.name)}</p>
-          </div>
+            <Text size="sm" fw={500} mt="xs">
+              {capitalize(type.name)}
+            </Text>
+          </Box>
         ))}
-      </div>
-    </div>
+      </SimpleGrid>
+    </Box>
   );
 };
 
-export default LandcoverSwatches; 
+export default LandcoverSwatches;

@@ -10,7 +10,8 @@ import {
   Grid,
   Box,
 } from '@mantine/core';
-import { DatePicker } from './DatePickerComponent';
+import { DatePickerInput } from '@mantine/dates';
+import { IconCalendar } from '@tabler/icons-react';
 import { subDays, addDays } from 'date-fns';
 import LandcoverSwatches from './LandcoverSwatches';
 
@@ -95,11 +96,16 @@ const TerrainModificationEditor = ({ task, tasks, onAction }) => {
             <Text>Start Date</Text>
           </Grid.Col>
           <Grid.Col span={8}>
-            <DatePicker
+            <DatePickerInput
               value={formData.start}
-              onDateChange={(date) => handleDateChange("start", date)}
+              onChange={(date) => handleDateChange("start", date)}
               minDate={formData.mapParent ? tasks.byId(formData.mapParent)?.end : undefined}
               maxDate={formData.end ? subDays(formData.end, 1) : undefined}
+              leftSection={<IconCalendar size={16} />}
+              valueFormat="MMMM D, YYYY"
+              placeholder="Pick a date"
+              clearable
+              w={280}
             />
           </Grid.Col>
         </Grid>
@@ -109,10 +115,15 @@ const TerrainModificationEditor = ({ task, tasks, onAction }) => {
             <Text>End Date</Text>
           </Grid.Col>
           <Grid.Col span={8}>
-            <DatePicker
+            <DatePickerInput
               value={formData.end}
-              onDateChange={(date) => handleDateChange("end", date)}
+              onChange={(date) => handleDateChange("end", date)}
               minDate={formData.start ? addDays(formData.start, 1) : undefined}
+              leftSection={<IconCalendar size={16} />}
+              valueFormat="MMMM D, YYYY"
+              placeholder="Pick a date"
+              clearable
+              w={280}
             />
           </Grid.Col>
         </Grid>

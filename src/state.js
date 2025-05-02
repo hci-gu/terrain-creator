@@ -309,3 +309,5 @@ export const showTileGridAtom = atom((get) => {
 })
 
 export const featuresAtom = atom({})
+
+export const colorSchemeAtom = atom('light')
