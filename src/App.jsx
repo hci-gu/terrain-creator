@@ -6,6 +6,7 @@ import MapContainer from './components/Map'
 import { useInitTiles } from './state'
 import Tile from './pages/Tile'
 import Tiles from './pages/Tiles'
+import GanttView from './pages/management_plan/ManagementPlanGanttView'
 
 const TabContainer = () => {
   return (
@@ -54,6 +55,10 @@ const router = createBrowserRouter([
   {
     path: '/tile/:id',
     element: <Tile />,
+  },
+  {
+    path: '/tile/:id/management-plan',
+    element: <GanttView />,
   },
 ], {
   future: {

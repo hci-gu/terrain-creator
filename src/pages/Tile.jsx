@@ -33,6 +33,7 @@ import * as pocketbase from '../pocketbase'
 import { formatDate } from '../utils'
 import { IconTrashFilled } from '@tabler/icons-react'
 import { Simulations } from './Simulation'
+import { GanttView } from './management_plan/ManagementPlanGanttView'
 
 const API_URL = import.meta.env.VITE_API_URL
 const URL = import.meta.env.VITE_URL
@@ -130,6 +131,7 @@ const DownloadButton = ({ type, tile }) => {
 
 const Tile = () => {
   const { id } = useParams()
+  const navigate = useNavigate()
   const tile = useAtomValue(tileAtom(id))
 
   const onSave = async (canvasInstance) => {
@@ -199,6 +201,14 @@ const Tile = () => {
               </Flex>
             </Flex>
           </div>
+          <Divider orientation="vertical" m="md" />
+          <Button 
+            variant="filled" 
+            onClick={() => navigate(`/tile/${id}/management-plan`)}
+            mb="md"
+          >
+            View Management Plan
+          </Button>
           <Divider orientation="vertical" m="md" />
           <div style={{ width: '50%' }}>
             <Simulations tile={tile} />
