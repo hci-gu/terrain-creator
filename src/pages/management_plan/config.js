@@ -44,6 +44,6 @@ export const config = {
   ],
   taskTypes: [
     { id: "task", label: "Task" },
-    { id: "terrainModification", label: "Terrain Modification" },
+    { id: "landcoverEdit", label: "Landcover Edit" },
   ],
 };

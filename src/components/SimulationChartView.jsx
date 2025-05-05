@@ -2,7 +2,7 @@ import React, { useState } from 'react'
 import { useAtomValue } from 'jotai'
 import { unwrap } from 'jotai/utils'
 import { simulationAtom, timestepsAtom } from '../state'
-import { formatDate } from '../utils'
+import { formatDate } from '@utils/formatDate'
 import * as pocketbase from '../pocketbase'
 import {
   CartesianGrid,
@@ -25,7 +25,7 @@ import {
 } from '@mantine/core'
 import { IconTrashFilled } from '@tabler/icons-react'
 import { useEffect } from 'react'
-import LoadingSpinner from '../components/LoadingSpinner'
+import LoadingSpinner from './LoadingSpinner'
 
 const vizColors = ['#3498db', '#2ecc71', '#e74c3c', '#f1c40f', '#9b59b6']
 
@@ -83,61 +83,64 @@ const SimulationLineChart = ({ id }) => {
   }))
 
   return (
-    <div style={{ width: '100%', height: '100%', padding: '1.5rem' }}>
-      <ResponsiveContainer width="100%" height="100%" minHeight={400}>
-        <LineChart
-          data={data}
-          margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
-        >
-          <XAxis
-            dataKey="day"
-            tickFormatter={(val) => `${val}`}
-            stroke="#666"
-            tick={{ fill: '#666', fontSize: 14, fontWeight: 700 }}
+    <ResponsiveContainer
+      width="100%"
+      height="100%"
+      minHeight={'20vh'}
+      minWidth={'20vw'}
+    >
+      <LineChart
+        data={data}
+        margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
+      >
+        <XAxis
+          dataKey="day"
+          tickFormatter={(val) => `${val}`}
+          stroke="#666"
+          tick={{ fill: '#666', fontSize: 14, fontWeight: 700 }}
+        />
+        <YAxis
+          stroke="#666"
+          tick={{ fill: '#666', fontSize: 14, fontWeight: 700 }}
+          tickFormatter={(val) => `${(val / 1000).toFixed(0)}`}
+        />
+        <CartesianGrid strokeDasharray="3 3" stroke="#eee" />
+        <Legend
+          wrapperStyle={{
+            paddingTop: '20px',
+            fontSize: '14px',
+          }}
+          formatter={(value, entry) => (
+            <Flex align="center" gap="sm">
+              <input
+                type="checkbox"
+                checked={visibleFields[value]}
+                onChange={() => {
+                  setVisibleFields((prev) => ({
+                    ...prev,
+                    [value]: !prev[value],
+                  }))
+                }}
+                style={{ accentColor: entry.color }}
+              />
+              <span>{value}</span>
+            </Flex>
+          )}
+        />
+        {fields.map((field, i) => (
+          <Line
+            key={field}
+            type="monotone"
+            dataKey={field}
+            stroke={vizColors[i]}
+            strokeWidth={2}
+            animationDuration={1000}
+            dot={false}
+            hide={!visibleFields[field]}
           />
-          <YAxis
-            stroke="#666"
-            tick={{ fill: '#666', fontSize: 14, fontWeight: 700 }}
-            tickFormatter={(val) => `${(val / 1000).toFixed(0)}`}
-          />
-          <CartesianGrid strokeDasharray="3 3" stroke="#eee" />
-          <Legend
-            wrapperStyle={{
-              paddingTop: '20px',
-              fontSize: '14px',
-            }}
-            formatter={(value, entry) => (
-              <Flex align="center" gap="sm">
-                <input
-                  type="checkbox"
-                  checked={visibleFields[value]}
-                  onChange={() => {
-                    setVisibleFields((prev) => ({
-                      ...prev,
-                      [value]: !prev[value],
-                    }))
-                  }}
-                  style={{ accentColor: entry.color }}
-                />
-                <span>{value}</span>
-              </Flex>
-            )}
-          />
-          {fields.map((field, i) => (
-            <Line
-              key={field}
-              type="monotone"
-              dataKey={field}
-              stroke={vizColors[i]}
-              strokeWidth={2}
-              animationDuration={1000}
-              dot={false}
-              hide={!visibleFields[field]}
-            />
-          ))}
-        </LineChart>
-      </ResponsiveContainer>
-    </div>
+        ))}
+      </LineChart>
+    </ResponsiveContainer>
   )
 }
 
@@ -243,7 +246,7 @@ export const SettingsPanel = ({ options, setOptions }) => {
   )
 }
 
-export const Simulations = ({ tile }) => {
+export const SimulationChartView = ({ tile }) => {
   const [selected, setSelected] = useState(tile.simulations?.[0]?.id || null)
   const [showSettings, setShowSettings] = useState(false)
   const [simulationOptions, setSimulationOptions] = useState({
@@ -261,7 +264,7 @@ export const Simulations = ({ tile }) => {
   })
 
   return (
-    <Flex style={{ width: '100%', minHeight: '100%' }} direction="column">
+    <Flex direction="column">
       <Flex align="center" justify="space-between" w="100%" mb="md">
         <Title order={2}>Simulations</Title>
         <Button variant="subtle" onClick={() => setShowSettings(!showSettings)}>
@@ -347,15 +350,13 @@ export const Simulations = ({ tile }) => {
               </Button>
             </Stack>
             {selected && (
-              <div style={{ flex: 1, paddingLeft: '1rem', minWidth: 0 }}>
-                <SimulationLineChart id={selected} />
-              </div>
+              <SimulationLineChart id={selected} />
             )}
           </Flex>
         )}
       </div>
-    </Flex>
+      </Flex>
   )
 }
 
-export default Simulations
+export default SimulationChartView

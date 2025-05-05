@@ -1,12 +1,13 @@
-import React, { useEffect, useMemo } from 'react'
+import React from 'react'
 import { createBrowserRouter, RouterProvider } from 'react-router-dom'
-import DarkModeToggle from './components/DarkModeToggle'
+import DarkModeToggle from '@components/DarkModeToggle'
 import { Title, Anchor, Tabs, AppShell, Flex } from '@mantine/core'
-import MapContainer from './components/Map'
-import { useInitTiles } from './state'
-import Tile from './pages/Tile'
-import Tiles from './pages/Tiles'
-import GanttView from './pages/management_plan/ManagementPlanGanttView'
+import MapContainer from '@pages/map'
+import { useInitTiles } from '@state'
+import Tiles from '@pages/Tiles'
+import ManagementPlanView from '@pages/management_plan/ManagementPlanView'
+import Dashboard from '@/pages/Dashboard'
+import TESTING from '@pages/TESTING'
 
 const TabContainer = () => {
   return (
@@ -33,39 +34,46 @@ const TabContainer = () => {
   )
 }
 
-const router = createBrowserRouter([
+const router = createBrowserRouter(
+  [
+    {
+      path: '/',
+      element: (
+        <>
+          <TabContainer />
+          <MapContainer />
+        </>
+      ),
+    },
+    {
+      path: '/tiles',
+      element: (
+        <>
+          <TabContainer />
+          <Tiles />,
+        </>
+      ),
+    },
+    {
+      path: 'dashboard/tile/:id_tile',
+      element: <Dashboard />,
+    },
+    {
+      path: 'dashboard/tile/:id_tile/management_plan_editor/:id_managementPlan',
+      element: <ManagementPlanView />,
+    },
+    {
+      path: 'testing',
+      element: <TESTING />,
+    },
+  ],
   {
-    path: '/',
-    element: (
-      <>
-        <TabContainer />
-        <MapContainer />
-      </>
-    ),
-  },
-  {
-    path: '/tiles',
-    element: (
-      <>
-        <TabContainer />
-        <Tiles />,
-      </>
-    ),
-  },
-  {
-    path: '/tile/:id',
-    element: <Tile />,
-  },
-  {
-    path: '/tile/:id/management-plan',
-    element: <GanttView />,
-  },
-], {
-  future: {
-    v7_startTransition: true,
-    v7_relativeSplatPath: true
+    future: {
+      v7_startTransition: true,
+      v7_relativeSplatPath: true,
+    },
   }
-})
+)
 
 const App = () => {
   useInitTiles()

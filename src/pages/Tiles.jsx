@@ -2,7 +2,7 @@ import { useAtom, useAtomValue } from 'jotai'
 import {
   filteredTilesAtom,
   landcoverFiltersAtom,
-  landcovers,
+  landcoverTypes,
   locationFilterAtom,
   locationFilterDistanceAtom,
   tilesAtom,
@@ -125,7 +125,7 @@ const LandcoverFilters = () => {
       <Text size="lg" fw="bolder">
         Filters
       </Text>
-      {landcovers.map((landCover) => (
+      {landcoverTypes.map((landCover) => (
         <LandCoverFilter
           name={landCover.name}
           key={`Filter_${landCover.name}`}
@@ -154,7 +154,7 @@ const TileList = ({ tiles }) => {
           <tr>
             <th>Tile</th>
             <th>Landcover</th>
-            {landcovers.map((landCover) => (
+            {landcoverTypes.map((landCover) => (
               <th
                 key={landCover.name}
                 onClick={() =>
@@ -209,7 +209,7 @@ const TileList = ({ tiles }) => {
                   max-width={50}
                 />
               </td>
-              {landcovers.map((landCover) => (
+              {landcoverTypes.map((landCover) => (
                 <td key={`${landCover.name}_${tile.id}`}>
                   {coverageForName(tile.landcover, landCover.name)}%
                 </td>
