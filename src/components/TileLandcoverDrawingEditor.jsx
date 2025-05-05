@@ -10,9 +10,9 @@ import {
 } from '@mantine/core'
 import CanvasDraw from 'react-canvas-draw'
 import {
-  getTileAtom,
-  landcoverTypes,
+  getTileByIdAtom,
 } from '@state'
+import { landcoverTypes, getLandcoverCoverageForTile } from '@constants/landcover'
 import * as pocketbase from '@pocketbase'
 import {useAtomValue} from 'jotai'
 import TileCoverInfo from '@components/TileCoverInfo'
@@ -20,19 +20,10 @@ import imageFromCanvas from '@utils/imageFromCanvas'
 import convertDataUrlToBlob from '@utils/convertDataUrlToBlob'
 
 const TileLandcoverDrawingEditor = ({ tile_id }) => {
-  const [landCoverType, setLandCoverType] = useState(landcoverTypes[0])
+  const [selectedLandcoverType, setSelectedLandcoverType] = useState(landcoverTypes.grass)
   const [brushRadius, setBrushRadius] = useState(10)
-  const tile = useAtomValue(getTileAtom(tile_id))
+  const tile = useAtomValue(getTileByIdAtom(tile_id))
   const canvasRef = useRef()
-
-  const coverageForLandcover = (landcover) => {
-    const value = tile.landcover.coverage[landcover.key]
-
-    if (value === undefined) {
-      return 0
-    }
-    return value.toFixed(2)
-  }
 
   const handleSave = async (canvasInstance) => {
     const image = await imageFromCanvas(canvasInstance)
@@ -53,7 +44,7 @@ const TileLandcoverDrawingEditor = ({ tile_id }) => {
         <CanvasDraw
           ref={canvasRef}
           imgSrc={tile.landcover.url}
-          brushColor={landCoverType.color}
+          brushColor={selectedLandcoverType.color}
           brushRadius={brushRadius}
           lazyRadius={0}
           canvasWidth={512}
@@ -73,19 +64,19 @@ const TileLandcoverDrawingEditor = ({ tile_id }) => {
             <ColorPicker
               w={39}
               format="hex"
-              value={landCoverType.color}
+              value={selectedLandcoverType.color}
               onChange={(color) => {
-                const landcover = landcoverTypes.find(
-                  (landcover) => landcover.color === color
+                const landcoverType = Object.values(landcoverTypes).find(
+                  (type) => type.color === color
                 )
-                setLandCoverType(landcover)
+                if (landcoverType) setSelectedLandcoverType(landcoverType)
               }}
               withPicker={false}
-              swatches={landcoverTypes.map((landcover) => landcover.color)}
+              swatches={Object.values(landcoverTypes).map(landcover => landcover.color)}
               swatchesPerRow={1}
             />
             <Flex direction="column" mt={6}>
-              {landcoverTypes.map((landcover) => (
+              {Object.entries(landcoverTypes).map(([key, landcover]) => (
                 <Flex
                   key={`Color_${landcover.name}`}
                   direction="column"
@@ -96,7 +87,7 @@ const TileLandcoverDrawingEditor = ({ tile_id }) => {
                     {landcover.name}
                   </Text>
                   <Text fz={12} fw={300}>
-                    {coverageForLandcover(landcover)}%
+                    {getLandcoverCoverageForTile(key, tile)}%
                   </Text>
                 </Flex>
               ))}

@@ -1,5 +1,5 @@
 import { parse } from 'date-fns';
-import { getTileAtom } from '@state';
+import { getTileByIdAtom } from '@state';
 
 export const data = {
   tasks: [

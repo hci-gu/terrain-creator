@@ -7,6 +7,7 @@
       "@pages/*": ["src/pages/*"],
       "@utils/*": ["src/utils/*"],
       "@state": ["src/state"],
+      "@constants/*": ["src/constants/*"],
       "@pocketbase": ["src/pocketbase"]
     }
   },

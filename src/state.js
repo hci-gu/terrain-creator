@@ -3,105 +3,10 @@ import { atomFamily } from 'jotai/utils'
 import _ from 'lodash'
 import * as pocketbase from './pocketbase'
 import { useEffect, useMemo } from 'react'
+import { landcoverSpawnSettings, landcoverFilters as initialLandcoverFilters } from '@constants/landcover'
 
-export const landcoverTypes = [
-  {
-    color: '#419BDF',
-    name: 'Water',
-    key: 'water',
-    spawnSettings: {
-      sheep: 0.0,
-      fox: 0.0,
-      goat: 0.0,
-    },
-  },
-  {
-    color: '#397D49',
-    name: 'Trees',
-    key: 'trees',
-    spawnSettings: {
-      sheep: 0.25,
-      fox: 0.25,
-      goat: 0.1,
-    },
-  },
-  {
-    color: '#88B053',
-    name: 'Grass',
-    key: 'grass',
-    spawnSettings: {
-      sheep: 0.5,
-      fox: 0.5,
-      goat: 0.25,
-    },
-  },
-  {
-    color: '#DFC35A',
-    name: 'Shrub',
-    key: 'shrub',
-    spawnSettings: {
-      sheep: 0.1,
-      fox: 0.25,
-      goat: 0.1,
-    },
-  },
-  {
-    color: '#E49635',
-    name: 'Crops',
-    key: 'crops',
-    spawnSettings: {
-      sheep: 0.1,
-      fox: 0.1,
-      goat: 0.1,
-    },
-  },
-  {
-    color: '#C4281B',
-    name: 'Built',
-    key: 'built',
-    spawnSettings: {
-      sheep: 0,
-      fox: 0,
-      goat: 0,
-    },
-  },
-  {
-    color: '#5e6572',
-    name: 'Bare',
-    key: 'bare',
-    spawnSettings: {
-      sheep: 0.05,
-      fox: 0.05,
-      goat: 0.25,
-    },
-  },
-  {
-    color: '#B39FE1',
-    name: 'Snow',
-    key: 'snow',
-    spawnSettings: {
-      sheep: 0.05,
-      fox: 0.05,
-      goat: 0.25,
-    },
-  },
-  {
-    color: '#7A87C6',
-    name: 'Flooded vegetation',
-    key: 'flooded_vegetation',
-    spawnSettings: {
-      sheep: 0.05,
-      fox: 0.05,
-      goat: 0,
-    },
-  },
-]
 
-export const landcoverMap = _.keyBy(landcoverTypes, 'name')
 
-export const defaultSpawnForLandcoverAndAnimal = (landcover, animal) => {
-  return landcoverMap[landcover].spawnSettings[animal]
-}
 
 const nameToKey = (name) => name.toLowerCase().replace(' ', '_')
 
@@ -128,34 +33,36 @@ const _boundsToQuery = (bounds) => {
 
 export const tilesAtom = atom([])
 
-export const getTileAtom = atomFamily((id) =>
+export const getTileByIdAtom = atomFamily((id) =>
   atom((get) => {
     return get(tilesAtom).find((tile) => tile.id === id)
   })
 )
+const managementPlans_dummy = [
+  {
+    id: 0,
+    name: 'Reforestation Plan 2025',
+    created: new Date(),
+    tile: getTileByIdAtom('9hm4co5mlmvo3gt'),
+  },
+  {
+    id: 1,
+    name: 'Water Management Alpha',
+    created: new Date(Date.now() - 86400000),
+    tile: getTileByIdAtom('9hm4co5mlmvo3gt'),
+  },
+]
+export const managementPlansAtom = atom(managementPlans_dummy)
 
-export const managementPlansAtom = atomFamily((id_tile) =>
-  atom([
-    {
-      id: '0',
-      name: 'Reforestation Plan 2025',
-      created: new Date(),
-      tile: getTileAtom(id_tile),
-    },
-    {
-      id: '1',
-      name: 'Water Management Alpha',
-      created: new Date(Date.now() - 86400000),
-      tile: getTileAtom(id_tile),
-    },
-  ])
-)
-
-export const getManagementPlanAtom = atomFamily((id_tile) =>
+export const getManagementPlanByIdAtom = atomFamily((id) =>
   atom((get) => {
-    return get(managementPlansAtom(id_tile)).find((plan) => plan.id === id_tile)
+    return get(managementPlansAtom).find((plan) => plan.id === id)
   })
 )
+
+export const spawnSettingsAtom = atom(landcoverSpawnSettings)
+
+export const landcoverFiltersAtom = atom(initialLandcoverFilters)
 
 export const filteredTilesAtom = atom((get) => {
   const tiles = get(tilesAtom)
@@ -283,12 +190,6 @@ export const useInitTiles = () => {
   }, [memo])
 }
 
-export const spawnSettingsAtom = atom(
-  landcoverTypes.reduce((acc, curr) => {
-    acc[curr.name] = curr.spawnSettings
-    return acc
-  }, {})
-)
 export const simulationAtom = atomFamily((id) =>
   atom(async (get) => {
     const tiles = get(tilesAtom)
@@ -314,13 +215,6 @@ export const timestepsAtom = atomFamily((id) =>
 export const locationFilterAtom = atom({})
 
 export const locationFilterDistanceAtom = atom(100)
-
-export const landcoverFiltersAtom = atom(
-  landcoverTypes.reduce((acc, cur) => {
-    acc[cur.name] = [0, 100]
-    return acc
-  }, {})
-)
 
 export const mapDrawModeAtom = atom('simple_select')
 export const VIEW_MODE = 'VIEW_MODE'

@@ -40,7 +40,6 @@ const router = createBrowserRouter(
       path: '/',
       element: (
         <>
-          <TabContainer />
           <MapContainer />
         </>
       ),
@@ -49,17 +48,16 @@ const router = createBrowserRouter(
       path: '/tiles',
       element: (
         <>
-          <TabContainer />
           <Tiles />,
         </>
       ),
     },
     {
-      path: 'dashboard/tile/:id_tile',
+      path: 'tile/:id_tile/dashboard',
       element: <Dashboard />,
     },
     {
-      path: 'dashboard/tile/:id_tile/management_plan_editor/:id_managementPlan',
+      path: 'tile/:id_tile/management_plan_editor/:id_managementPlan',
       element: <ManagementPlanView />,
     },
     {
@@ -90,6 +88,7 @@ const App = () => {
           </Flex>
         </AppShell.Header>
         <AppShell.Main mt={64} w="100vw">
+          <TabContainer />
           <RouterProvider router={router} />
         </AppShell.Main>
       </AppShell>

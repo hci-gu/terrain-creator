@@ -17,7 +17,7 @@ import { DatePickerInput } from '@mantine/dates';
 import { IconCalendar } from '@tabler/icons-react';
 import { subDays, addDays } from 'date-fns';
 import LandcoverSwatches from './LandcoverSwatches';
-import { getTileAtom } from '@state';
+import { getTileByIdAtom } from '@state';
 import { useAtomValue } from 'jotai';
 import TileLandcoverDrawingEditor from '@components/TileLandcoverDrawingEditor';
 
@@ -25,7 +25,7 @@ const LandcoverEditForm = ({ task, tasks, onAction }) => {
   const { id_tile, id_managementPlan } = useParams()
   const [formData, setFormData] = useState({ ...task });
   const [opened, setOpened] = useState(true);
-  const tile = useAtomValue(getTileAtom(id_tile))
+  const tile = useAtomValue(getTileByIdAtom(id_tile))
   const [mapTileImage, setMapTileImage] = useState(false);
   const [tileViewOpened, setTileViewOpened] = useState(false);
 

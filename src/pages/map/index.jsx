@@ -9,10 +9,10 @@ import {
   mapBoundsAtom,
   mapModeAtom,
   mapViewportAtom,
-  getTileAtom,
+  getTileByIdAtom,
   tilesAtom,
   mapDrawModeAtom,
-} from '../../state'
+} from '@state'
 import styled from '@emotion/styled'
 import {
   Card,
@@ -118,7 +118,7 @@ const TileList = () => {
       <Flex direction="column">
         {tiles.map((tile) => (
           <Card
-            onClick={() => navigate(`/dashboard/tile/${tile.id}`)}
+            onClick={() => navigate(`/tile/${tile.id}/dashboard`)}
             withBorder
             mb={16}
             key={`TileListItem_${tile.id}`}
@@ -151,7 +151,7 @@ const MapContainer = () => {
   const mapMode = useAtomValue(mapModeAtom)
   const tiles = useAtomValue(tilesAtom)
   const { id } = useParams()
-  const tile = useAtomValue(getTileAtom(id))
+  const tile = useAtomValue(getTileByIdAtom(id))
   const [tileOpacity, setTileOpacity] = useState(0.65)
   // const [islandMask, setIslandMask] = useState(false)
 
@@ -178,7 +178,7 @@ const MapContainer = () => {
     )
 
     if (tile) {
-      startTransition(() => navigate(`dashboard/tile/${tile.id}`))
+      startTransition(() => navigate(`/tile/${tile.id}/dashboard`))
 
     }
   }

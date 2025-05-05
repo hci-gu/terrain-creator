@@ -2,19 +2,19 @@ import { useAtom, useAtomValue } from 'jotai'
 import {
   filteredTilesAtom,
   landcoverFiltersAtom,
-  landcoverTypes,
   locationFilterAtom,
   locationFilterDistanceAtom,
   tilesAtom,
-} from '../state'
+} from '@state'
 import { Image, RangeSlider, Slider, Table, Text } from '@mantine/core'
 import { Suspense, useState } from 'react'
 import { IconSortAscending, IconSortDescending } from '@tabler/icons-react'
 import styled from '@emotion/styled'
 import { IconDownload } from '@tabler/icons-react'
 import JSZip from 'jszip'
-import SearchBox from '../components/Searchbox'
-import LoadingSpinner from '../components/LoadingSpinner'
+import SearchBox from '@components/Searchbox'
+import LoadingSpinner from '@components/LoadingSpinner'
+import { landcoverTypes, getLandcoverCoverageForTile } from '@constants/landcover'
 
 const Container = styled.div`
   margin: 24px auto;
@@ -52,19 +52,6 @@ const FiltersContainer = styled.div`
     margin-top: 8px;
   }
 `
-
-const nameToKey = (name) => name.toLowerCase().replace(' ', '_')
-const coverageForName = (tile, name) => {
-  if (!tile.coverage) {
-    return 0
-  }
-  const value = tile.coverage[nameToKey(name)]
-
-  if (value === undefined) {
-    return 0
-  }
-  return value.toFixed(2)
-}
 
 const ColorBlock = ({ color }) => {
   return (
@@ -125,7 +112,7 @@ const LandcoverFilters = () => {
       <Text size="lg" fw="bolder">
         Filters
       </Text>
-      {landcoverTypes.map((landCover) => (
+      {Object.values(landcoverTypes).map((landCover) => (
         <LandCoverFilter
           name={landCover.name}
           key={`Filter_${landCover.name}`}
@@ -154,14 +141,14 @@ const TileList = ({ tiles }) => {
           <tr>
             <th>Tile</th>
             <th>Landcover</th>
-            {landcoverTypes.map((landCover) => (
+            {Object.values(landcoverTypes).map((type) => (
               <th
-                key={landCover.name}
+                key={type.name}
                 onClick={() =>
                   setSelectedLandcover({
-                    ...landCover,
+                    ...type,
                     direction:
-                      selectedLandcover.name != landCover.name
+                      selectedLandcover.name != type.name
                         ? 'desc'
                         : selectedLandcover.direction === 'asc'
                         ? 'desc'
@@ -174,12 +161,12 @@ const TileList = ({ tiles }) => {
                     display: 'flex',
                     alignItems: 'center',
                     fontWeight:
-                      selectedLandcover.name == landCover.name ? 900 : 500,
+                      selectedLandcover.name == type.name ? 900 : 500,
                   }}
                 >
-                  <ColorBlock color={landCover.color} />
-                  {landCover.name}
-                  {selectedLandcover.name == landCover.name &&
+                  <ColorBlock color={type.color} />
+                  {type.name}
+                  {selectedLandcover.name == type.name &&
                     (selectedLandcover.direction === 'asc' ? (
                       <IconSortAscending />
                     ) : (
@@ -209,9 +196,9 @@ const TileList = ({ tiles }) => {
                   max-width={50}
                 />
               </td>
-              {landcoverTypes.map((landCover) => (
-                <td key={`${landCover.name}_${tile.id}`}>
-                  {coverageForName(tile.landcover, landCover.name)}%
+              {Object.keys(landcoverTypes).map((key) => (
+                <td key={`${key}_${tile.id}`}>
+                  {getLandcoverCoverageForTile(key, tile)}%
                 </td>
               ))}
             </tr>

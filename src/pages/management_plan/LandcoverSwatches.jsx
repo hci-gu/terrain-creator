@@ -1,12 +1,12 @@
 import React from 'react';
 import { SimpleGrid, Box, Text } from '@mantine/core';
-import { landcoverTypes } from '@/state'
+import { landcoverTypes } from '@constants/landcover'
 
 export const LandcoverSwatches = ({ selectedType, onSelect }) => {
   return (
     <SimpleGrid cols={3} spacing="xs" verticalSpacing="xs">
-      {landcoverTypes.map((type) => (
-        <Box key={type.name} ta="center">
+      {Object.entries(landcoverTypes).map(([key, type]) => (
+        <Box key={key} ta="center">
           <Box
             w={40}
             h={40}
@@ -16,7 +16,7 @@ export const LandcoverSwatches = ({ selectedType, onSelect }) => {
               borderRadius: 'var(--mantine-radius-md)',
               cursor: 'pointer',
               border:
-                selectedType === type.name
+                selectedType?.name === type.name
                   ? '2px solid var(--mantine-color-blue-6)'
                   : '1px solid var(--mantine-color-gray-3)',
               transition: 'transform 150ms ease',
@@ -24,7 +24,7 @@ export const LandcoverSwatches = ({ selectedType, onSelect }) => {
                 transform: 'scale(1.05)',
               },
             }}
-            onClick={() => onSelect(type.name)}
+            onClick={() => onSelect(type)}
             aria-label={type.name}
           />
           <Text size="sm" fw={500} mt="xs">

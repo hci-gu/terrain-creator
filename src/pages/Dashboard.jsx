@@ -9,10 +9,12 @@ import {
   Button,
   Text,
   Stack,
+  Grid,
+  Image,
 } from '@mantine/core'
 import { useAtomValue, useSetAtom, useAtom } from 'jotai'
-import { getTileAtom, managementPlansAtom } from '@state' 
-import TileLandcoverDrawingEditor from '@components/TileLandcoverDrawingEditor'
+import { getTileByIdAtom, managementPlansAtom } from '@state' 
+import ManagementPlanView from '@pages/management_plan/ManagementPlanView'
 import { SimulationChartView } from '@components/SimulationChartView'
 import ItemList from '@components/ItemList'
 
@@ -36,9 +38,9 @@ const getManagementPlansForTile = (id_tile) => {
 const Dashboard = () => {
   const { id_tile } = useParams()
   const navigate = useNavigate()
-  const tile = useAtomValue(getTileAtom(id_tile))
-  const [managementPlans, setManagementPlans] = useAtom(managementPlansAtom(id_tile))
-  const [selectedPlanId, setSelectedPlanId] = useState(null)
+  const tile = useAtomValue(getTileByIdAtom(id_tile))
+  const [managementPlans, setManagementPlans] = useAtom(managementPlansAtom)
+  const [selectedPlanId, setSelectedPlanId] = useState(0)
 
   const renderPlanContent = (plan) => (
     <Flex direction="column">
@@ -71,58 +73,47 @@ const Dashboard = () => {
 
   return (
     <Suspense fallback={<div>Loading Dashboard...</div>}>
-      <Container fluid>
-        <Breadcrumbs pt="md" pb="md">
-          <Anchor onClick={() => navigate('/')} style={{ cursor: 'pointer' }}>
-            Home
-          </Anchor>
-          <Anchor
-            onClick={() => navigate(`/tiles`)}
-            style={{ cursor: 'pointer' }}
+      <Container fluid p="xl">
+        <Stack>
+          <Flex
+            justify="flex-start"
+            align="flex-start"
+            direction="row"
+            wrap="nowrap"
+            gap="md"
           >
-            Tiles
-          </Anchor>
-        </Breadcrumbs>
-        {/* Dashboard Layout */}
-        <Flex
-          justify="center"
-          align="stretch"
-          direction="row"
-          wrap="wrap"
-          gap="lg"
-          h="100vh"
-          w="100%"
-        >
-          {/* Section 1: Tile View */}
-          <TileLandcoverDrawingEditor tile_id={id_tile} />
 
-          <Divider orientation="vertical" />
-
-          {/* Section 2: Management Plans */}
-          <Stack>
-            <Text size="xl" fw={500}>
-              Management Plans
-            </Text>
-            <Button variant="filled" onClick={() => createManagementPlan()}>
-              New Plan
-            </Button>
-            <ItemList
-              items={managementPlans}
-              selectedId={selectedPlanId}
-              onSelect={(id) => {
-                setSelectedPlanId(id)
-                handleNavigateToEditor(id)
-              }}
-              onDelete={handleDeletePlan}
-              renderItemContent={renderPlanContent}
+            <Image
+              src={tile.landcover.url}
+              alt="Landcover"
+              fit="contain"
             />
-          </Stack>
 
-          <Divider orientation="vertical" />
+            <ManagementPlanView id_managementPlan={selectedPlanId} />
 
-          {/* Section 3: Simulation Chart View */}
+            <Stack maxWidth={300} maxHeight={500} style={{ overflow: 'scroll' }}>
+              <Text size="xl" fw={500}>
+                Management Plans
+              </Text>
+              <Button variant="filled" onClick={() => createManagementPlan()}>
+                New Plan
+              </Button>
+              <ItemList
+                items={managementPlans}
+                selectedId={selectedPlanId}
+                onSelect={(id) => {
+                  console.log('selectedPlanId:', id)
+                  setSelectedPlanId(id)
+                  // handleNavigateToEditor(id)
+                }}
+                onDelete={handleDeletePlan}
+                renderItemContent={renderPlanContent}
+              />
+            </Stack>
+
+          </Flex>
           <SimulationChartView tile={tile} />
-        </Flex>
+        </Stack>
       </Container>
     </Suspense>
   )

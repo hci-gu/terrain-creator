@@ -7,15 +7,17 @@ import LandcoverEditForm from "./LandcoverEditForm";
 import { useNavigate, useParams } from "react-router-dom";
 import { Button, Container, Flex, useMantineColorScheme, Title, Group, Stack} from "@mantine/core";
 import { IconArrowLeft } from "@tabler/icons-react";
-import { getManagementPlanAtom } from "@state";
+import { getManagementPlanByIdAtom } from "@state";
 import { useAtomValue } from "jotai";
 
-export const ManagementPlanView = ({ id_tile }) => {
-  const { id_managementPlan } = useParams()
+export const ManagementPlanView = ({ id_managementPlan }) => {
+  if (id_managementPlan === null || id_managementPlan === undefined) {
+    return
+  }
   const apiRef = useRef(null)
   const [taskToEdit, setTaskToEdit] = useState(null)
   const [tasks, setTasks] = useState(null)
-  const managementPlan = useAtomValue(getManagementPlanAtom(id_managementPlan))
+  const managementPlan = useAtomValue(getManagementPlanByIdAtom(id_managementPlan))
   const navigate = useNavigate()
   const { colorScheme } = useMantineColorScheme()
   const ganttThemeClass =
@@ -96,13 +98,20 @@ export const ManagementPlanView = ({ id_tile }) => {
     }
   }
 
+  console.log("managementPlan:", managementPlan)
+  console.log("id_managementPlan:", id_managementPlan)
+
   return (
-    <Container fluid style={{ height: '100vh', padding: '1rem' }}>
+    <>
       <link
         rel="stylesheet"
         href="https://cdn.svar.dev/fonts/wxi/wx-icons.css"
       />
-      <Flex direction="column" h="100%">
+      <Flex
+        direction="column"
+        className={ganttThemeClass}
+        style={{ overflow: 'scroll' }}
+      >
         <Stack align="flex-start">
           <Title order={2}>{managementPlan.name}</Title>
           <Button
@@ -110,43 +119,35 @@ export const ManagementPlanView = ({ id_tile }) => {
             leftSection={<IconArrowLeft size={16} />}
             onClick={() => navigate(`/dashboard/tile/${id_tile}`)}
             mb="md"
-        >
+          >
             Back to Tile
           </Button>
         </Stack>
-        <div
-          className={ganttThemeClass}
-          style={{
-            flexGrow: 1,
-            position: 'relative',
-            overflow: 'hidden',
+
+        {/* <ContextMenu api={apiRef.current} > */}
+        <Gantt
+          // className={ganttThemeClass}
+          init={(api) => {
+            apiRef.current = api
+            setTasks(api.getState().tasks)
+            api.on('update-task', () => setTasks(api.getState().tasks))
+            api.on('add-task', () => setTasks(api.getState().tasks))
+            api.on('delete-task', () => setTasks(api.getState().tasks))
           }}
-        >
-          {/* <ContextMenu api={apiRef.current} > */}
-          <Gantt
-            className={ganttThemeClass}
-            init={(api) => {
-              apiRef.current = api
-              setTasks(api.getState().tasks)
-              api.on('update-task', () => setTasks(api.getState().tasks))
-              api.on('add-task', () => setTasks(api.getState().tasks))
-              api.on('delete-task', () => setTasks(api.getState().tasks))
-            }}
-            start={config.start}
-            end={config.end}
-            lengthUnit={config.lengthUnit}
-            scales={config.scales}
-            zoom={true}
-            cellWidth={config.cellWidth}
-            columns={config.columns}
-            taskTypes={config.taskTypes}
-            taskTemplate={config.MyTaskContent}
-            tasks={data.tasks}
-            links={data.links}
-          />
-        </div>
-        {/* </ContextMenu> */}
+          start={config.start}
+          end={config.end}
+          lengthUnit={config.lengthUnit}
+          scales={config.scales}
+          zoom={true}
+          cellWidth={config.cellWidth}
+          columns={config.columns}
+          taskTypes={config.taskTypes}
+          taskTemplate={config.MyTaskContent}
+          tasks={data.tasks}
+          links={data.links}
+        />
       </Flex>
+      {/* </ContextMenu> */}
       {taskToEdit && (
         <LandcoverEditForm
           task={taskToEdit}
@@ -154,7 +155,7 @@ export const ManagementPlanView = ({ id_tile }) => {
           onAction={handleFormAction}
         />
       )}
-    </Container>
+    </>
   )
 }
 

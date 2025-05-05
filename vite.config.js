@@ -12,6 +12,7 @@ export default defineConfig(() => ({
       '@pages': path.resolve(__dirname, 'src/pages'),
       '@utils': path.resolve(__dirname, 'src/utils'),
       '@state': path.resolve(__dirname, 'src/state'),
+      '@constants': path.resolve(__dirname, 'src/constants'),
       '@pocketbase': path.resolve(__dirname, 'src/pocketbase'),
       eventsource: 'pocketbase',
     },
