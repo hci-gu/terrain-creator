@@ -23,9 +23,9 @@ import {
   Card,
   Slider,
 } from '@mantine/core'
-import { IconTrashFilled } from '@tabler/icons-react'
 import { useEffect } from 'react'
 import LoadingSpinner from './LoadingSpinner'
+import ItemList from './ItemList'
 
 const vizColors = ['#3498db', '#2ecc71', '#e74c3c', '#f1c40f', '#9b59b6']
 
@@ -263,6 +263,30 @@ export const SimulationChartView = ({ tile }) => {
     },
   })
 
+  const handleSimulationDelete = (simulationId) => {
+    pocketbase.deleteSimulation(tile.id, simulationId)
+    if (selected === simulationId) {
+      setSelected(null)
+    }
+  }
+
+  const renderSimulationItem = (simulation) => (
+    <Flex direction="column">
+      <Text fw={500}>{simulation.created.toLocaleDateString()}</Text>
+      <Text fz="sm" c="dimmed">
+        {simulation.created
+          .toLocaleTimeString()
+          .split(':')
+          .map((part, i) => (
+            <span key={i} style={{ fontSize: i === 2 ? '0.8em' : 'inherit' }}>
+              {i > 0 ? ':' : ''}
+              {part}
+            </span>
+          ))}
+      </Text>
+    </Flex>
+  )
+
   return (
     <Flex direction="column">
       <Flex align="center" justify="space-between" w="100%" mb="md">
@@ -279,59 +303,14 @@ export const SimulationChartView = ({ tile }) => {
           />
         ) : (
           <Flex>
-            <Stack gap="md" mt="md">
-              {tile.simulations?.map((simulation) => (
-                <Card
-                  key={simulation.id}
-                  withBorder
-                  shadow="xs"
-                  style={
-                    simulation.id === selected
-                      ? { borderColor: '#339AF0', borderWidth: 2 }
-                      : {}
-                  }
-                  onClick={() => setSelected(simulation.id)}
-                >
-                  <Flex align="center" justify="space-between">
-                    <Flex direction="column">
-                      <Text fw={500}>
-                        {simulation.created.toLocaleDateString()}
-                      </Text>
-                      <Text fz="sm" c="dimmed">
-                        {simulation.created
-                          .toLocaleTimeString()
-                          .split(':')
-                          .map((part, i) => (
-                            <span
-                              key={i}
-                              style={{
-                                fontSize: i === 2 ? '0.8em' : 'inherit',
-                              }}
-                            >
-                              {i > 0 ? ':' : ''}
-                              {part}
-                            </span>
-                          ))}
-                      </Text>
-                    </Flex>
-                    <Space w="md" />
-                    <Button
-                      w={48}
-                      pl={12}
-                      pr={12}
-                      variant="outline"
-                      color="red"
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        pocketbase.deleteSimulation(tile.id, simulation.id)
-                        setSelected(null)
-                      }}
-                    >
-                      <IconTrashFilled />
-                    </Button>
-                  </Flex>
-                </Card>
-              ))}
+            <Stack gap="md" mt="md" w="250px">
+              <ItemList
+                items={tile.simulations}
+                selectedId={selected}
+                onSelect={setSelected}
+                onDelete={handleSimulationDelete}
+                renderItemContent={renderSimulationItem}
+              />
               <Button
                 onClick={async () => {
                   try {
@@ -350,12 +329,24 @@ export const SimulationChartView = ({ tile }) => {
               </Button>
             </Stack>
             {selected && (
-              <SimulationLineChart id={selected} />
+              <div style={{ flexGrow: 1, marginLeft: 'md' }}>
+                <SimulationLineChart id={selected} />
+              </div>
+            )}
+            {!selected && tile.simulations?.length > 0 && (
+              <Flex align="center" justify="center" style={{ flexGrow: 1, marginLeft: 'md' }}>
+                <Text c="dimmed">Select a simulation to view details.</Text>
+              </Flex>
+            )}
+            {!selected && (!tile.simulations || tile.simulations?.length === 0) && (
+              <Flex align="center" justify="center" style={{ flexGrow: 1, marginLeft: 'md' }}>
+                <Text c="dimmed">Run a new simulation to see the results.</Text>
+              </Flex>
             )}
           </Flex>
         )}
       </div>
-      </Flex>
+    </Flex>
   )
 }
 

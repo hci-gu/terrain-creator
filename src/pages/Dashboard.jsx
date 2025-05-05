@@ -87,11 +87,13 @@ const Dashboard = () => {
               src={tile.landcover.url}
               alt="Landcover"
               fit="contain"
+              w={512}
+              h={512}
             />
 
             <ManagementPlanView id_managementPlan={selectedPlanId} />
 
-            <Stack maxWidth={300} maxHeight={500} style={{ overflow: 'scroll' }}>
+            <Stack style={{ overflow: 'scroll', maxHeight: '100%', minWidth: '300px'}}>
               <Text size="xl" fw={500}>
                 Management Plans
               </Text>
