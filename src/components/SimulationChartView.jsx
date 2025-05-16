@@ -88,7 +88,7 @@ export const SimulationChartView = ({ id_simulation }) => {
     <ResponsiveContainer
       width="100%"
       height="100%"
-      style={{ overflowX: 'scroll', overflowY: 'hidden' }}
+      style={{ overflow: 'hidden' }}
     >
       <LineChart
         data={data}
