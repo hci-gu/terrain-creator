@@ -38,7 +38,7 @@ export const getTileByIdAtom = atomFamily((id) =>
     return get(tilesAtom).find((tile) => tile.id === id)
   })
 )
-const managementPlans_dummy = [
+const managementPlans_init_TESTING = [
   {
     id: 0,
     name: 'Reforestation Plan 2025',
@@ -52,7 +52,7 @@ const managementPlans_dummy = [
     tile: getTileByIdAtom('9hm4co5mlmvo3gt'),
   },
 ]
-export const managementPlansAtom = atom(managementPlans_dummy)
+export const managementPlansAtom = atom(managementPlans_init_TESTING)
 
 export const getManagementPlanByIdAtom = atomFamily((id) =>
   atom((get) => {
