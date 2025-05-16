@@ -92,7 +92,9 @@ const Dashboard = () => {
     <Box w="100%" h="100%">
       <Stack h="100%" gap="md">
         <Paper
-          style={{ flex: '1 1 50%', minHeight: 0, minWidth: 0 }}
+          // style={{ flex: '1 1 50%', minHeight: 0, minWidth: 0 }}
+          flex="1 1 50%"
+          miw="0"
           w="100%"
           p="md"
           shadow="xl"
@@ -106,17 +108,9 @@ const Dashboard = () => {
             wrap="nowrap"
             gap="md"
             h="100%"
-            style={{ minWidth: 0 }}
+            miw="0"
           >
-            <Box
-              h="100%"
-              style={{
-                flex: '0 0 auto',
-                width: '30vw',
-                minWidth: '300px',
-                maxWidth: '500px',
-              }}
-            >
+            <Box h="100%" w="30vw" miw="300" maw="500" flex="0 0 auto">
               <ManagementPlanItemList
                 managementPlans={managementPlans}
                 selectedPlanId={selectedPlanId}
@@ -126,18 +120,15 @@ const Dashboard = () => {
               />
             </Box>
 
-            <Box
-              h="100%"
-              style={{ flex: '1 1 auto', minWidth: 0, overflowX: 'auto' }}
-            >
-              <Box style={{ minWidth: '750px', height: '100%' }}>
-                <ManagementPlanView id_managementPlan={selectedPlanId} />
-              </Box>
+            <Box h="100%" miw="0" flex="auto" style={{ overflowX: 'auto' }}>
+              <ManagementPlanView id_managementPlan={selectedPlanId} />
             </Box>
           </Flex>
         </Paper>
         <Paper
-          style={{ flex: '1 1 50%', minHeight: 0, minWidth: 0 }}
+          // style={{ flex: '1 1 50%', minHeight: 0, minWidth: 0 }}
+          flex="1 1 50%"
+          miw="0"
           w="100%"
           p="md"
           shadow="xl"
@@ -151,17 +142,9 @@ const Dashboard = () => {
             wrap="nowrap"
             gap="md"
             h="100%"
-            style={{ minWidth: 0 }}
+            miw="0"
           >
-            <Box
-              h="100%"
-              style={{
-                flex: '0 0 auto',
-                width: '30vw',
-                minWidth: '300px',
-                maxWidth: '500px',
-              }}
-            >
+            <Box h="100%" w="30vw" miw="300" maw="500" flex="0 0 auto">
               <SimulationItemList
                 simulations={tile.simulations}
                 selectedSimulationId={selectedSimulationId}
@@ -171,13 +154,8 @@ const Dashboard = () => {
               />
             </Box>
 
-            <Box
-              h="100%"
-              style={{ flex: '1 1 auto', minWidth: 0, overflowX: 'auto' }}
-            >
-              <Box style={{ minWidth: '750px', height: '100%' }}>
-                <SimulationChartView id_simulation={selectedSimulationId} />
-              </Box>
+            <Box h="100%" miw="0" flex="auto" style={{ overflowX: 'auto' }}>
+              <SimulationChartView id_simulation={selectedSimulationId} />
             </Box>
           </Flex>
         </Paper>

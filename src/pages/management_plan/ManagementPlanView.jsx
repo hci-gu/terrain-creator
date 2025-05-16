@@ -50,7 +50,7 @@ export const ManagementPlanView = ({ id_managementPlan }) => {
   }
 
   return (
-    <Box w="100%" h="100%">
+    <Box w="100%" h="100%" miw="750">
       <Stack gap="xs">
         <Text fz="xl" fw={700}>
           {managementPlan.name}
