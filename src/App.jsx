@@ -1,15 +1,7 @@
 import React from 'react'
 import { createBrowserRouter, RouterProvider } from 'react-router-dom'
 import DarkModeToggle from '@components/DarkModeToggle'
-import {
-  Title,
-  Anchor,
-  Tabs,
-  AppShell,
-  Flex,
-  Stack,
-  Group,
-} from '@mantine/core'
+import { Title, Anchor, Tabs, AppShell, Group } from '@mantine/core'
 import MapContainer from '@pages/map'
 import { useInitTiles } from '@state'
 import Tiles from '@pages/Tiles'

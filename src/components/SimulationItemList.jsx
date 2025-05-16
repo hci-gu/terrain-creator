@@ -6,7 +6,7 @@ export const SimulationItemList = ({
   selectedSimulationId,
   onSelect,
   onDelete,
-  onCreateSimulation
+  onCreateSimulation,
 }) => {
   const renderSimulationContent = (simulation) => (
     <Stack>
@@ -27,10 +27,6 @@ export const SimulationItemList = ({
 
   return (
     <ItemList
-      w="30%"
-      h="100%"
-      miw="300px"
-      style={{ overflow: 'auto' }}
       items={simulations}
       selectedId={selectedSimulationId}
       onSelect={onSelect}
@@ -43,4 +39,4 @@ export const SimulationItemList = ({
   )
 }
 
-export default SimulationItemList 
+export default SimulationItemList

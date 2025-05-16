@@ -51,7 +51,7 @@ export const ManagementPlanView = ({ id_managementPlan }) => {
 
   return (
     <Box w="100%" h="100%" style={{ overflowX: 'scroll' }}>
-      <Stack gap="lg">
+      <Stack gap="xs">
         <Text fz="xl" fw={700}>
           {managementPlan.name}
         </Text>

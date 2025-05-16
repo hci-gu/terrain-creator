@@ -1,12 +1,12 @@
 import { Stack, Text, Box } from '@mantine/core'
 import ItemList from './ItemList'
 
-export const ManagementPlanItemList = ({ 
-  managementPlans, 
-  selectedPlanId, 
-  onSelect, 
-  onDelete, 
-  onCreatePlan 
+export const ManagementPlanItemList = ({
+  managementPlans,
+  selectedPlanId,
+  onSelect,
+  onDelete,
+  onCreatePlan,
 }) => {
   const renderPlanContent = (plan) => (
     <Stack>
@@ -19,10 +19,6 @@ export const ManagementPlanItemList = ({
 
   return (
     <ItemList
-      w="30%"
-      h="100%"
-      miw="300px"
-      style={{ overflow: 'auto' }}
       items={managementPlans}
       selectedId={selectedPlanId}
       onSelect={onSelect}
@@ -33,4 +29,4 @@ export const ManagementPlanItemList = ({
       onButtonClick={onCreatePlan}
     />
   )
-} 
+}

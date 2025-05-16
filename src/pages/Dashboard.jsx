@@ -1,4 +1,4 @@
-import React, { useState, Suspense } from 'react'
+import React, { useState, Suspense, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import {
   Container,
@@ -24,13 +24,10 @@ import * as pocketbase from '@/pocketbase'
 
 const Dashboard = () => {
   const { id_tile } = useParams()
-  const navigate = useNavigate()
   const tile = useAtomValue(getTileByIdAtom(id_tile))
   const [managementPlans, setManagementPlans] = useAtom(managementPlansAtom)
   const [selectedPlanId, setSelectedPlanId] = useState(0)
-  const [selectedSimulationId, setSelectedSimulationId] = useState(
-    tile.simulations[0].id
-  )
+  const [selectedSimulationId, setSelectedSimulationId] = useState(null)
   const [showSettings, setShowSettings] = useState(false)
   const [simulationOptions, setSimulationOptions] = useState({
     maxSteps: 1000,
@@ -45,6 +42,12 @@ const Dashboard = () => {
       cod: 388,
     },
   })
+
+  useEffect(() => {
+    if (tile && tile.simulations && tile.simulations.length > 0) {
+      setSelectedSimulationId(tile.simulations[0].id)
+    }
+  }, [tile])
 
   const createManagementPlan = (planName) => {
     const newPlan = {
@@ -89,12 +92,12 @@ const Dashboard = () => {
     <Box w="100%" h="100%">
       <Stack h="100%" gap="md">
         <Paper
+          style={{ flex: '1 1 50%' }}
           w="100%"
           p="md"
           shadow="xl"
           radius="md"
           withBorder
-          style={{ flex: 1 }}
         >
           <Flex
             justify="flex-start"
@@ -104,24 +107,28 @@ const Dashboard = () => {
             gap="md"
             h="100%"
           >
-            <ManagementPlanItemList
-              managementPlans={managementPlans}
-              selectedPlanId={selectedPlanId}
-              onSelect={setSelectedPlanId}
-              onDelete={handleDeletePlan}
-              onCreatePlan={createManagementPlan}
-            />
+            <Box h="100%" w="30vw" miw="300" maw="500">
+              <ManagementPlanItemList
+                managementPlans={managementPlans}
+                selectedPlanId={selectedPlanId}
+                onSelect={setSelectedPlanId}
+                onDelete={handleDeletePlan}
+                onCreatePlan={createManagementPlan}
+              />
+            </Box>
 
-            <ManagementPlanView id_managementPlan={selectedPlanId} />
+            <Box h="100%" style={{ flex: '1 1 70%', minWidth: 0 }}>
+              <ManagementPlanView id_managementPlan={selectedPlanId} />
+            </Box>
           </Flex>
         </Paper>
         <Paper
+          style={{ flex: '1 1 50%' }}
           w="100%"
           p="md"
           shadow="xl"
           radius="md"
           withBorder
-          style={{ flex: 1 }}
         >
           <Flex
             justify="flex-start"
@@ -131,15 +138,19 @@ const Dashboard = () => {
             gap="md"
             h="100%"
           >
-            <SimulationItemList
-              simulations={tile.simulations}
-              selectedSimulationId={selectedSimulationId}
-              onSelect={setSelectedSimulationId}
-              onDelete={handleDeleteSimulation}
-              onCreateSimulation={handleCreateSimulation}
-            />
+            <Box h="100%" w="30vw" miw="300" maw="500">
+              <SimulationItemList
+                simulations={tile.simulations}
+                selectedSimulationId={selectedSimulationId}
+                onSelect={setSelectedSimulationId}
+                onDelete={handleDeleteSimulation}
+                onCreateSimulation={handleCreateSimulation}
+              />
+            </Box>
 
-            <SimulationChartView id_simulation={selectedSimulationId} />
+            <Box h="100%" style={{ flex: '1 1 70%', minWidth: 0 }}>
+              <SimulationChartView id_simulation={selectedSimulationId} />
+            </Box>
           </Flex>
         </Paper>
       </Stack>
