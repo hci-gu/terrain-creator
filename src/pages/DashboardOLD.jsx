@@ -14,7 +14,7 @@ import {
 } from '@mantine/core'
 import { useAtomValue, useSetAtom, useAtom } from 'jotai'
 import { getTileByIdAtom, managementPlansAtom } from '@state' 
-import ManagementPlanView from '@pages/management_plan/ManagementPlanView'
+import ManagementPlanViewOLD from '@/pages/management_plan/ManagementPlanViewOLD'
 import { SimulationChartView } from '@components/SimulationChartView'
 import ItemList from '@components/ItemList'
 
@@ -91,7 +91,7 @@ const Dashboard = () => {
               h={512}
             />
 
-            <ManagementPlanView id_managementPlan={selectedPlanId} />
+            <ManagementPlanViewOLD id_managementPlan={selectedPlanId} />
 
             <Stack style={{ overflow: 'scroll', maxHeight: '100%', minWidth: '300px'}}>
               <Text size="xl" fw={500}>

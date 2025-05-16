@@ -12,6 +12,9 @@ import { IconTrashFilled } from '@tabler/icons-react'
  * @param {function(id: string|number): void} onSelect - Function called when an item card is clicked.
  * @param {function(id: string|number): void} onDelete - Function called when the delete button is clicked.
  * @param {function(item: object): React.ReactNode} renderItemContent - Function that takes an item and returns the JSX for its content within the card.
+ * @param {string} [title] - Optional title to display above the list.
+ * @param {string} [buttonLabel] - Optional label for the action button.
+ * @param {function(): void} [onButtonClick] - Optional callback for when the action button is clicked.
  */
 const ItemList = ({
   items,
@@ -19,52 +22,68 @@ const ItemList = ({
   onSelect,
   onDelete,
   renderItemContent,
+  title,
+  buttonLabel,
+  onButtonClick,
 }) => {
-  if (!items || items.length === 0) {
-    return <Text c="dimmed">No items available.</Text>
-  }
-
   return (
-    <Stack gap="md" w="100%">
-      {' '}
-      {/* Ensure Stack takes width */}
-      {items.map((item) => (
-        <Card
-          key={item.id}
-          withBorder
-          shadow="xs"
-          style={
-            item.id === selectedId
-              ? { borderColor: '#339AF0', borderWidth: 2, cursor: 'pointer' }
-              : { cursor: 'pointer' }
-          }
-          onClick={() => onSelect(item.id)}
-          padding="sm" // Use consistent padding
-        >
-          <Flex align="center" justify="space-between">
-            {/* Render custom content provided by the parent */}
-            <div style={{ flexGrow: 1, marginRight: 'md' }}>
-              {renderItemContent(item)}
-            </div>
+    <Stack
+      gap="md"
+      w="100%"
+      h="100%"
+      pl="md"
+      pr="md"
+      style={{ overflowY: 'scroll' }}
+    >
+      {title && (
+        <Text size="xl" fw={500}>
+          {title}
+        </Text>
+      )}
+      {buttonLabel && onButtonClick && (
+        <Button variant="filled" onClick={onButtonClick}>
+          {buttonLabel}
+        </Button>
+      )}
+      {!items || items.length === 0 ? (
+        <Text c="dimmed">No items available.</Text>
+      ) : (
+        items.map((item) => (
+          <Card
+            key={item.id}
+            withBorder
+            shadow="xs"
+            style={
+              item.id === selectedId
+                ? { borderColor: '#339AF0', borderWidth: 2, cursor: 'pointer' }
+                : { cursor: 'pointer' }
+            }
+            onClick={() => onSelect(item.id)}
+            padding="sm"
+          >
+            <Flex align="center" justify="space-between">
+              <div style={{ flexGrow: 1, marginRight: 'md' }}>
+                {renderItemContent(item)}
+              </div>
 
-            {/* Standard Delete Button */}
-            <Button
-              w={48}
-              pl={12}
-              pr={12}
-              variant="outline"
-              color="red"
-              onClick={(e) => {
-                e.stopPropagation() // Prevent Card's onClick from firing
-                onDelete(item.id)
-              }}
-              aria-label={`Delete item ${item.id}`} // For accessibility
-            >
-              <IconTrashFilled size={16} />
-            </Button>
-          </Flex>
-        </Card>
-      ))}
+              <Button
+                w={48}
+                pl={12}
+                pr={12}
+                variant="outline"
+                color="red"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  onDelete(item.id)
+                }}
+                aria-label={`Delete item ${item.id}`}
+              >
+                <IconTrashFilled size={16} />
+              </Button>
+            </Flex>
+          </Card>
+        ))
+      )}
     </Stack>
   )
 }

@@ -5,7 +5,7 @@ import * as pocketbase from './pocketbase'
 import { useEffect, useMemo } from 'react'
 import { landcoverSpawnSettings, landcoverFilters as initialLandcoverFilters } from '@constants/landcover'
 
-
+import { parse, addDays } from 'date-fns'
 
 
 const nameToKey = (name) => name.toLowerCase().replace(' ', '_')
@@ -41,15 +41,80 @@ export const getTileByIdAtom = atomFamily((id) =>
 const managementPlans_init_TESTING = [
   {
     id: 0,
-    name: 'Reforestation Plan 2025',
+    name: 'Farmer Johns Plan 2025',
     created: new Date(),
-    tile: getTileByIdAtom('9hm4co5mlmvo3gt'),
+    tasks: [
+      {
+        id: 1,
+        parent: null,
+        child: 2,
+        text: 'Chop down trees',
+        type: 'landcoverEdit',
+        start: parse('2025-04-01', 'yyyy-MM-dd', new Date()),
+        end: parse('2025-04-07', 'yyyy-MM-dd', new Date()),
+      },
+      {
+        id: 2,
+        parent: 1,
+        child: null,
+        text: 'Build barn',
+        type: 'landcoverEdit',
+        start: parse('2025-04-07', 'yyyy-MM-dd', new Date()),
+        end: parse('2025-04-14', 'yyyy-MM-dd', new Date()),
+      },
+    ],
   },
   {
     id: 1,
-    name: 'Water Management Alpha',
-    created: new Date(Date.now() - 86400000),
-    tile: getTileByIdAtom('9hm4co5mlmvo3gt'),
+    name: 'Gothenburg Fishing Policy 2025',
+    created: addDays(new Date(), 1),
+    tasks: [
+      {
+        id: 1,
+        parent: null,
+        child: 2,
+        text: 'Start of fishing season',
+        type: 'fishingAmountEdit',
+        start: parse('2025-04-01', 'yyyy-MM-dd', new Date()),
+        end: parse('2025-04-07', 'yyyy-MM-dd', new Date()),
+      },
+      {
+        id: 2,
+        parent: 1,
+        child: 3,
+        text: 'Mid-season fishing',
+        type: 'fishingAmountEdit',
+        start: parse('2025-04-07', 'yyyy-MM-dd', new Date()),
+        end: parse('2025-04-14', 'yyyy-MM-dd', new Date()),
+      },
+      {
+        id: 3,
+        parent: 2,
+        child: 4,
+        text: 'End of fishing season',
+        type: 'fishingAmountEdit',
+        start: parse('2025-04-14', 'yyyy-MM-dd', new Date()),
+        end: parse('2025-04-21', 'yyyy-MM-dd', new Date()),
+      },
+      {
+        id: 4,
+        parent: 3,
+        child: 5,
+        text: 'Build Oil Rig',
+        type: 'landcoverEdit',
+        start: parse('2025-04-21', 'yyyy-MM-dd', new Date()),
+        end: parse('2025-04-28', 'yyyy-MM-dd', new Date()),
+      },
+      {
+        id: 5,
+        parent: 4,
+        child: null,
+        text: 'Build Second Oil Rig',
+        type: 'landcoverEdit',
+        start: parse('2025-04-28', 'yyyy-MM-dd', new Date()),
+        end: parse('2025-05-05', 'yyyy-MM-dd', new Date()),
+      },
+    ],
   },
 ]
 export const managementPlansAtom = atom(managementPlans_init_TESTING)

@@ -22,17 +22,19 @@ import {
   Stack,
   Card,
   Slider,
+  Box,
+  Container,
 } from '@mantine/core'
 import { useEffect } from 'react'
 import LoadingSpinner from './LoadingSpinner'
-import ItemList from './ItemList'
+import { SimulationItemList } from './SimulationItemList'
 
 const vizColors = ['#3498db', '#2ecc71', '#e74c3c', '#f1c40f', '#9b59b6']
 
-const SimulationLineChart = ({ id }) => {
+export const SimulationChartView = ({ id_simulation }) => {
   const [timesteps, setTimeSteps] = useState([])
   const [visibleFields, setVisibleFields] = useState({})
-  const initialTimesteps = useAtomValue(unwrap(timestepsAtom(id)))
+  const initialTimesteps = useAtomValue(unwrap(timestepsAtom(id_simulation)))
 
   useEffect(() => {
     setTimeSteps(initialTimesteps)
@@ -66,7 +68,7 @@ const SimulationLineChart = ({ id }) => {
     return () => {
       pocketbase.unsubscribe('timesteps')
     }
-  }, [id])
+  }, [id_simulation])
 
   if (!timesteps || !timesteps.length) return <LoadingSpinner />
 
@@ -86,8 +88,7 @@ const SimulationLineChart = ({ id }) => {
     <ResponsiveContainer
       width="100%"
       height="100%"
-      minHeight={'20vh'}
-      minWidth={'20vw'}
+      style={{ overflowX: 'scroll', overflowY: 'hidden' }}
     >
       <LineChart
         data={data}
@@ -243,110 +244,6 @@ export const SettingsPanel = ({ options, setOptions }) => {
         )}
       </Card>
     </Stack>
-  )
-}
-
-export const SimulationChartView = ({ tile }) => {
-  const [selected, setSelected] = useState(tile.simulations?.[0]?.id || null)
-  const [showSettings, setShowSettings] = useState(false)
-  const [simulationOptions, setSimulationOptions] = useState({
-    maxSteps: 1000,
-    fishingAmounts: {
-      herring: 0.26,
-      spat: 0.26,
-      cod: 0.5,
-    },
-    initialPopulation: {
-      herring: 760,
-      spat: 1525,
-      cod: 388,
-    },
-  })
-
-  const handleSimulationDelete = (simulationId) => {
-    pocketbase.deleteSimulation(tile.id, simulationId)
-    if (selected === simulationId) {
-      setSelected(null)
-    }
-  }
-
-  const renderSimulationItem = (simulation) => (
-    <Flex direction="column">
-      <Text fw={500}>{simulation.created.toLocaleDateString()}</Text>
-      <Text fz="sm" c="dimmed">
-        {simulation.created
-          .toLocaleTimeString()
-          .split(':')
-          .map((part, i) => (
-            <span key={i} style={{ fontSize: i === 2 ? '0.8em' : 'inherit' }}>
-              {i > 0 ? ':' : ''}
-              {part}
-            </span>
-          ))}
-      </Text>
-    </Flex>
-  )
-
-  return (
-    <Flex direction="column">
-      <Flex align="center" justify="space-between" w="100%" mb="md">
-        <Title order={2}>Simulations</Title>
-        <Button variant="subtle" onClick={() => setShowSettings(!showSettings)}>
-          {showSettings ? 'Back to Simulations' : 'Settings'}
-        </Button>
-      </Flex>
-      <div>
-        {showSettings ? (
-          <SettingsPanel
-            options={simulationOptions}
-            setOptions={setSimulationOptions}
-          />
-        ) : (
-          <Flex>
-            <Stack gap="md" mt="md" w="250px">
-              <ItemList
-                items={tile.simulations}
-                selectedId={selected}
-                onSelect={setSelected}
-                onDelete={handleSimulationDelete}
-                renderItemContent={renderSimulationItem}
-              />
-              <Button
-                onClick={async () => {
-                  try {
-                    const simulation = await pocketbase.createSimulation(
-                      tile,
-                      simulationOptions
-                    )
-                    setSelected(simulation.id)
-                  } catch (error) {
-                    console.error('Failed to create simulation:', error.message)
-                    alert('Failed to create simulation: ' + error.message)
-                  }
-                }}
-              >
-                Run new simulation
-              </Button>
-            </Stack>
-            {selected && (
-              <div style={{ flexGrow: 1, marginLeft: 'md' }}>
-                <SimulationLineChart id={selected} />
-              </div>
-            )}
-            {!selected && tile.simulations?.length > 0 && (
-              <Flex align="center" justify="center" style={{ flexGrow: 1, marginLeft: 'md' }}>
-                <Text c="dimmed">Select a simulation to view details.</Text>
-              </Flex>
-            )}
-            {!selected && (!tile.simulations || tile.simulations?.length === 0) && (
-              <Flex align="center" justify="center" style={{ flexGrow: 1, marginLeft: 'md' }}>
-                <Text c="dimmed">Run a new simulation to see the results.</Text>
-              </Flex>
-            )}
-          </Flex>
-        )}
-      </div>
-    </Flex>
   )
 }
 
