@@ -12,7 +12,6 @@ import {
   Grid,
   Image,
   Box,
-  Paper,
 } from '@mantine/core'
 import { useAtomValue, useSetAtom, useAtom } from 'jotai'
 import { getTileByIdAtom, managementPlansAtom } from '@state'
@@ -20,6 +19,7 @@ import { ManagementPlanView } from '@pages/management_plan/ManagementPlanView'
 import { SimulationChartView } from '@components/SimulationChartView'
 import { ManagementPlanItemList } from '@components/ManagementPlanItemList'
 import { SimulationItemList } from '@components/SimulationItemList'
+import { ContentCell, ContentLayout } from '@components/DashboardStyles'
 import * as pocketbase from '@/pocketbase'
 
 const Dashboard = () => {
@@ -91,26 +91,9 @@ const Dashboard = () => {
   return (
     <Box w="100%" h="100%">
       <Stack h="100%" gap="md">
-        <Paper
-          // style={{ flex: '1 1 50%', minHeight: 0, minWidth: 0 }}
-          flex="1 1 50%"
-          miw="0"
-          w="100%"
-          p="md"
-          shadow="xl"
-          radius="md"
-          withBorder
-        >
-          <Flex
-            justify="flex-start"
-            align="flex-start"
-            direction="row"
-            wrap="nowrap"
-            gap="md"
-            h="100%"
-            miw="0"
-          >
-            <Box h="100%" w="30vw" miw="300" maw="500" flex="0 0 auto">
+        <ContentCell>
+          <ContentLayout
+            sidebar={
               <ManagementPlanItemList
                 managementPlans={managementPlans}
                 selectedPlanId={selectedPlanId}
@@ -118,33 +101,14 @@ const Dashboard = () => {
                 onDelete={handleDeletePlan}
                 onCreatePlan={createManagementPlan}
               />
-            </Box>
+            }
+            main={<ManagementPlanView id_managementPlan={selectedPlanId} />}
+          />
+        </ContentCell>
 
-            <Box h="100%" miw="0" flex="auto" style={{ overflowX: 'auto' }}>
-              <ManagementPlanView id_managementPlan={selectedPlanId} />
-            </Box>
-          </Flex>
-        </Paper>
-        <Paper
-          // style={{ flex: '1 1 50%', minHeight: 0, minWidth: 0 }}
-          flex="1 1 50%"
-          miw="0"
-          w="100%"
-          p="md"
-          shadow="xl"
-          radius="md"
-          withBorder
-        >
-          <Flex
-            justify="flex-start"
-            align="flex-start"
-            direction="row"
-            wrap="nowrap"
-            gap="md"
-            h="100%"
-            miw="0"
-          >
-            <Box h="100%" w="30vw" miw="300" maw="500" flex="0 0 auto">
+        <ContentCell>
+          <ContentLayout
+            sidebar={
               <SimulationItemList
                 simulations={tile.simulations}
                 selectedSimulationId={selectedSimulationId}
@@ -152,13 +116,10 @@ const Dashboard = () => {
                 onDelete={handleDeleteSimulation}
                 onCreateSimulation={handleCreateSimulation}
               />
-            </Box>
-
-            <Box h="100%" miw="0" flex="auto" style={{ overflowX: 'auto' }}>
-              <SimulationChartView id_simulation={selectedSimulationId} />
-            </Box>
-          </Flex>
-        </Paper>
+            }
+            main={<SimulationChartView id_simulation={selectedSimulationId} />}
+          />
+        </ContentCell>
       </Stack>
     </Box>
   )
