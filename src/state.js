@@ -3,10 +3,12 @@ import { atomFamily } from 'jotai/utils'
 import _ from 'lodash'
 import * as pocketbase from './pocketbase'
 import { useEffect, useMemo } from 'react'
-import { landcoverSpawnSettings, landcoverFilters as initialLandcoverFilters } from '@constants/landcover'
+import {
+  landcoverSpawnSettings,
+  landcoverFilters as initialLandcoverFilters,
+} from '@constants/landcover'
 
 import { parse, addDays } from 'date-fns'
-
 
 const nameToKey = (name) => name.toLowerCase().replace(' ', '_')
 
@@ -46,8 +48,6 @@ const managementPlans_init_TESTING = [
     tasks: [
       {
         id: 1,
-        parent: null,
-        child: 2,
         text: 'Chop down trees',
         type: 'landcoverEdit',
         start: parse('2025-04-01', 'yyyy-MM-dd', new Date()),
@@ -55,8 +55,6 @@ const managementPlans_init_TESTING = [
       },
       {
         id: 2,
-        parent: 1,
-        child: null,
         text: 'Build barn',
         type: 'landcoverEdit',
         start: parse('2025-04-07', 'yyyy-MM-dd', new Date()),
@@ -71,8 +69,6 @@ const managementPlans_init_TESTING = [
     tasks: [
       {
         id: 1,
-        parent: null,
-        child: 2,
         text: 'Start of fishing season',
         type: 'fishingAmountEdit',
         start: parse('2025-04-01', 'yyyy-MM-dd', new Date()),
@@ -80,8 +76,6 @@ const managementPlans_init_TESTING = [
       },
       {
         id: 2,
-        parent: 1,
-        child: 3,
         text: 'Mid-season fishing',
         type: 'fishingAmountEdit',
         start: parse('2025-04-07', 'yyyy-MM-dd', new Date()),
@@ -89,8 +83,6 @@ const managementPlans_init_TESTING = [
       },
       {
         id: 3,
-        parent: 2,
-        child: 4,
         text: 'End of fishing season',
         type: 'fishingAmountEdit',
         start: parse('2025-04-14', 'yyyy-MM-dd', new Date()),
@@ -98,8 +90,6 @@ const managementPlans_init_TESTING = [
       },
       {
         id: 4,
-        parent: 3,
-        child: 5,
         text: 'Build Oil Rig',
         type: 'landcoverEdit',
         start: parse('2025-04-21', 'yyyy-MM-dd', new Date()),
@@ -107,8 +97,6 @@ const managementPlans_init_TESTING = [
       },
       {
         id: 5,
-        parent: 4,
-        child: null,
         text: 'Build Second Oil Rig',
         type: 'landcoverEdit',
         start: parse('2025-04-28', 'yyyy-MM-dd', new Date()),
@@ -123,6 +111,80 @@ export const getManagementPlanByIdAtom = atomFamily((id) =>
   atom((get) => {
     return get(managementPlansAtom).find((plan) => plan.id === id)
   })
+)
+
+export const updateManagementPlanTaskAtom = atom(
+  null,
+  (get, set, { managementPlan, taskToUpdateId, taskToUpdateData }) => {
+    const updatedTasks = managementPlan.tasks.map((task) => {
+      if (task.id === taskToUpdateId) {
+        return { ...task, ...taskToUpdateData }
+      }
+      return task
+    })
+    managementPlan.tasks = updatedTasks
+    set(managementPlansAtom, [...get(managementPlansAtom)])
+  }
+)
+
+export const addManagementPlanTaskAtom = atom(
+  null,
+  (get, set, { managementPlan, taskToAdd, previousTask }) => {
+    const tasks = managementPlan.tasks
+    const newTaskId =
+      tasks.length > 0 ? Math.max(...tasks.map((t) => t.id)) + 1 : 0
+
+    const type = previousTask.type || 'landcoverEdit'
+    const startDate = previousTask ? previousTask.end : new Date()
+    const endDate = addDays(startDate, 1)
+
+    const newTask = {
+      id: newTaskId,
+      text: 'New Task',
+      type: type, // Default type, can be changed later
+      start: startDate,
+      end: endDate,
+      ...taskToAdd, // Allow overriding defaults
+      id: newTaskId, // Ensure ID is not overridden
+    }
+
+    let newTasksArray
+    if (previousTask) {
+      const insertAtIndex = tasks.findIndex((t) => t.id === previousTask.id) + 1
+      if (insertAtIndex > 0 && insertAtIndex <= tasks.length) {
+        newTasksArray = [
+          ...tasks.slice(0, insertAtIndex),
+          newTask,
+          ...tasks.slice(insertAtIndex),
+        ]
+      } else {
+        // Fallback if previousTaskId is not found or is the last task
+        newTasksArray = [...tasks, newTask]
+      }
+    } else {
+      // Add to the beginning if no previousTaskId
+      newTasksArray = [newTask, ...tasks]
+    }
+
+    managementPlan.tasks = newTasksArray
+    set(managementPlansAtom, (prevPlans) => {
+      return prevPlans.map((plan) =>
+        plan.id === managementPlan.id ? { ...plan, tasks: newTasksArray } : plan
+      )
+    })
+    return newTask // Return the newly created task
+  }
+)
+
+export const deleteManagementPlanTaskAtom = atom(
+  null,
+  (get, set, { managementPlan, taskToDeleteId }) => {
+    const updatedTasks = managementPlan.tasks.filter(
+      (task) => task.id !== taskToDeleteId
+    )
+    managementPlan.tasks = updatedTasks
+    set(managementPlansAtom, [...get(managementPlansAtom)])
+  }
 )
 
 export const spawnSettingsAtom = atom(landcoverSpawnSettings)
