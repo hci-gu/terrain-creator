@@ -9,10 +9,12 @@ import {
   Divider,
 } from '@mantine/core'
 import { format } from 'date-fns'
-import { useState, useEffect, useRef } from 'react'
+import { useEffect, useRef } from 'react'
+import { atom, useAtom } from 'jotai'
 
-const MIN_IMAGE_SIZE = 200 // pixels
-const MIN_TIMELINE_SIZE = 4500 // pixels
+export const timelineWidthAtom = atom(null)
+
+const ZOOM_SPEED_FACTOR = 20
 const TimelineTaskItem = ({
   task,
   tile,
@@ -21,34 +23,12 @@ const TimelineTaskItem = ({
   clampedTaskStart,
   clampedTaskEnd,
   handleTaskClick,
-  dynamicImageSize, // Added prop
 }) => {
-  const paperRef = useRef(null)
-  const [paperWidth, setPaperWidth] = useState(0)
-
-  useEffect(() => {
-    const currentPaperElement = paperRef.current
-    if (currentPaperElement) {
-      const observer = new ResizeObserver((entries) => {
-        if (entries && entries.length > 0) {
-          const newWidth = entries[0].contentRect.width
-          setPaperWidth(newWidth)
-        }
-      })
-      observer.observe(currentPaperElement)
-      // Initial width check
-      setPaperWidth(currentPaperElement.getBoundingClientRect().width)
-      return () => {
-        observer.unobserve(currentPaperElement)
-      }
-    }
-  }, [])
-
   return (
     <Tooltip
       label={
         <Stack gap="xs">
-          <Text fw={600}>{task.text}</Text>
+          <Text fw={600}>{task.name}</Text>
           <Text fz="sm">Start: {format(clampedTaskStart, 'MMM d, yyyy')}</Text>
           <Text fz="sm">End: {format(clampedTaskEnd, 'MMM d, yyyy')}</Text>
           {task.type === 'landcoverEdit' && (
@@ -62,14 +42,11 @@ const TimelineTaskItem = ({
       position="bottom"
     >
       <Paper
-        ref={paperRef}
         shadow="xl"
         withBorder
-        // h="50%"
         w={`${widthPercentage}%`}
         left={`${leftPercentage}%`}
         pos="absolute"
-        // p="xs"
         style={{
           cursor: 'pointer',
           zIndex: 2,
@@ -80,7 +57,7 @@ const TimelineTaskItem = ({
         <Stack w="100%" h="100%" gap="xs" align="flex-start">
           <Box>
             <Text fz="xl" fw={600} truncate>
-              {task.text}
+              {task.name}
             </Text>
             {task.type === 'landcoverEdit' && (
               <Text fz="xs" c="blue" truncate>
@@ -88,20 +65,12 @@ const TimelineTaskItem = ({
               </Text>
             )}
           </Box>
-          {/* {tile?.landcover?.url &&
-            dynamicImageSize > 0 &&
-            paperWidth >= dynamicImageSize && ( */}
           {tile?.landcover?.url && (
             <Box>
               <Image
                 src={tile.landcover.url}
-                alt={task.text}
-                // h={widthPercentage * 10}
-                // h={dynamicImageSize}
-                h={dynamicImageSize}
-                // w={dynamicImageSize}
-                // maw="100%"
-                // mah="100%"
+                alt={task.name}
+                h="312"
                 radius="sm"
                 fit="contain"
               />
@@ -115,16 +84,8 @@ const TimelineTaskItem = ({
 
 export const Timeline = ({ tasks, tile, onTaskClick }) => {
   const timelineContainerRef = useRef(null)
-  const [timelineVisualWidth, setTimelineVisualWidth] = useState(null)
-  const ZOOM_SPEED_FACTOR = 20
+  const [timelineWidth, setTimelineWidth] = useAtom(timelineWidthAtom)
   const zoomAnchorRef = useRef(null)
-
-  useEffect(() => {
-    // Initialize timelineVisualWidth based on container width if not already set
-    if (timelineContainerRef.current && timelineVisualWidth === null) {
-      setTimelineVisualWidth(timelineContainerRef.current.clientWidth)
-    }
-  }, [timelineVisualWidth])
 
   // Setup horizontal scrolling and zooming
   useEffect(() => {
@@ -138,7 +99,7 @@ export const Timeline = ({ tasks, tile, onTaskClick }) => {
         const mouseX =
           event.clientX - timelineElement.getBoundingClientRect().left
         const currentScrollLeft = timelineElement.scrollLeft
-        const widthBeforeThisZoomEvent = timelineVisualWidth
+        const widthBeforeThisZoomEvent = timelineWidth
 
         const anchorRatio =
           widthBeforeThisZoomEvent > 0
@@ -151,7 +112,7 @@ export const Timeline = ({ tasks, tile, onTaskClick }) => {
           widthBeforeZoom: widthBeforeThisZoomEvent,
         }
 
-        setTimelineVisualWidth((prevActualWidth) => {
+        setTimelineWidth((prevActualWidth) => {
           const changeAmount = event.deltaY * ZOOM_SPEED_FACTOR
           let newCalculatedWidth = prevActualWidth - changeAmount
           const containerVisibleWidth = timelineElement.clientWidth
@@ -174,14 +135,14 @@ export const Timeline = ({ tasks, tile, onTaskClick }) => {
         passive: false,
       })
     }
-  }, [timelineVisualWidth, ZOOM_SPEED_FACTOR])
+  }, [timelineWidth, ZOOM_SPEED_FACTOR])
 
   // Effect to adjust scroll after zoom
   useEffect(() => {
     const timelineElement = timelineContainerRef.current
     if (timelineElement && zoomAnchorRef.current) {
       const { ratio, mouseXAtZoom, widthBeforeZoom } = zoomAnchorRef.current
-      const newWidthAfterZoom = timelineVisualWidth
+      const newWidthAfterZoom = timelineWidth
 
       if (newWidthAfterZoom !== widthBeforeZoom) {
         let newScrollLeft = ratio * newWidthAfterZoom - mouseXAtZoom
@@ -197,7 +158,7 @@ export const Timeline = ({ tasks, tile, onTaskClick }) => {
       }
       zoomAnchorRef.current = null
     }
-  }, [timelineVisualWidth])
+  }, [timelineWidth])
 
   // Determine the display year
   let displayYear
@@ -225,31 +186,16 @@ export const Timeline = ({ tasks, tile, onTaskClick }) => {
 
   const monthMarkers = getMonthMarkers()
 
-  const dynamicImageSize = Math.max(
-    MIN_IMAGE_SIZE,
-    Math.floor(timelineVisualWidth / 100)
-  )
-
   return (
     <Box
       ref={timelineContainerRef}
+      flex="auto"
       style={{
-        flexGrow: 1,
         overflowX: 'scroll',
-        // width: '100%', // Ensure it takes available width
-        // height: '100%', // Ensure it takes available height
       }}
     >
-      <Box
-        // w={`${timelineVisualWidth}px`}
-        style={{
-          width: timelineVisualWidth ? `${timelineVisualWidth}px` : '100%',
-          // minWidth: MIN_TIMELINE_SIZE,
-        }}
-        h="100%"
-        pos="relative"
-      >
-        <Group h={50} gap={0} style={{ position: 'relative' }}>
+      <Box w={`${timelineWidth}px`} h="100%" pos="relative">
+        <Group h={50} gap={0} pos="relative">
           {monthMarkers.map((markerDate, index) => {
             const markerPositionPercent =
               timelineDuration > 0
@@ -263,10 +209,10 @@ export const Timeline = ({ tasks, tile, onTaskClick }) => {
                 fz="xl"
                 fw={600}
                 c="dimmed"
+                pos="absolute"
+                left={`${markerPositionPercent}%`}
+                pl="4px"
                 style={{
-                  position: 'absolute',
-                  left: `${markerPositionPercent}%`,
-                  paddingLeft: '4px',
                   userSelect: 'none',
                 }}
               >
@@ -278,12 +224,12 @@ export const Timeline = ({ tasks, tile, onTaskClick }) => {
 
         <Box
           h={'calc(100% - 50px)'}
+          pos="relative"
           sx={(theme) => ({
             backgroundColor:
               theme.colorScheme === 'dark'
                 ? theme.colors.dark[6]
                 : theme.colors.gray[0],
-            position: 'relative',
           })}
         >
           {monthMarkers.map((markerDate, index) => {
@@ -299,11 +245,11 @@ export const Timeline = ({ tasks, tile, onTaskClick }) => {
                 key={`line-${index}`}
                 orientation="vertical"
                 size="xs"
+                pos="absolute"
+                left={`${markerPositionPercent}%`}
+                top="0"
+                bottom="0"
                 style={{
-                  position: 'absolute',
-                  left: `${markerPositionPercent}%`,
-                  top: 0,
-                  bottom: 0,
                   zIndex: 1,
                 }}
               />
@@ -358,7 +304,6 @@ export const Timeline = ({ tasks, tile, onTaskClick }) => {
                   clampedTaskStart={clampedTaskStart}
                   clampedTaskEnd={clampedTaskEnd}
                   handleTaskClick={onTaskClick}
-                  dynamicImageSize={dynamicImageSize}
                 />
               )
             })}

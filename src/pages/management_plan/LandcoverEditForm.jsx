@@ -22,7 +22,7 @@ import { useAtomValue } from 'jotai'
 import TileLandcoverDrawingEditor from '@components/TileLandcoverDrawingEditor'
 
 const LandcoverEditForm = ({ task, tasks, onAction }) => {
-  const { id_tile, id_managementPlan } = useParams()
+  const { id_tile } = useParams()
   const [formData, setFormData] = useState({ ...task })
   const [opened, setOpened] = useState(true)
   const tile = useAtomValue(getTileByIdAtom(id_tile))
@@ -98,7 +98,7 @@ const LandcoverEditForm = ({ task, tasks, onAction }) => {
       <Modal
         opened={opened}
         onClose={handleClose}
-        title={<Title order={3}>Edit '{formData.text}'</Title>}
+        title={<Title order={3}>Edit '{formData.name}'</Title>}
         size="lg"
         padding="xl"
       >
@@ -110,8 +110,8 @@ const LandcoverEditForm = ({ task, tasks, onAction }) => {
             </Grid.Col>
             <Grid.Col span={8}>
               <TextInput
-                name="text"
-                value={formData.text || ''}
+                name="name"
+                value={formData.name || ''}
                 onChange={handleChange}
               />
             </Grid.Col>
@@ -226,7 +226,7 @@ const LandcoverEditForm = ({ task, tasks, onAction }) => {
                     onAction('changeTask', previousTask)
                   }}
                 >
-                  {previousTask.text}
+                  {previousTask.name}
                 </Button>
               ) : (
                 <Box
@@ -257,7 +257,7 @@ const LandcoverEditForm = ({ task, tasks, onAction }) => {
                     onAction('changeTask', nextTask)
                   }}
                 >
-                  {nextTask.text}
+                  {nextTask.name}
                 </Button>
               ) : (
                 <Button
@@ -288,7 +288,7 @@ const LandcoverEditForm = ({ task, tasks, onAction }) => {
       <Modal
         opened={tileViewOpened}
         onClose={() => setTileViewOpened(false)}
-        title={<Title order={3}>Edit Landcover for '{formData.text}'</Title>}
+        title={<Title order={3}>Edit Landcover for '{formData.name}'</Title>}
         size="xl"
         padding="xl"
       >

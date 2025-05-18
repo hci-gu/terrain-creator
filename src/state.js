@@ -48,14 +48,14 @@ const managementPlans_init_TESTING = [
     tasks: [
       {
         id: 1,
-        text: 'Chop down trees',
+        name: 'Chop down trees',
         type: 'landcoverEdit',
         start: parse('2025-04-01', 'yyyy-MM-dd', new Date()),
         end: parse('2025-04-07', 'yyyy-MM-dd', new Date()),
       },
       {
         id: 2,
-        text: 'Build barn',
+        name: 'Build barn',
         type: 'landcoverEdit',
         start: parse('2025-04-07', 'yyyy-MM-dd', new Date()),
         end: parse('2025-04-14', 'yyyy-MM-dd', new Date()),
@@ -69,35 +69,35 @@ const managementPlans_init_TESTING = [
     tasks: [
       {
         id: 1,
-        text: 'Start of fishing season',
+        name: 'Start of fishing season',
         type: 'fishingAmountEdit',
         start: parse('2025-04-01', 'yyyy-MM-dd', new Date()),
         end: parse('2025-04-07', 'yyyy-MM-dd', new Date()),
       },
       {
         id: 2,
-        text: 'Mid-season fishing',
+        name: 'Mid-season fishing',
         type: 'fishingAmountEdit',
         start: parse('2025-04-07', 'yyyy-MM-dd', new Date()),
         end: parse('2025-04-14', 'yyyy-MM-dd', new Date()),
       },
       {
         id: 3,
-        text: 'End of fishing season',
+        name: 'End of fishing season',
         type: 'fishingAmountEdit',
         start: parse('2025-04-14', 'yyyy-MM-dd', new Date()),
         end: parse('2025-04-21', 'yyyy-MM-dd', new Date()),
       },
       {
         id: 4,
-        text: 'Build Oil Rig',
+        name: 'Build Oil Rig',
         type: 'landcoverEdit',
         start: parse('2025-04-21', 'yyyy-MM-dd', new Date()),
         end: parse('2025-04-28', 'yyyy-MM-dd', new Date()),
       },
       {
         id: 5,
-        text: 'Build Second Oil Rig',
+        name: 'Build Second Oil Rig',
         type: 'landcoverEdit',
         start: parse('2025-04-28', 'yyyy-MM-dd', new Date()),
         end: parse('2025-05-05', 'yyyy-MM-dd', new Date()),
@@ -140,7 +140,7 @@ export const addManagementPlanTaskAtom = atom(
 
     const newTask = {
       id: newTaskId,
-      text: 'New Task',
+      name: 'New Task',
       type: type, // Default type, can be changed later
       start: startDate,
       end: endDate,

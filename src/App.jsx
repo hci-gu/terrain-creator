@@ -5,7 +5,6 @@ import { Title, Anchor, Tabs, AppShell, Group } from '@mantine/core'
 import MapContainer from '@pages/map'
 import { useInitTiles } from '@state'
 import Tiles from '@pages/Tiles'
-import ManagementPlanViewOLD from '@/pages/management_plan/ManagementPlanViewOLD'
 import Dashboard from '@/pages/Dashboard'
 import TESTING from '@pages/TESTING'
 
@@ -55,10 +54,6 @@ const router = createBrowserRouter(
     {
       path: 'tile/:id_tile/dashboard',
       element: <Dashboard />,
-    },
-    {
-      path: 'tile/:id_tile/management_plan_editor/:id_managementPlan',
-      element: <ManagementPlanViewOLD />,
     },
     {
       path: 'testing',
