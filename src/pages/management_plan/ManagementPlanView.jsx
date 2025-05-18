@@ -7,6 +7,7 @@ import {
   Group,
   Tooltip,
   Image,
+  Divider,
 } from '@mantine/core'
 import { format } from 'date-fns'
 import { useAtomValue, useSetAtom } from 'jotai'
@@ -74,21 +75,26 @@ const TimelineTaskItem = ({
           </Box>
           {tile?.landcover?.url && (
             <Box
+              w="auto"
+              h="50%"
+              flex="1 1 auto"
               style={{
-                flexGrow: 1,
+                // flexGrow: 1,
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                width: '100%',
               }}
             >
               <Image
                 src={tile.landcover.url}
                 alt={task.text}
+                // flex="1 0 auto"
                 w="100%"
-                maw="512px"
-                mah="100%"
-                fit="cover"
+                h="100%"
+                // maw="512px"
+                // mah="100%"
+                // mih="0"
+                // fit="contain"
                 radius="sm"
               />
             </Box>
@@ -113,9 +119,86 @@ export const ManagementPlanView = ({ tile, id_managementPlan }) => {
   const [editingTask, setEditingTask] = useState(null)
 
   const timelineContainerRef = useRef(null)
-  const [timelineVisualWidth, setTimelineVisualWidth] = useState(20000) // Initial width in pixels
+  const [timelineVisualWidth, setTimelineVisualWidth] = useState(null) // Initial width in pixels
   const ZOOM_SPEED_FACTOR = 20 // Adjust sensitivity as needed
   const zoomAnchorRef = useRef(null)
+
+  // Setup horizontal scrolling and zooming
+  useEffect(() => {
+    const timelineElement = timelineContainerRef.current
+
+    if (timelineElement) {
+      const handleWheel = (event) => {
+        if (!timelineElement) return
+
+        if (event.ctrlKey) {
+          event.preventDefault()
+
+          const mouseX =
+            event.clientX - timelineElement.getBoundingClientRect().left
+          const currentScrollLeft = timelineElement.scrollLeft
+          const widthBeforeThisZoomEvent = timelineVisualWidth // From closure, updated due to dep array
+
+          const anchorRatio =
+            widthBeforeThisZoomEvent > 0
+              ? (currentScrollLeft + mouseX) / widthBeforeThisZoomEvent
+              : 0
+
+          zoomAnchorRef.current = {
+            ratio: anchorRatio,
+            mouseXAtZoom: mouseX,
+            widthBeforeZoom: widthBeforeThisZoomEvent,
+          }
+
+          setTimelineVisualWidth((prevActualWidth) => {
+            const changeAmount = event.deltaY * ZOOM_SPEED_FACTOR
+            let newCalculatedWidth = prevActualWidth - changeAmount
+            const containerVisibleWidth = timelineElement.clientWidth
+            return Math.max(containerVisibleWidth, newCalculatedWidth)
+          })
+        } else {
+          if (event.deltaY !== 0) {
+            event.preventDefault()
+            timelineElement.scrollLeft -= event.deltaY
+          }
+        }
+      }
+
+      timelineElement.addEventListener('wheel', handleWheel, {
+        passive: false,
+      })
+
+      return () => {
+        timelineElement.removeEventListener('wheel', handleWheel, {
+          passive: false,
+        })
+      }
+    }
+  }, [timelineVisualWidth, ZOOM_SPEED_FACTOR]) // Added timelineVisualWidth and ZOOM_SPEED_FACTOR to dependency array
+
+  // Effect to adjust scroll after zoom
+  useEffect(() => {
+    const timelineElement = timelineContainerRef.current
+    if (timelineElement && zoomAnchorRef.current) {
+      const { ratio, mouseXAtZoom, widthBeforeZoom } = zoomAnchorRef.current
+      const newWidthAfterZoom = timelineVisualWidth // Current width after state update
+
+      if (newWidthAfterZoom !== widthBeforeZoom) {
+        // Ensure it was a zoom that changed width
+        let newScrollLeft = ratio * newWidthAfterZoom - mouseXAtZoom
+
+        const containerVisibleWidth = timelineElement.clientWidth
+        const maxScrollLeft = Math.max(
+          0,
+          newWidthAfterZoom - containerVisibleWidth
+        )
+        newScrollLeft = Math.max(0, Math.min(newScrollLeft, maxScrollLeft))
+
+        timelineElement.scrollLeft = newScrollLeft
+      }
+      zoomAnchorRef.current = null // Reset after use
+    }
+  }, [timelineVisualWidth]) // Runs after timelineVisualWidth changes
 
   const currentTasks = managementPlan?.tasks || []
 
@@ -197,88 +280,6 @@ export const ManagementPlanView = ({ tile, id_managementPlan }) => {
     }
   }
 
-  // Setup horizontal scrolling and zooming
-  useEffect(() => {
-    const timelineElement = timelineContainerRef.current
-
-    if (timelineElement) {
-      const handleWheel = (event) => {
-        if (!timelineElement) return
-
-        if (event.ctrlKey) {
-          event.preventDefault()
-
-          const mouseX =
-            event.clientX - timelineElement.getBoundingClientRect().left
-          const currentScrollLeft = timelineElement.scrollLeft
-          const widthBeforeThisZoomEvent = timelineVisualWidth // From closure, updated due to dep array
-
-          const anchorRatio =
-            widthBeforeThisZoomEvent > 0
-              ? (currentScrollLeft + mouseX) / widthBeforeThisZoomEvent
-              : 0
-
-          zoomAnchorRef.current = {
-            ratio: anchorRatio,
-            mouseXAtZoom: mouseX,
-            widthBeforeZoom: widthBeforeThisZoomEvent,
-          }
-
-          setTimelineVisualWidth((prevActualWidth) => {
-            const changeAmount = event.deltaY * ZOOM_SPEED_FACTOR
-            let newCalculatedWidth = prevActualWidth - changeAmount
-            const containerVisibleWidth = timelineElement.clientWidth
-            return Math.max(containerVisibleWidth, newCalculatedWidth)
-          })
-        } else {
-          // Existing horizontal scroll logic
-          if (event.deltaY !== 0) {
-            event.preventDefault()
-            timelineElement.scrollLeft -= event.deltaY
-          }
-          if (event.deltaX !== 0) {
-            // No preventDefault() here was original behavior for horizontal mouse wheel scroll
-            timelineElement.scrollLeft -= event.deltaX
-          }
-        }
-      }
-
-      timelineElement.addEventListener('wheel', handleWheel, {
-        passive: false,
-      })
-
-      return () => {
-        timelineElement.removeEventListener('wheel', handleWheel, {
-          passive: false,
-        })
-      }
-    }
-  }, [timelineVisualWidth]) // Added timelineVisualWidth to dependencies
-
-  // Effect to adjust scroll after zoom
-  useEffect(() => {
-    const timelineElement = timelineContainerRef.current
-    if (timelineElement && zoomAnchorRef.current) {
-      const { ratio, mouseXAtZoom, widthBeforeZoom } = zoomAnchorRef.current
-      const newWidthAfterZoom = timelineVisualWidth // Current width after state update
-
-      if (newWidthAfterZoom !== widthBeforeZoom) {
-        // Ensure it was a zoom that changed width
-        let newScrollLeft = ratio * newWidthAfterZoom - mouseXAtZoom
-
-        const containerVisibleWidth = timelineElement.clientWidth
-        const maxScrollLeft = Math.max(
-          0,
-          newWidthAfterZoom - containerVisibleWidth
-        )
-        newScrollLeft = Math.max(0, Math.min(newScrollLeft, maxScrollLeft))
-
-        timelineElement.scrollLeft = newScrollLeft
-      }
-      zoomAnchorRef.current = null // Reset after use
-    }
-  }, [timelineVisualWidth]) // Runs after timelineVisualWidth changes
-
   return (
     <Box w="100%" h="100%" miw="750">
       <Stack gap="xs" h="100%">
@@ -286,15 +287,11 @@ export const ManagementPlanView = ({ tile, id_managementPlan }) => {
           ref={timelineContainerRef}
           style={{
             flexGrow: 1,
-            overflowX: 'auto',
+            overflowX: 'scroll',
           }}
         >
           <Box w={`${timelineVisualWidth}px`} h="100%" pos="relative">
-            <Group
-              h={50}
-              gap={0}
-              style={{ position: 'relative', borderBottom: '1px solid #eee' }}
-            >
+            <Group h={50} gap={0} style={{ position: 'relative' }}>
               {monthMarkers.map((markerDate, index) => {
                 const markerPositionPercent =
                   timelineDuration > 0
@@ -323,10 +320,13 @@ export const ManagementPlanView = ({ tile, id_managementPlan }) => {
 
             <Box
               h={'calc(100% - 50px)'}
-              style={{
+              sx={(theme) => ({
+                backgroundColor:
+                  theme.colorScheme === 'dark'
+                    ? theme.colors.dark[6]
+                    : theme.colors.gray[0],
                 position: 'relative',
-                backgroundColor: '#f9f9f9',
-              }}
+              })}
             >
               {monthMarkers.map((markerDate, index) => {
                 const markerPositionPercent =
@@ -337,15 +337,16 @@ export const ManagementPlanView = ({ tile, id_managementPlan }) => {
                     : 0
 
                 return (
-                  <Box
+                  <Divider
                     key={`line-${index}`}
+                    orientation="vertical"
+                    // color="gray.4" // or "gray.3" depending on desired shade, #e0e0e0 is close to gray.3 or gray.4
+                    size="xs" // for 1px width
                     style={{
                       position: 'absolute',
                       left: `${markerPositionPercent}%`,
                       top: 0,
                       bottom: 0,
-                      width: '1px',
-                      backgroundColor: '#e0e0e0',
                       zIndex: 1,
                     }}
                   />

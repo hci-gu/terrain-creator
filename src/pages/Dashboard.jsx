@@ -99,7 +99,7 @@ const Dashboard = () => {
                 selectedPlanId={selectedPlanId}
                 onSelect={setSelectedPlanId}
                 onDelete={handleDeletePlan}
-                onCreatePlan={createManagementPlan}
+                onCreatePlan={() => createManagementPlan()}
               />
             }
             main={

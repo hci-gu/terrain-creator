@@ -132,9 +132,9 @@ export const addManagementPlanTaskAtom = atom(
   (get, set, { managementPlan, taskToAdd, previousTask }) => {
     const tasks = managementPlan.tasks
     const newTaskId =
-      tasks.length > 0 ? Math.max(...tasks.map((t) => t.id)) + 1 : 0
+      tasks.reduce((maxId, task) => Math.max(task.id, maxId), -1) + 1
 
-    const type = previousTask.type || 'landcoverEdit'
+    const type = previousTask?.type || 'landcoverEdit'
     const startDate = previousTask ? previousTask.end : new Date()
     const endDate = addDays(startDate, 1)
 
