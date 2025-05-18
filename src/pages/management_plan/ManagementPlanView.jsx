@@ -18,7 +18,7 @@ import {
   addManagementPlanTaskAtom,
 } from '@state'
 import { useState } from 'react' // Removed useEffect, useRef
-import LandcoverEditForm from './LandcoverEditForm'
+import TaskEditorForm from './TaskEditorForm'
 import { Timeline } from './Timeline' // Import the new Timeline component
 
 export const ManagementPlanView = ({ tile, id_managementPlan }) => {
@@ -34,15 +34,7 @@ export const ManagementPlanView = ({ tile, id_managementPlan }) => {
   const addTask = useSetAtom(addManagementPlanTaskAtom)
   const [editingTask, setEditingTask] = useState(null)
 
-  // All timeline-specific logic (refs, state, effects, constants) has been moved to Timeline.jsx
-  // timelineContainerRef, timelineVisualWidth, ZOOM_SPEED_FACTOR, zoomAnchorRef
-  // useEffect for scrolling/zooming
-  // useEffect for adjusting scroll after zoom
-
   const currentTasks = managementPlan?.tasks || []
-
-  // Logic for displayYear, timelineMinDate, timelineMaxDate, actualTimelineEndDate, timelineDuration
-  // getMonthMarkers function and monthMarkers variable have been moved to Timeline.jsx
 
   if (!managementPlan) {
     return (
@@ -52,9 +44,6 @@ export const ManagementPlanView = ({ tile, id_managementPlan }) => {
     )
   }
 
-  // The check for currentTasks length is now implicitly handled by Timeline or can be added as a wrapper if needed.
-  // However, Timeline component itself handles empty tasks gracefully by calculating a default displayYear.
-  // It might be better to show a message if currentTasks is empty before rendering the Timeline.
   if (!currentTasks || currentTasks.length === 0) {
     return (
       <Container fluid>
@@ -64,14 +53,11 @@ export const ManagementPlanView = ({ tile, id_managementPlan }) => {
   }
 
   const handleTaskClick = (task) => {
-    if (task.type === 'landcoverEdit') {
-      setEditingTask(task)
-    }
-    // Other task click logic can remain here if it doesn't directly manipulate timeline display
+    setEditingTask(task)
   }
 
   const handleFormAction = (actionType, data) => {
-    if (actionType === 'update') {
+    if (actionType === 'updateTask') {
       console.log('Update task:', data)
       updateTask({
         managementPlan: managementPlan,
@@ -79,13 +65,13 @@ export const ManagementPlanView = ({ tile, id_managementPlan }) => {
         taskToUpdateData: data.task,
       })
       setEditingTask(null)
-    } else if (actionType === 'delete') {
+    } else if (actionType === 'deleteTask') {
       deleteTask({
         managementPlan: managementPlan,
         taskToDeleteId: data.id,
       })
       setEditingTask(null)
-    } else if (actionType === 'changeTask') {
+    } else if (actionType === 'changeEditingTask') {
       setEditingTask(data)
     } else if (actionType === 'createTask') {
       const currentEditingTask = data
@@ -109,7 +95,7 @@ export const ManagementPlanView = ({ tile, id_managementPlan }) => {
         />
       </Stack>
       {editingTask && (
-        <LandcoverEditForm
+        <TaskEditorForm
           key={editingTask.id} // Ensure key is stable if editingTask can change but represent the same conceptual item
           task={editingTask}
           tasks={currentTasks} // Pass currentTasks for context if needed by the form (e.g., for validation)

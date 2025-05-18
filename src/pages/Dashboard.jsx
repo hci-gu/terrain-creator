@@ -111,7 +111,7 @@ const Dashboard = () => {
           />
         </ContentCell>
 
-        {/* <ContentCell flexBasis="30%">
+        <ContentCell flexBasis="30%">
           <ContentLayout
             sidebar={
               <SimulationItemList
@@ -124,7 +124,7 @@ const Dashboard = () => {
             }
             main={<SimulationChartView id_simulation={selectedSimulationId} />}
           />
-        </ContentCell> */}
+        </ContentCell>
       </Stack>
     </Box>
   )

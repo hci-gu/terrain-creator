@@ -21,7 +21,7 @@ import { getTileByIdAtom } from '@state'
 import { useAtomValue } from 'jotai'
 import TileLandcoverDrawingEditor from '@components/TileLandcoverDrawingEditor'
 
-const LandcoverEditForm = ({ task, tasks, onAction }) => {
+const TaskEditorForm = ({ task, tasks, onAction }) => {
   const { id_tile } = useParams()
   const [formData, setFormData] = useState({ ...task })
   const [opened, setOpened] = useState(true)
@@ -53,13 +53,8 @@ const LandcoverEditForm = ({ task, tasks, onAction }) => {
     return null
   }, [currentTaskIndex, tasks])
 
-  const handleChange = (e) => {
-    const { name, value } = e.target
-    setFormData((prev) => ({ ...prev, [name]: value }))
-  }
-
-  const handleDateChange = (fieldName, date) => {
-    setFormData((prev) => ({ ...prev, [fieldName]: date }))
+  const handleFieldChange = (fieldName, value) => {
+    setFormData((prev) => ({ ...prev, [fieldName]: value }))
   }
 
   const handleSave = () => {
@@ -67,7 +62,7 @@ const LandcoverEditForm = ({ task, tasks, onAction }) => {
       id: formData.id,
       task: formData,
     }
-    onAction('update', updatedTaskData)
+    onAction('updateTask', updatedTaskData)
     setOpened(false)
   }
 
@@ -78,7 +73,7 @@ const LandcoverEditForm = ({ task, tasks, onAction }) => {
   }
 
   const handleDelete = () => {
-    onAction('delete', { id: formData.id })
+    onAction('deleteTask', { id: formData.id })
     setOpened(false)
   }
 
@@ -113,7 +108,9 @@ const LandcoverEditForm = ({ task, tasks, onAction }) => {
               <TextInput
                 name="name"
                 value={formData.name || ''}
-                onChange={handleChange}
+                onChange={(e) =>
+                  handleFieldChange(e.target.name, e.target.value)
+                }
               />
             </Grid.Col>
           </Grid>
@@ -125,7 +122,7 @@ const LandcoverEditForm = ({ task, tasks, onAction }) => {
             <Grid.Col span={8}>
               <DatePickerInput
                 value={formData.start}
-                onChange={(date) => handleDateChange('start', date)}
+                onChange={(date) => handleFieldChange('start', date)}
                 minDate={previousTask ? previousTask.end : undefined}
                 maxDate={formData.end ? subDays(formData.end, 1) : undefined}
                 leftSection={<IconCalendar size={16} />}
@@ -143,7 +140,7 @@ const LandcoverEditForm = ({ task, tasks, onAction }) => {
             <Grid.Col span={8}>
               <DatePickerInput
                 value={formData.end}
-                onChange={(date) => handleDateChange('end', date)}
+                onChange={(date) => handleFieldChange('end', date)}
                 minDate={
                   formData.start ? addDays(formData.start, 1) : undefined
                 }
@@ -156,53 +153,62 @@ const LandcoverEditForm = ({ task, tasks, onAction }) => {
             </Grid.Col>
           </Grid>
           {/* Map Tile */}
-          <Grid>
-            <Grid.Col span={4}>
-              <Text>Map Tile</Text>
-            </Grid.Col>
-            <Grid.Col span={8}>
-              <Switch
-                label={mapTileImage ? 'Satellite' : 'Landcover'}
-                checked={mapTileImage}
-                onChange={(event) =>
-                  setMapTileImage(event.currentTarget.checked)
-                }
-                mb="xs"
-              />
-              <Box
-                pos="relative"
-                onClick={() => setTileViewOpened(true)}
-                style={{ cursor: 'pointer' }}
-              >
-                <Image
-                  src={mapTileImage ? tile.satellite : tile.landcover?.url}
-                  alt="Map Tile"
-                  style={{
-                    width: '100%',
-                    height: '100%',
-                  }}
+          {task.type === 'landcoverEdit' && (
+            <Grid>
+              <Grid.Col span={4}>
+                <Text>Map Tile</Text>
+              </Grid.Col>
+              <Grid.Col span={8}>
+                <Switch
+                  label={mapTileImage ? 'Satellite' : 'Landcover'}
+                  checked={mapTileImage}
+                  onChange={(event) =>
+                    setMapTileImage(event.currentTarget.checked)
+                  }
+                  mb="xs"
                 />
-                {formData.mapLandcover && (
+                <Box
+                  pos="relative"
+                  onClick={() => setTileViewOpened(true)}
+                  style={{ cursor: 'pointer' }}
+                >
                   <Image
-                    src={formData.mapLandcover}
-                    alt="Map Landcover"
-                    pos="absolute"
-                    top={0}
-                    left={0}
+                    src={mapTileImage ? tile.satellite : tile.landcover?.url}
+                    alt="Map Tile"
+                    style={{
+                      width: '100%',
+                      height: '100%',
+                    }}
                   />
-                )}
-                {previousTask && previousTask.mapLandcover && (
-                  <Image
-                    src={previousTask.mapLandcover}
-                    alt="Parent Map Landcover"
-                    pos="absolute"
-                    top={0}
-                    left={0}
-                  />
-                )}
-              </Box>
-            </Grid.Col>
-          </Grid>
+                  {formData.landcoverEdit && (
+                    <Image
+                      src={formData.landcoverEdit}
+                      alt="Landcover Edit"
+                      pos="absolute"
+                      top={0}
+                      left={0}
+                    />
+                  )}
+                  {previousTask && previousTask.landcoverEdit && (
+                    <Image
+                      src={previousTask.landcoverEdit}
+                      alt="Previous Landcover Edit"
+                      pos="absolute"
+                      top={0}
+                      left={0}
+                    />
+                  )}
+                </Box>
+              </Grid.Col>
+            </Grid>
+          )}
+          {task.type === 'fishingAmountEdit' && (
+            <Grid>
+              <Grid.Col span={4}>
+                <Text>Fishing Amount</Text>
+              </Grid.Col>
+            </Grid>
+          )}
           {/* Previous Task */}
           <Grid>
             <Grid.Col span={6}>
@@ -212,7 +218,7 @@ const LandcoverEditForm = ({ task, tasks, onAction }) => {
                   variant="outline"
                   fullWidth
                   onClick={() => {
-                    onAction('changeTask', previousTask)
+                    onAction('changeEditingTask', previousTask)
                   }}
                 >
                   {previousTask.name}
@@ -243,7 +249,7 @@ const LandcoverEditForm = ({ task, tasks, onAction }) => {
                   variant="outline"
                   fullWidth
                   onClick={() => {
-                    onAction('changeTask', nextTask)
+                    onAction('changeEditingTask', nextTask)
                   }}
                 >
                   {nextTask.name}
@@ -287,4 +293,4 @@ const LandcoverEditForm = ({ task, tasks, onAction }) => {
   )
 }
 
-export default LandcoverEditForm
+export default TaskEditorForm
