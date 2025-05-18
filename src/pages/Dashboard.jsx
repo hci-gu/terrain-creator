@@ -28,20 +28,6 @@ const Dashboard = () => {
   const [managementPlans, setManagementPlans] = useAtom(managementPlansAtom)
   const [selectedPlanId, setSelectedPlanId] = useState(0)
   const [selectedSimulationId, setSelectedSimulationId] = useState(null)
-  const [showSettings, setShowSettings] = useState(false)
-  const [simulationOptions, setSimulationOptions] = useState({
-    maxSteps: 1000,
-    fishingAmounts: {
-      herring: 0.26,
-      spat: 0.26,
-      cod: 0.5,
-    },
-    initialPopulation: {
-      herring: 760,
-      spat: 1525,
-      cod: 388,
-    },
-  })
 
   useEffect(() => {
     if (tile && tile.simulations && tile.simulations.length > 0) {

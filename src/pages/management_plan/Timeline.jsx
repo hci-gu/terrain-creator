@@ -11,10 +11,11 @@ import {
 import { format } from 'date-fns'
 import { useEffect, useRef } from 'react'
 import { atom, useAtom } from 'jotai'
+import FishingPolicyView from '@components/FishingPolicyView'
 
 export const timelineWidthAtom = atom(null)
 
-const ZOOM_SPEED_FACTOR = 20
+const ZOOM_SPEED_FACTOR = 10
 const TimelineTaskItem = ({
   task,
   tile,
@@ -31,20 +32,28 @@ const TimelineTaskItem = ({
           <Text fw={600}>{task.name}</Text>
           <Text fz="sm">Start: {format(clampedTaskStart, 'MMM d, yyyy')}</Text>
           <Text fz="sm">End: {format(clampedTaskEnd, 'MMM d, yyyy')}</Text>
-          {task.type === 'landcoverEdit' && (
-            <Text fz="sm" c="blue">
-              Landcover Type: {task.mapLandcoverType}
-            </Text>
+          {tile.landcover?.url && task.type === 'landcoverEdit' && (
+            <Box h="100">
+              <Image
+                src={tile.landcover.url}
+                alt={task.name}
+                h="100%"
+                radius="sm"
+                fit="contain"
+              />
+            </Box>
           )}
         </Stack>
       }
       withArrow
-      position="bottom"
+      // position="top"
     >
       <Paper
         shadow="xl"
         withBorder
+        p="xs"
         w={`${widthPercentage}%`}
+        h="50%"
         left={`${leftPercentage}%`}
         pos="absolute"
         style={{
@@ -60,22 +69,34 @@ const TimelineTaskItem = ({
               {task.name}
             </Text>
             {task.type === 'landcoverEdit' && (
-              <Text fz="xs" c="blue" truncate>
-                LC Type: {task.mapLandcoverType}
+              <Text fz="xs" truncate>
+                Landcover edit specfic values
               </Text>
             )}
+            {task.type === 'fishingPolicyEdit' && task.fishingPolicy && (
+              <FishingPolicyView fishingPolicy={task.fishingPolicy} />
+            )}
           </Box>
-          {tile?.landcover?.url && (
-            <Box>
-              <Image
-                src={tile.landcover.url}
-                alt={task.name}
-                h="312"
-                radius="sm"
-                fit="contain"
-              />
+          {/* {tile.landcover?.url &&
+            task.type === 'landcoverEdit' &&
+            widthPercentage > 1 && (
+              <Box h="100%">
+                <Image
+                  src={tile.landcover.url}
+                  alt={task.name}
+                  radius="sm"
+                  mah="200px"
+                  fit="contain"
+                />
+              </Box>
+            )} */}
+          {/* {task.type === 'fishingPolicyEdit' && (
+            <Box h="312">
+              <Text fz="xs" c="blue" truncate>
+                Fishing Policy: {`${task.fishingPolicy}`}
+              </Text>
             </Box>
-          )}
+          )} */}
         </Stack>
       </Paper>
     </Tooltip>
@@ -93,7 +114,7 @@ export const Timeline = ({ tasks, tile, onTaskClick }) => {
     if (!timelineElement) return
 
     const handleWheel = (event) => {
-      if (event.ctrlKey) {
+      if (event.shiftKey) {
         event.preventDefault()
 
         const mouseX =
@@ -192,6 +213,7 @@ export const Timeline = ({ tasks, tile, onTaskClick }) => {
       flex="auto"
       style={{
         overflowX: 'scroll',
+        userSelect: 'none',
       }}
     >
       <Box w={`${timelineWidth}px`} h="100%" pos="relative">
@@ -212,9 +234,6 @@ export const Timeline = ({ tasks, tile, onTaskClick }) => {
                 pos="absolute"
                 left={`${markerPositionPercent}%`}
                 pl="4px"
-                style={{
-                  userSelect: 'none',
-                }}
               >
                 {format(markerDate, 'MMMM')}
               </Text>
@@ -293,7 +312,7 @@ export const Timeline = ({ tasks, tile, onTaskClick }) => {
               ) {
                 return null
               }
-
+              console.log(widthPercentage)
               return (
                 <TimelineTaskItem
                   key={task.id}

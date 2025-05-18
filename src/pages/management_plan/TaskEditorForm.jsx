@@ -12,14 +12,79 @@ import {
   Box,
   Title,
   Switch,
+  Slider,
+  Space,
+  Paper,
+  Card,
 } from '@mantine/core'
 import { DatePickerInput } from '@mantine/dates'
 import { IconCalendar } from '@tabler/icons-react'
 import { subDays, addDays } from 'date-fns'
-import LandcoverSwatches from './LandcoverSwatches'
 import { getTileByIdAtom } from '@state'
 import { useAtomValue } from 'jotai'
 import TileLandcoverDrawingEditor from '@components/TileLandcoverDrawingEditor'
+import FishingPolicyView from '../../components/FishingPolicyView'
+
+const MapTileEditorView = ({
+  mapTileImage,
+  onMapTileImageChange,
+  tile,
+  onTileViewOpen,
+  currentLandcoverEdit,
+  previousLandcoverEdit,
+}) => {
+  if (!tile) return null
+
+  return (
+    <Grid>
+      <Grid.Col span={4}>
+        <Text>Map Tile</Text>
+      </Grid.Col>
+      <Grid.Col span={8}>
+        <Switch
+          label={mapTileImage ? 'Satellite' : 'Landcover'}
+          checked={mapTileImage}
+          onChange={(event) =>
+            onMapTileImageChange(event.currentTarget.checked)
+          }
+          mb="xs"
+        />
+        <Box
+          pos="relative"
+          onClick={onTileViewOpen}
+          style={{ cursor: 'pointer' }}
+        >
+          <Image
+            src={mapTileImage ? tile.satellite : tile.landcover?.url}
+            alt="Map Tile"
+            style={{
+              width: '100%',
+              height: '100%',
+            }}
+          />
+          {currentLandcoverEdit && (
+            <Image
+              src={currentLandcoverEdit}
+              alt="Landcover Edit"
+              pos="absolute"
+              top={0}
+              left={0}
+            />
+          )}
+          {previousLandcoverEdit && (
+            <Image
+              src={previousLandcoverEdit}
+              alt="Previous Landcover Edit"
+              pos="absolute"
+              top={0}
+              left={0}
+            />
+          )}
+        </Box>
+      </Grid.Col>
+    </Grid>
+  )
+}
 
 const TaskEditorForm = ({ task, tasks, onAction }) => {
   const { id_tile } = useParams()
@@ -56,7 +121,15 @@ const TaskEditorForm = ({ task, tasks, onAction }) => {
   const handleFieldChange = (fieldName, value) => {
     setFormData((prev) => ({ ...prev, [fieldName]: value }))
   }
-
+  const handleFishingPolicyChange = (species, value) => {
+    setFormData((prev) => ({
+      ...prev,
+      fishingPolicy: {
+        ...prev.fishingPolicy,
+        [species]: value,
+      },
+    }))
+  }
   const handleSave = () => {
     const updatedTaskData = {
       id: formData.id,
@@ -154,58 +227,22 @@ const TaskEditorForm = ({ task, tasks, onAction }) => {
           </Grid>
           {/* Map Tile */}
           {task.type === 'landcoverEdit' && (
-            <Grid>
-              <Grid.Col span={4}>
-                <Text>Map Tile</Text>
-              </Grid.Col>
-              <Grid.Col span={8}>
-                <Switch
-                  label={mapTileImage ? 'Satellite' : 'Landcover'}
-                  checked={mapTileImage}
-                  onChange={(event) =>
-                    setMapTileImage(event.currentTarget.checked)
-                  }
-                  mb="xs"
-                />
-                <Box
-                  pos="relative"
-                  onClick={() => setTileViewOpened(true)}
-                  style={{ cursor: 'pointer' }}
-                >
-                  <Image
-                    src={mapTileImage ? tile.satellite : tile.landcover?.url}
-                    alt="Map Tile"
-                    style={{
-                      width: '100%',
-                      height: '100%',
-                    }}
-                  />
-                  {formData.landcoverEdit && (
-                    <Image
-                      src={formData.landcoverEdit}
-                      alt="Landcover Edit"
-                      pos="absolute"
-                      top={0}
-                      left={0}
-                    />
-                  )}
-                  {previousTask && previousTask.landcoverEdit && (
-                    <Image
-                      src={previousTask.landcoverEdit}
-                      alt="Previous Landcover Edit"
-                      pos="absolute"
-                      top={0}
-                      left={0}
-                    />
-                  )}
-                </Box>
-              </Grid.Col>
-            </Grid>
+            <MapTileEditorView
+              mapTileImage={mapTileImage}
+              onMapTileImageChange={setMapTileImage}
+              tile={tile}
+              onTileViewOpen={() => setTileViewOpened(true)}
+              currentLandcoverEdit={formData.landcoverEdit}
+              previousLandcoverEdit={previousTask?.landcoverEdit}
+            />
           )}
-          {task.type === 'fishingAmountEdit' && (
+          {task.type === 'fishingPolicyEdit' && (
             <Grid>
-              <Grid.Col span={4}>
-                <Text>Fishing Amount</Text>
+              <Grid.Col span={12}>
+                <FishingPolicyView
+                  fishingPolicy={formData.fishingPolicy}
+                  onFishingPolicyChange={handleFishingPolicyChange}
+                />
               </Grid.Col>
             </Grid>
           )}

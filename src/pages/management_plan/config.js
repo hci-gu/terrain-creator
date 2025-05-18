@@ -1,7 +1,7 @@
-import { parse, addDays } from 'date-fns';
+import { parse, addDays } from 'date-fns'
 
-const startDate = parse('2025-04-01', 'yyyy-MM-dd', new Date());
-const endDate = addDays(parse('2025-04-30', 'yyyy-MM-dd', new Date()), 1);
+const startDate = parse('2025-04-01', 'yyyy-MM-dd', new Date())
+const endDate = addDays(parse('2025-04-30', 'yyyy-MM-dd', new Date()), 1)
 
 export const config = {
   start: startDate,
@@ -45,6 +45,6 @@ export const config = {
   taskTypes: [
     { id: 'task', label: 'Task' },
     { id: 'landcoverEdit', label: 'Landcover Edit' },
-    { id: 'fishingAmountEdit', label: 'Fishing Amount Edit' },
+    { id: 'fishingPolicyEdit', label: 'Fishing Policy Edit' },
   ],
 }
