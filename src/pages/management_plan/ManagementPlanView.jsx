@@ -57,6 +57,7 @@ const TimelineTaskItem = ({
           cursor: 'pointer',
           top: '50%',
           transform: 'translateY(-50%)',
+          zIndex: 2,
         }}
         onClick={() => handleTaskClick(task)}
       >
@@ -112,6 +113,9 @@ export const ManagementPlanView = ({ tile, id_managementPlan }) => {
   const [editingTask, setEditingTask] = useState(null)
 
   const timelineContainerRef = useRef(null)
+  const [timelineVisualWidth, setTimelineVisualWidth] = useState(20000) // Initial width in pixels
+  const ZOOM_SPEED_FACTOR = 20 // Adjust sensitivity as needed
+  const zoomAnchorRef = useRef(null)
 
   const currentTasks = managementPlan?.tasks || []
 
@@ -193,32 +197,87 @@ export const ManagementPlanView = ({ tile, id_managementPlan }) => {
     }
   }
 
-  // Setup horizontal scrolling
+  // Setup horizontal scrolling and zooming
   useEffect(() => {
     const timelineElement = timelineContainerRef.current
 
     if (timelineElement) {
-      const handleWheelScroll = (event) => {
-        if (event.deltaY !== 0) {
+      const handleWheel = (event) => {
+        if (!timelineElement) return
+
+        if (event.ctrlKey) {
           event.preventDefault()
-          timelineElement.scrollLeft -= event.deltaY
-        }
-        if (event.deltaX !== 0) {
-          timelineElement.scrollLeft -= event.deltaX
+
+          const mouseX =
+            event.clientX - timelineElement.getBoundingClientRect().left
+          const currentScrollLeft = timelineElement.scrollLeft
+          const widthBeforeThisZoomEvent = timelineVisualWidth // From closure, updated due to dep array
+
+          const anchorRatio =
+            widthBeforeThisZoomEvent > 0
+              ? (currentScrollLeft + mouseX) / widthBeforeThisZoomEvent
+              : 0
+
+          zoomAnchorRef.current = {
+            ratio: anchorRatio,
+            mouseXAtZoom: mouseX,
+            widthBeforeZoom: widthBeforeThisZoomEvent,
+          }
+
+          setTimelineVisualWidth((prevActualWidth) => {
+            const changeAmount = event.deltaY * ZOOM_SPEED_FACTOR
+            let newCalculatedWidth = prevActualWidth - changeAmount
+            const containerVisibleWidth = timelineElement.clientWidth
+            return Math.max(containerVisibleWidth, newCalculatedWidth)
+          })
+        } else {
+          // Existing horizontal scroll logic
+          if (event.deltaY !== 0) {
+            event.preventDefault()
+            timelineElement.scrollLeft -= event.deltaY
+          }
+          if (event.deltaX !== 0) {
+            // No preventDefault() here was original behavior for horizontal mouse wheel scroll
+            timelineElement.scrollLeft -= event.deltaX
+          }
         }
       }
 
-      timelineElement.addEventListener('wheel', handleWheelScroll, {
+      timelineElement.addEventListener('wheel', handleWheel, {
         passive: false,
       })
 
       return () => {
-        timelineElement.removeEventListener('wheel', handleWheelScroll, {
+        timelineElement.removeEventListener('wheel', handleWheel, {
           passive: false,
         })
       }
     }
-  }, [])
+  }, [timelineVisualWidth]) // Added timelineVisualWidth to dependencies
+
+  // Effect to adjust scroll after zoom
+  useEffect(() => {
+    const timelineElement = timelineContainerRef.current
+    if (timelineElement && zoomAnchorRef.current) {
+      const { ratio, mouseXAtZoom, widthBeforeZoom } = zoomAnchorRef.current
+      const newWidthAfterZoom = timelineVisualWidth // Current width after state update
+
+      if (newWidthAfterZoom !== widthBeforeZoom) {
+        // Ensure it was a zoom that changed width
+        let newScrollLeft = ratio * newWidthAfterZoom - mouseXAtZoom
+
+        const containerVisibleWidth = timelineElement.clientWidth
+        const maxScrollLeft = Math.max(
+          0,
+          newWidthAfterZoom - containerVisibleWidth
+        )
+        newScrollLeft = Math.max(0, Math.min(newScrollLeft, maxScrollLeft))
+
+        timelineElement.scrollLeft = newScrollLeft
+      }
+      zoomAnchorRef.current = null // Reset after use
+    }
+  }, [timelineVisualWidth]) // Runs after timelineVisualWidth changes
 
   return (
     <Box w="100%" h="100%" miw="750">
@@ -230,7 +289,7 @@ export const ManagementPlanView = ({ tile, id_managementPlan }) => {
             overflowX: 'auto',
           }}
         >
-          <Box w="20000px" h="100%" pos="relative">
+          <Box w={`${timelineVisualWidth}px`} h="100%" pos="relative">
             <Group
               h={50}
               gap={0}
