@@ -56,7 +56,7 @@ const Dashboard = () => {
         ? planName
         : `Management Plan ${managementPlans.length + 1}`,
       created: new Date(),
-      tile: tile,
+      tasks: [],
     }
     setManagementPlans([...managementPlans, newPlan])
     return newPlan
@@ -91,7 +91,7 @@ const Dashboard = () => {
   return (
     <Box w="100%" h="100%">
       <Stack h="100%" gap="md">
-        <ContentCell>
+        <ContentCell flexBasis="70%">
           <ContentLayout
             sidebar={
               <ManagementPlanItemList
@@ -111,7 +111,7 @@ const Dashboard = () => {
           />
         </ContentCell>
 
-        <ContentCell>
+        {/* <ContentCell flexBasis="30%">
           <ContentLayout
             sidebar={
               <SimulationItemList
@@ -124,7 +124,7 @@ const Dashboard = () => {
             }
             main={<SimulationChartView id_simulation={selectedSimulationId} />}
           />
-        </ContentCell>
+        </ContentCell> */}
       </Stack>
     </Box>
   )

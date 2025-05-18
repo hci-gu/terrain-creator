@@ -88,7 +88,7 @@ export const SimulationChartView = ({ id_simulation }) => {
     <ResponsiveContainer
       width="100%"
       height="100%"
-      minWidth="750px"
+      // minWidth="750px"
       style={{ overflow: 'hidden' }}
     >
       <LineChart

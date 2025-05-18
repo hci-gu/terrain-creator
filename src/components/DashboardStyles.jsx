@@ -1,8 +1,8 @@
 import { Paper, Flex, Box } from '@mantine/core'
 
-export const ContentCell = ({ children, ...props }) => (
+export const ContentCell = ({ children, flexBasis = '50%', ...props }) => (
   <Paper
-    flex="1 1 50%"
+    flex={`1 1 ${flexBasis}`}
     miw="0"
     w="100%"
     p="md"
@@ -29,7 +29,12 @@ export const ContentLayout = ({ sidebar, main }) => (
       {sidebar}
     </Box>
 
-    <Box h="100%" miw="0" flex="auto" style={{ overflowX: 'auto' }}>
+    <Box
+      h="100%"
+      miw="0"
+      flex="auto"
+      // style={{ overflowX: 'auto' }}
+    >
       {main}
     </Box>
   </Flex>

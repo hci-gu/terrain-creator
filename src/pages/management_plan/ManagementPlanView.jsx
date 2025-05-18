@@ -3,13 +3,13 @@ import {
   Box,
   Text,
   Stack,
-  Paper,
-  Group,
-  Tooltip,
-  Image,
-  Divider,
+  // Paper,
+  // Group,
+  // Tooltip,
+  // Image,
+  // Divider,
 } from '@mantine/core'
-import { format } from 'date-fns'
+// import { format } from 'date-fns'
 import { useAtomValue, useSetAtom } from 'jotai'
 import {
   getManagementPlanByIdAtom,
@@ -17,93 +17,9 @@ import {
   deleteManagementPlanTaskAtom,
   addManagementPlanTaskAtom,
 } from '@state'
-import { useState, useEffect, useRef } from 'react'
+import { useState } from 'react' // Removed useEffect, useRef
 import LandcoverEditForm from './LandcoverEditForm'
-
-const TimelineTaskItem = ({
-  task,
-  tile,
-  leftPercentage,
-  widthPercentage,
-  clampedTaskStart,
-  clampedTaskEnd,
-  handleTaskClick,
-}) => {
-  return (
-    <Tooltip
-      label={
-        <Stack gap="xs">
-          <Text fw={600}>{task.text}</Text>
-          <Text fz="sm">Start: {format(clampedTaskStart, 'MMM d, yyyy')}</Text>
-          <Text fz="sm">End: {format(clampedTaskEnd, 'MMM d, yyyy')}</Text>
-          {task.type === 'landcoverEdit' && (
-            <Text fz="sm" c="blue">
-              Landcover Type: {task.mapLandcoverType}
-            </Text>
-          )}
-        </Stack>
-      }
-      withArrow
-      position="bottom"
-    >
-      <Paper
-        shadow="xl"
-        withBorder
-        h="80%"
-        w={`${widthPercentage}%`}
-        left={`${leftPercentage}%`}
-        pos="absolute"
-        p="xs"
-        style={{
-          cursor: 'pointer',
-          top: '50%',
-          transform: 'translateY(-50%)',
-          zIndex: 2,
-        }}
-        onClick={() => handleTaskClick(task)}
-      >
-        <Stack h="100%" justify="flex-start" gap="xs">
-          <Box>
-            <Text fz="xl" fw={600} truncate>
-              {task.text}
-            </Text>
-            {task.type === 'landcoverEdit' && (
-              <Text fz="xs" c="blue" truncate>
-                LC Type: {task.mapLandcoverType}
-              </Text>
-            )}
-          </Box>
-          {tile?.landcover?.url && (
-            <Box
-              w="auto"
-              h="50%"
-              flex="1 1 auto"
-              style={{
-                // flexGrow: 1,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
-            >
-              <Image
-                src={tile.landcover.url}
-                alt={task.text}
-                // flex="1 0 auto"
-                w="100%"
-                h="100%"
-                // maw="512px"
-                // mah="100%"
-                // mih="0"
-                // fit="contain"
-                radius="sm"
-              />
-            </Box>
-          )}
-        </Stack>
-      </Paper>
-    </Tooltip>
-  )
-}
+import { Timeline } from './Timeline' // Import the new Timeline component
 
 export const ManagementPlanView = ({ tile, id_managementPlan }) => {
   if (id_managementPlan === null || id_managementPlan === undefined) {
@@ -118,116 +34,15 @@ export const ManagementPlanView = ({ tile, id_managementPlan }) => {
   const addTask = useSetAtom(addManagementPlanTaskAtom)
   const [editingTask, setEditingTask] = useState(null)
 
-  const timelineContainerRef = useRef(null)
-  const [timelineVisualWidth, setTimelineVisualWidth] = useState(null) // Initial width in pixels
-  const ZOOM_SPEED_FACTOR = 20 // Adjust sensitivity as needed
-  const zoomAnchorRef = useRef(null)
-
-  // Setup horizontal scrolling and zooming
-  useEffect(() => {
-    const timelineElement = timelineContainerRef.current
-
-    if (timelineElement) {
-      const handleWheel = (event) => {
-        if (!timelineElement) return
-
-        if (event.ctrlKey) {
-          event.preventDefault()
-
-          const mouseX =
-            event.clientX - timelineElement.getBoundingClientRect().left
-          const currentScrollLeft = timelineElement.scrollLeft
-          const widthBeforeThisZoomEvent = timelineVisualWidth // From closure, updated due to dep array
-
-          const anchorRatio =
-            widthBeforeThisZoomEvent > 0
-              ? (currentScrollLeft + mouseX) / widthBeforeThisZoomEvent
-              : 0
-
-          zoomAnchorRef.current = {
-            ratio: anchorRatio,
-            mouseXAtZoom: mouseX,
-            widthBeforeZoom: widthBeforeThisZoomEvent,
-          }
-
-          setTimelineVisualWidth((prevActualWidth) => {
-            const changeAmount = event.deltaY * ZOOM_SPEED_FACTOR
-            let newCalculatedWidth = prevActualWidth - changeAmount
-            const containerVisibleWidth = timelineElement.clientWidth
-            return Math.max(containerVisibleWidth, newCalculatedWidth)
-          })
-        } else {
-          if (event.deltaY !== 0) {
-            event.preventDefault()
-            timelineElement.scrollLeft -= event.deltaY
-          }
-        }
-      }
-
-      timelineElement.addEventListener('wheel', handleWheel, {
-        passive: false,
-      })
-
-      return () => {
-        timelineElement.removeEventListener('wheel', handleWheel, {
-          passive: false,
-        })
-      }
-    }
-  }, [timelineVisualWidth, ZOOM_SPEED_FACTOR]) // Added timelineVisualWidth and ZOOM_SPEED_FACTOR to dependency array
-
-  // Effect to adjust scroll after zoom
-  useEffect(() => {
-    const timelineElement = timelineContainerRef.current
-    if (timelineElement && zoomAnchorRef.current) {
-      const { ratio, mouseXAtZoom, widthBeforeZoom } = zoomAnchorRef.current
-      const newWidthAfterZoom = timelineVisualWidth // Current width after state update
-
-      if (newWidthAfterZoom !== widthBeforeZoom) {
-        // Ensure it was a zoom that changed width
-        let newScrollLeft = ratio * newWidthAfterZoom - mouseXAtZoom
-
-        const containerVisibleWidth = timelineElement.clientWidth
-        const maxScrollLeft = Math.max(
-          0,
-          newWidthAfterZoom - containerVisibleWidth
-        )
-        newScrollLeft = Math.max(0, Math.min(newScrollLeft, maxScrollLeft))
-
-        timelineElement.scrollLeft = newScrollLeft
-      }
-      zoomAnchorRef.current = null // Reset after use
-    }
-  }, [timelineVisualWidth]) // Runs after timelineVisualWidth changes
+  // All timeline-specific logic (refs, state, effects, constants) has been moved to Timeline.jsx
+  // timelineContainerRef, timelineVisualWidth, ZOOM_SPEED_FACTOR, zoomAnchorRef
+  // useEffect for scrolling/zooming
+  // useEffect for adjusting scroll after zoom
 
   const currentTasks = managementPlan?.tasks || []
 
-  // Determine the display year
-  let displayYear
-  if (currentTasks.length > 0) {
-    const earliestTaskDate = new Date(
-      Math.min(...currentTasks.map((task) => new Date(task.start)))
-    )
-    displayYear = earliestTaskDate.getFullYear()
-  } else {
-    displayYear = new Date().getFullYear()
-  }
-
-  const timelineMinDate = new Date(displayYear, 0, 1) // January 1st
-  const timelineMaxDate = new Date(displayYear + 1, 0, 1) // January 1st of next year (for duration calc)
-  const actualTimelineEndDate = new Date(displayYear, 11, 31, 23, 59, 59) // Dec 31st for clamping tasks
-
-  const timelineDuration = timelineMaxDate.getTime() - timelineMinDate.getTime()
-
-  const getMonthMarkers = () => {
-    const markers = []
-    for (let i = 0; i < 12; i++) {
-      markers.push(new Date(displayYear, i, 1))
-    }
-    return markers
-  }
-
-  const monthMarkers = getMonthMarkers()
+  // Logic for displayYear, timelineMinDate, timelineMaxDate, actualTimelineEndDate, timelineDuration
+  // getMonthMarkers function and monthMarkers variable have been moved to Timeline.jsx
 
   if (!managementPlan) {
     return (
@@ -237,6 +52,9 @@ export const ManagementPlanView = ({ tile, id_managementPlan }) => {
     )
   }
 
+  // The check for currentTasks length is now implicitly handled by Timeline or can be added as a wrapper if needed.
+  // However, Timeline component itself handles empty tasks gracefully by calculating a default displayYear.
+  // It might be better to show a message if currentTasks is empty before rendering the Timeline.
   if (!currentTasks || currentTasks.length === 0) {
     return (
       <Container fluid>
@@ -249,6 +67,7 @@ export const ManagementPlanView = ({ tile, id_managementPlan }) => {
     if (task.type === 'landcoverEdit') {
       setEditingTask(task)
     }
+    // Other task click logic can remain here if it doesn't directly manipulate timeline display
   }
 
   const handleFormAction = (actionType, data) => {
@@ -283,138 +102,17 @@ export const ManagementPlanView = ({ tile, id_managementPlan }) => {
   return (
     <Box w="100%" h="100%" miw="750">
       <Stack gap="xs" h="100%">
-        <Box
-          ref={timelineContainerRef}
-          style={{
-            flexGrow: 1,
-            overflowX: 'scroll',
-          }}
-        >
-          <Box w={`${timelineVisualWidth}px`} h="100%" pos="relative">
-            <Group h={50} gap={0} style={{ position: 'relative' }}>
-              {monthMarkers.map((markerDate, index) => {
-                const markerPositionPercent =
-                  timelineDuration > 0
-                    ? ((markerDate.getTime() - timelineMinDate.getTime()) /
-                        timelineDuration) *
-                      100
-                    : 0
-                return (
-                  <Text
-                    key={`label-${index}`}
-                    fz="xl"
-                    fw={600}
-                    c="dimmed"
-                    style={{
-                      position: 'absolute',
-                      left: `${markerPositionPercent}%`,
-                      paddingLeft: '4px',
-                      userSelect: 'none',
-                    }}
-                  >
-                    {format(markerDate, 'MMMM')}
-                  </Text>
-                )
-              })}
-            </Group>
-
-            <Box
-              h={'calc(100% - 50px)'}
-              sx={(theme) => ({
-                backgroundColor:
-                  theme.colorScheme === 'dark'
-                    ? theme.colors.dark[6]
-                    : theme.colors.gray[0],
-                position: 'relative',
-              })}
-            >
-              {monthMarkers.map((markerDate, index) => {
-                const markerPositionPercent =
-                  timelineDuration > 0
-                    ? ((markerDate.getTime() - timelineMinDate.getTime()) /
-                        timelineDuration) *
-                      100
-                    : 0
-
-                return (
-                  <Divider
-                    key={`line-${index}`}
-                    orientation="vertical"
-                    // color="gray.4" // or "gray.3" depending on desired shade, #e0e0e0 is close to gray.3 or gray.4
-                    size="xs" // for 1px width
-                    style={{
-                      position: 'absolute',
-                      left: `${markerPositionPercent}%`,
-                      top: 0,
-                      bottom: 0,
-                      zIndex: 1,
-                    }}
-                  />
-                )
-              })}
-
-              <Group h="100%" gap="lg" wrap="nowrap" pos="relative">
-                {currentTasks.map((task) => {
-                  const taskStart = new Date(task.start)
-                  let taskEnd = new Date(task.end)
-
-                  const clampedTaskStart = new Date(
-                    Math.max(taskStart, timelineMinDate)
-                  )
-                  const clampedTaskEnd = new Date(
-                    Math.min(taskEnd, actualTimelineEndDate)
-                  )
-
-                  if (clampedTaskStart > clampedTaskEnd) {
-                    return null
-                  }
-
-                  const taskDuration =
-                    clampedTaskEnd.getTime() - clampedTaskStart.getTime()
-
-                  const leftPercentage =
-                    timelineDuration > 0
-                      ? ((clampedTaskStart.getTime() -
-                          timelineMinDate.getTime()) /
-                          timelineDuration) *
-                        100
-                      : 0
-                  const widthPercentage =
-                    timelineDuration > 0
-                      ? (taskDuration / timelineDuration) * 100
-                      : 0
-
-                  if (
-                    taskEnd < timelineMinDate ||
-                    taskStart > actualTimelineEndDate ||
-                    widthPercentage <= 0
-                  ) {
-                    return null
-                  }
-
-                  return (
-                    <TimelineTaskItem
-                      key={task.id}
-                      task={task}
-                      tile={tile}
-                      leftPercentage={leftPercentage}
-                      widthPercentage={widthPercentage}
-                      clampedTaskStart={clampedTaskStart}
-                      clampedTaskEnd={clampedTaskEnd}
-                      handleTaskClick={handleTaskClick}
-                    />
-                  )
-                })}
-              </Group>
-            </Box>
-          </Box>
-        </Box>
+        <Timeline
+          tasks={currentTasks}
+          tile={tile}
+          onTaskClick={handleTaskClick}
+        />
       </Stack>
       {editingTask && (
         <LandcoverEditForm
-          key={editingTask.id}
+          key={editingTask.id} // Ensure key is stable if editingTask can change but represent the same conceptual item
           task={editingTask}
-          tasks={currentTasks}
+          tasks={currentTasks} // Pass currentTasks for context if needed by the form (e.g., for validation)
           onAction={handleFormAction}
         />
       )}
