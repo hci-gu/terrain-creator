@@ -21,7 +21,7 @@ export const ContentLayout = ({ sidebar, main }) => (
     align="flex-start"
     direction="row"
     wrap="nowrap"
-    gap="md"
+    // gap="xs"
     h="100%"
     miw="0"
   >

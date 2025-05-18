@@ -102,7 +102,12 @@ const Dashboard = () => {
                 onCreatePlan={createManagementPlan}
               />
             }
-            main={<ManagementPlanView id_managementPlan={selectedPlanId} />}
+            main={
+              <ManagementPlanView
+                tile={tile}
+                id_managementPlan={selectedPlanId}
+              />
+            }
           />
         </ContentCell>
 

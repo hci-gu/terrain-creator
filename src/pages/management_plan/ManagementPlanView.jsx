@@ -1,15 +1,12 @@
-import { config } from './config'
 import {
-  Button,
   Container,
-  Flex,
   Box,
   Text,
   Stack,
   Paper,
   Group,
-  Title,
   Tooltip,
+  Image,
 } from '@mantine/core'
 import { format } from 'date-fns'
 import { useAtomValue, useSetAtom } from 'jotai'
@@ -19,10 +16,89 @@ import {
   deleteManagementPlanTaskAtom,
   addManagementPlanTaskAtom,
 } from '@state'
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import LandcoverEditForm from './LandcoverEditForm'
 
-export const ManagementPlanView = ({ id_managementPlan }) => {
+const TimelineTaskItem = ({
+  task,
+  tile,
+  leftPercentage,
+  widthPercentage,
+  clampedTaskStart,
+  clampedTaskEnd,
+  handleTaskClick,
+}) => {
+  return (
+    <Tooltip
+      label={
+        <Stack gap="xs">
+          <Text fw={600}>{task.text}</Text>
+          <Text fz="sm">Start: {format(clampedTaskStart, 'MMM d, yyyy')}</Text>
+          <Text fz="sm">End: {format(clampedTaskEnd, 'MMM d, yyyy')}</Text>
+          {task.type === 'landcoverEdit' && (
+            <Text fz="sm" c="blue">
+              Landcover Type: {task.mapLandcoverType}
+            </Text>
+          )}
+        </Stack>
+      }
+      withArrow
+      position="bottom"
+    >
+      <Paper
+        shadow="xl"
+        withBorder
+        h="80%"
+        w={`${widthPercentage}%`}
+        left={`${leftPercentage}%`}
+        pos="absolute"
+        p="xs"
+        style={{
+          cursor: 'pointer',
+          top: '50%',
+          transform: 'translateY(-50%)',
+        }}
+        onClick={() => handleTaskClick(task)}
+      >
+        <Stack h="100%" justify="flex-start" gap="xs">
+          <Box>
+            <Text fz="xl" fw={600} truncate>
+              {task.text}
+            </Text>
+            {task.type === 'landcoverEdit' && (
+              <Text fz="xs" c="blue" truncate>
+                LC Type: {task.mapLandcoverType}
+              </Text>
+            )}
+          </Box>
+          {tile?.landcover?.url && (
+            <Box
+              style={{
+                flexGrow: 1,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: '100%',
+              }}
+            >
+              <Image
+                src={tile.landcover.url}
+                alt={task.text}
+                w="100%"
+                maw="512px"
+                mah="100%"
+                fit="cover"
+                radius="sm"
+              />
+            </Box>
+          )}
+        </Stack>
+      </Paper>
+    </Tooltip>
+  )
+}
+
+export const ManagementPlanView = ({ tile, id_managementPlan }) => {
   if (id_managementPlan === null || id_managementPlan === undefined) {
     return null
   }
@@ -34,6 +110,8 @@ export const ManagementPlanView = ({ id_managementPlan }) => {
   const deleteTask = useSetAtom(deleteManagementPlanTaskAtom)
   const addTask = useSetAtom(addManagementPlanTaskAtom)
   const [editingTask, setEditingTask] = useState(null)
+
+  const timelineContainerRef = useRef(null)
 
   const currentTasks = managementPlan?.tasks || []
 
@@ -104,7 +182,7 @@ export const ManagementPlanView = ({ id_managementPlan }) => {
     } else if (actionType === 'changeTask') {
       setEditingTask(data)
     } else if (actionType === 'createTask') {
-      const currentEditingTask = data // This is the task from which 'create' was clicked
+      const currentEditingTask = data
       const newTask = addTask({
         managementPlan: managementPlan,
         previousTask: currentEditingTask,
@@ -115,165 +193,161 @@ export const ManagementPlanView = ({ id_managementPlan }) => {
     }
   }
 
+  // Setup horizontal scrolling
+  useEffect(() => {
+    const timelineElement = timelineContainerRef.current
+
+    if (timelineElement) {
+      const handleWheelScroll = (event) => {
+        if (event.deltaY !== 0) {
+          event.preventDefault()
+          timelineElement.scrollLeft -= event.deltaY
+        }
+        if (event.deltaX !== 0) {
+          timelineElement.scrollLeft -= event.deltaX
+        }
+      }
+
+      timelineElement.addEventListener('wheel', handleWheelScroll, {
+        passive: false,
+      })
+
+      return () => {
+        timelineElement.removeEventListener('wheel', handleWheelScroll, {
+          passive: false,
+        })
+      }
+    }
+  }, [])
+
   return (
     <Box w="100%" h="100%" miw="750">
       <Stack gap="xs" h="100%">
-        <Title order={3}>{managementPlan.name}</Title>
-
-        {/* Timeline Container */}
         <Box
-          w="100%"
-          h="100%"
-          miw={20000} // Default width for the timeline
+          ref={timelineContainerRef}
           style={{
-            border: '1px solid #ccc', // Visual for timeline track
-            position: 'relative', // For absolute positioning of tasks
-            overflowX: 'auto', // Allow horizontal scrolling if tasks exceed width
-            backgroundColor: '#f9f9f9', // Light background for the timeline
+            flexGrow: 1,
+            overflowX: 'auto',
           }}
         >
-          {/* Render Month Markers */}
-          {monthMarkers.map((markerDate, index) => {
-            const markerPosition =
-              timelineDuration > 0
-                ? ((markerDate.getTime() - timelineMinDate.getTime()) /
-                    timelineDuration) *
-                  100
-                : 0
-
-            // Ensure marker is within the 0-100% range (should always be, but good practice)
-            // if (markerPosition < 0 || markerPosition >= 100) {
-            //   // Use >= 100 for last marker edge case
-            //   return null
-            // }
-
-            return (
-              <Box
-                key={`marker-${index}`}
-                style={{
-                  position: 'absolute',
-                  left: `${markerPosition}%`,
-                  top: 0,
-                  bottom: 0,
-                  width: '1px',
-                  backgroundColor: '#e0e0e0', // Lighter line for month markers
-                  zIndex: 1, // Below tasks
-                }}
-              >
-                <Text
-                  fz="xs"
-                  c="dimmed"
-                  style={{
-                    position: 'absolute',
-                    top: '2px',
-                    left: '4px',
-                    whiteSpace: 'nowrap',
-                  }}
-                >
-                  {format(markerDate, 'MMM yyyy')}
-                </Text>
-              </Box>
-            )
-          })}
-
-          <Group
-            gap="lg"
-            wrap="nowrap"
-            style={{
-              position: 'relative',
-              height: '100%',
-              zIndex: 2 /* Above markers */,
-            }}
-          >
-            {currentTasks.map((task) => {
-              const taskStart = new Date(task.start)
-              let taskEnd = new Date(task.end)
-
-              // Clamp task dates to the timeline's year
-              const clampedTaskStart = new Date(
-                Math.max(taskStart, timelineMinDate)
-              )
-              const clampedTaskEnd = new Date(
-                Math.min(taskEnd, actualTimelineEndDate)
-              )
-
-              // Ensure start is not after end after clamping
-              if (clampedTaskStart > clampedTaskEnd) {
-                return null // Or handle as zero-duration task at start
-              }
-
-              const taskDuration =
-                clampedTaskEnd.getTime() - clampedTaskStart.getTime()
-
-              const leftPercentage =
-                timelineDuration > 0
-                  ? ((clampedTaskStart.getTime() - timelineMinDate.getTime()) /
-                      timelineDuration) *
-                    100
-                  : 0
-              const widthPercentage =
-                timelineDuration > 0
-                  ? (taskDuration / timelineDuration) * 100
-                  : 0
-
-              // Skip rendering if task is outside the timeline year or has no duration after clamping
-              if (
-                taskEnd < timelineMinDate ||
-                taskStart > actualTimelineEndDate ||
-                widthPercentage <= 0
-              ) {
-                return null
-              }
-
-              return (
-                <Tooltip
-                  key={task.id}
-                  label={
-                    <Stack gap="xs">
-                      <Text fw={600}>{task.text}</Text>
-                      <Text fz="sm">
-                        Start: {format(clampedTaskStart, 'MMM d, yyyy')}
-                      </Text>
-                      <Text fz="sm">
-                        End: {format(clampedTaskEnd, 'MMM d, yyyy')}
-                      </Text>
-                      {task.type === 'landcoverEdit' && (
-                        <Text fz="sm" c="blue">
-                          Landcover Type: {task.mapLandcoverType}
-                        </Text>
-                      )}
-                    </Stack>
-                  }
-                  withArrow
-                  position="bottom"
-                >
-                  <Paper
-                    shadow="xl"
-                    withBorder
-                    p="md"
-                    onClick={() => handleTaskClick(task)}
+          <Box w="20000px" h="100%" pos="relative">
+            <Group
+              h={50}
+              gap={0}
+              style={{ position: 'relative', borderBottom: '1px solid #eee' }}
+            >
+              {monthMarkers.map((markerDate, index) => {
+                const markerPositionPercent =
+                  timelineDuration > 0
+                    ? ((markerDate.getTime() - timelineMinDate.getTime()) /
+                        timelineDuration) *
+                      100
+                    : 0
+                return (
+                  <Text
+                    key={`label-${index}`}
+                    fz="xl"
+                    fw={600}
+                    c="dimmed"
                     style={{
-                      cursor: 'pointer',
-                      position: 'absolute', // Crucial for timeline positioning
-                      left: `${leftPercentage}%`,
-                      width: `${widthPercentage}%`,
-                      // minWidth: '250px',
-                      height: '70%', // Adjusted height to make space for month labels
-                      top: '15%', // Adjusted top to center with new height
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
+                      position: 'absolute',
+                      left: `${markerPositionPercent}%`,
+                      paddingLeft: '4px',
+                      userSelect: 'none',
                     }}
                   >
-                    <Group gap="xs" wrap="nowrap">
-                      <Text fw={600} truncate>
-                        {task.text}
-                      </Text>
-                    </Group>
-                  </Paper>
-                </Tooltip>
-              )
-            })}
-          </Group>
+                    {format(markerDate, 'MMMM')}
+                  </Text>
+                )
+              })}
+            </Group>
+
+            <Box
+              h={'calc(100% - 50px)'}
+              style={{
+                position: 'relative',
+                backgroundColor: '#f9f9f9',
+              }}
+            >
+              {monthMarkers.map((markerDate, index) => {
+                const markerPositionPercent =
+                  timelineDuration > 0
+                    ? ((markerDate.getTime() - timelineMinDate.getTime()) /
+                        timelineDuration) *
+                      100
+                    : 0
+
+                return (
+                  <Box
+                    key={`line-${index}`}
+                    style={{
+                      position: 'absolute',
+                      left: `${markerPositionPercent}%`,
+                      top: 0,
+                      bottom: 0,
+                      width: '1px',
+                      backgroundColor: '#e0e0e0',
+                      zIndex: 1,
+                    }}
+                  />
+                )
+              })}
+
+              <Group h="100%" gap="lg" wrap="nowrap" pos="relative">
+                {currentTasks.map((task) => {
+                  const taskStart = new Date(task.start)
+                  let taskEnd = new Date(task.end)
+
+                  const clampedTaskStart = new Date(
+                    Math.max(taskStart, timelineMinDate)
+                  )
+                  const clampedTaskEnd = new Date(
+                    Math.min(taskEnd, actualTimelineEndDate)
+                  )
+
+                  if (clampedTaskStart > clampedTaskEnd) {
+                    return null
+                  }
+
+                  const taskDuration =
+                    clampedTaskEnd.getTime() - clampedTaskStart.getTime()
+
+                  const leftPercentage =
+                    timelineDuration > 0
+                      ? ((clampedTaskStart.getTime() -
+                          timelineMinDate.getTime()) /
+                          timelineDuration) *
+                        100
+                      : 0
+                  const widthPercentage =
+                    timelineDuration > 0
+                      ? (taskDuration / timelineDuration) * 100
+                      : 0
+
+                  if (
+                    taskEnd < timelineMinDate ||
+                    taskStart > actualTimelineEndDate ||
+                    widthPercentage <= 0
+                  ) {
+                    return null
+                  }
+
+                  return (
+                    <TimelineTaskItem
+                      key={task.id}
+                      task={task}
+                      tile={tile}
+                      leftPercentage={leftPercentage}
+                      widthPercentage={widthPercentage}
+                      clampedTaskStart={clampedTaskStart}
+                      clampedTaskEnd={clampedTaskEnd}
+                      handleTaskClick={handleTaskClick}
+                    />
+                  )
+                })}
+              </Group>
+            </Box>
+          </Box>
         </Box>
       </Stack>
       {editingTask && (
