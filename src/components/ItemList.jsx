@@ -1,5 +1,5 @@
 import React from 'react'
-import { Card, Text, Button, Stack, Group } from '@mantine/core'
+import { Card, Text, Button, Stack, Group, Box } from '@mantine/core'
 import { IconTrashFilled } from '@tabler/icons-react'
 
 const ItemList = ({
@@ -13,8 +13,8 @@ const ItemList = ({
   onButtonClick,
 }) => {
   return (
-    <Stack gap="md" w="100%" h="100%">
-      <Group gap="xs" pr="md" justify="space-between">
+    <Stack gap="md" w="100%" h="100%" wrap="nowrap">
+      <Group gap="xs" pr="lg" justify="space-between">
         {title && (
           <Text size="xl" fw={500} truncate>
             {title}
@@ -26,12 +26,7 @@ const ItemList = ({
           </Button>
         )}
       </Group>
-      <Group
-        gap="xs"
-        w="100%"
-        justify="space-between"
-        style={{ overflowY: 'auto' }}
-      >
+      <Box gap="xs" w="100%" style={{ overflowY: 'auto' }}>
         {!items || items.length === 0 ? (
           <Text c="dimmed">No items available.</Text>
         ) : (
@@ -71,7 +66,7 @@ const ItemList = ({
             </Card>
           ))
         )}
-      </Group>
+      </Box>
     </Stack>
   )
 }

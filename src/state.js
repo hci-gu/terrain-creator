@@ -24,7 +24,7 @@ export const oceancovers = [
     name: 'Ocean',
   },
 ]
-export const landcoverMap = _.keyBy(landcovers, 'name')
+// export const landcoverMap = _.keyBy(landcovers, 'name')
 const hexToRgb = (hex) => {
   const r = parseInt(hex.substring(1, 3), 16)
   const g = parseInt(hex.substring(3, 5), 16)

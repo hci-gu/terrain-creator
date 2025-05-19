@@ -9,12 +9,12 @@ export const ManagementPlanItemList = ({
   onCreatePlan,
 }) => {
   const renderPlanContent = (plan) => (
-    <Stack>
+    <Box>
       <Text fw={500}>{plan.name}</Text>
       <Text fz="sm" c="dimmed">
         Created: {plan.created.toLocaleDateString()}
       </Text>
-    </Stack>
+    </Box>
   )
 
   return (
