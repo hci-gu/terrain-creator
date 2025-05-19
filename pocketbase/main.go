@@ -239,6 +239,11 @@ func main() {
 			return nil
 		})
 
+		e.Router.GET("/simulate/agents", func(c echo.Context) error {
+			proxy.ServeHTTP(c.Response(), c.Request())
+			return nil
+		})
+
 		e.Router.GET("/simulate/:id", func(c echo.Context) error {
 			proxy.ServeHTTP(c.Response(), c.Request())
 			return nil

@@ -232,13 +232,6 @@ const MapContainer = () => {
             value={tileOpacity}
           />
           <Space h="md" />
-          {/* {mode === CREATE_MODE && (
-            <Checkbox
-              label="Mask out island"
-              checked={islandMask}
-              onChange={(e) => setIslandMask(e.target.checked)}
-            />
-          )} */}
           {mapMode == CREATE_MODE && <CreateTiles mapRef={map} />}
           {mapMode == CREATE_MODE && <Space h="md" />}
           <TileList />
