@@ -1,8 +1,7 @@
 import React, { useState } from 'react'
 import { useAtomValue } from 'jotai'
 import { unwrap } from 'jotai/utils'
-import { simulationAtom, timestepsAtom } from '../state'
-import { formatDate } from '@utils/formatDate'
+import { timestepsAtom } from '../state'
 import * as pocketbase from '../pocketbase'
 import {
   CartesianGrid,
@@ -13,21 +12,9 @@ import {
   XAxis,
   YAxis,
 } from 'recharts'
-import {
-  Space,
-  Text,
-  Flex,
-  Button,
-  Title,
-  Stack,
-  Card,
-  Slider,
-  Box,
-  Container,
-} from '@mantine/core'
+import { Space, Text, Flex, Stack, Card, Slider } from '@mantine/core'
 import { useEffect } from 'react'
 import LoadingSpinner from './LoadingSpinner'
-import { SimulationItemList } from './SimulationItemList'
 
 const vizColors = ['#3498db', '#2ecc71', '#e74c3c', '#f1c40f', '#9b59b6']
 

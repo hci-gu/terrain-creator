@@ -158,12 +158,19 @@ export const updateManagementPlanTaskAtom = atom(
   }
 )
 
+export const updateManagementPlanNameAtom = atom(
+  null,
+  (get, set, { managementPlan, newName }) => {
+    managementPlan.name = newName
+    set(managementPlansAtom, [...get(managementPlansAtom)])
+  }
+)
+
 export const addManagementPlanTaskAtom = atom(
   null,
   (get, set, { managementPlan, taskToAdd, previousTask }) => {
     const tasks = managementPlan.tasks
-    const newTaskId =
-      tasks.reduce((maxId, task) => Math.max(task.id, maxId), -1) + 1
+    const newTaskId = Date.now()
 
     const type = previousTask?.type || 'landcoverEdit'
     const startDate = previousTask ? previousTask.end : new Date()
@@ -172,7 +179,7 @@ export const addManagementPlanTaskAtom = atom(
     const newTask = {
       id: newTaskId,
       name: 'New Task',
-      type: type, // Default type, can be changed later
+      type: type,
       start: startDate,
       end: endDate,
       ...taskToAdd, // Allow overriding defaults
@@ -189,21 +196,18 @@ export const addManagementPlanTaskAtom = atom(
           ...tasks.slice(insertAtIndex),
         ]
       } else {
-        // Fallback if previousTaskId is not found or is the last task
         newTasksArray = [...tasks, newTask]
       }
     } else {
-      // Add to the beginning if no previousTaskId
       newTasksArray = [newTask, ...tasks]
     }
 
-    managementPlan.tasks = newTasksArray
     set(managementPlansAtom, (prevPlans) => {
       return prevPlans.map((plan) =>
         plan.id === managementPlan.id ? { ...plan, tasks: newTasksArray } : plan
       )
     })
-    return newTask // Return the newly created task
+    return newTask
   }
 )
 

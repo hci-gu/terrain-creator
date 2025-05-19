@@ -63,8 +63,14 @@ const TimelineTaskItem = ({
         }}
         onClick={() => handleTaskClick(task)}
       >
-        <Stack w="100%" h="100%" gap="xs" align="flex-start">
-          <Box>
+        <Stack
+          w="100%"
+          h="100%"
+          gap="xs"
+          // align="flex-start"
+          // justify="flex-start"
+        >
+          <Box w="100%" h="100%">
             <Text fz="xl" fw={600} truncate>
               {task.name}
             </Text>
@@ -77,19 +83,20 @@ const TimelineTaskItem = ({
               <FishingPolicyView fishingPolicy={task.fishingPolicy} />
             )}
           </Box>
-          {/* {tile.landcover?.url &&
+          {tile.landcover?.url &&
             task.type === 'landcoverEdit' &&
             widthPercentage > 1 && (
-              <Box h="100%">
-                <Image
-                  src={tile.landcover.url}
-                  alt={task.name}
-                  radius="sm"
-                  mah="200px"
-                  fit="contain"
-                />
-              </Box>
-            )} */}
+              // <Box h="50%">
+              <Image
+                src={tile.landcover.url}
+                alt={task.name}
+                radius="sm"
+                // h="100%"
+                // w="auto"
+                fit="contain"
+              />
+              // </Box>
+            )}
           {/* {task.type === 'fishingPolicyEdit' && (
             <Box h="312">
               <Text fz="xs" c="blue" truncate>
@@ -142,7 +149,7 @@ export const Timeline = ({ tasks, tile, onTaskClick }) => {
       } else {
         if (event.deltaY !== 0) {
           event.preventDefault()
-          timelineElement.scrollLeft -= event.deltaY // Note: Scroll direction might need adjustment based on UX preference
+          timelineElement.scrollLeft -= event.deltaY
         }
       }
     }
@@ -181,7 +188,6 @@ export const Timeline = ({ tasks, tile, onTaskClick }) => {
     }
   }, [timelineWidth])
 
-  // Determine the display year
   let displayYear
   if (tasks.length > 0) {
     const earliestTaskDate = new Date(
@@ -312,7 +318,6 @@ export const Timeline = ({ tasks, tile, onTaskClick }) => {
               ) {
                 return null
               }
-              console.log(widthPercentage)
               return (
                 <TimelineTaskItem
                   key={task.id}

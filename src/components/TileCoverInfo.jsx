@@ -39,25 +39,18 @@ const DownloadButton = ({ type, tile }) => {
 }
 
 const TileCoverInfo = ({ tile }) => {
-  if (!tile) return null // Add guard clause for missing tile
+  if (!tile) return null
 
   return (
     <div>
       <Flex gap="md">
+        <ImageComponent src={tile.satellite} w={256} h={256} radius={8} />
         <ImageComponent
-          src={tile.satellite}
+          src={tile.heightmap?.url}
           w={256}
           h={256}
           radius={8}
-          fallbackSrc={`${URL}/images/loading.png`}
-        />
-        <ImageComponent
-          src={tile.heightmap?.url} // Optional chaining for safety
-          w={256}
-          h={256}
-          radius={8}
-          key={`HM_${tile.id}_${new Date().getTime()}`} // More stable key
-          fallbackSrc={`${URL}/images/loading.png`}
+          key={tile.id}
         />
         <Flex direction="column" gap="md">
           <Text>Download textures:</Text>

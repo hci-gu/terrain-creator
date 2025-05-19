@@ -1,26 +1,53 @@
-import React, { useState, Suspense, useEffect } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
-import {
-  Container,
-  Breadcrumbs,
-  Anchor,
-  Flex,
-  Divider,
-  Button,
-  Text,
-  Stack,
-  Grid,
-  Image,
-  Box,
-} from '@mantine/core'
-import { useAtomValue, useSetAtom, useAtom } from 'jotai'
+import React, { useState, useEffect } from 'react'
+import { useParams } from 'react-router-dom'
+import { Stack, Box, Paper, Flex } from '@mantine/core'
+import { useAtomValue, useAtom } from 'jotai'
 import { getTileByIdAtom, managementPlansAtom } from '@state'
 import { ManagementPlanView } from '@pages/management_plan/ManagementPlanView'
 import { SimulationChartView } from '@components/SimulationChartView'
 import { ManagementPlanItemList } from '@components/ManagementPlanItemList'
 import { SimulationItemList } from '@components/SimulationItemList'
-import { ContentCell, ContentLayout } from '@components/DashboardStyles'
 import * as pocketbase from '@/pocketbase'
+
+export const ContentCell = ({ children, flexBasis = '50%', ...props }) => (
+  <Paper
+    flex={`1 1 ${flexBasis}`}
+    w="100%"
+    p="md"
+    shadow="xl"
+    radius="md"
+    withBorder
+    style={{ minHeight: 0 }}
+    {...props}
+  >
+    {children}
+  </Paper>
+)
+
+export const ContentLayout = ({ sidebar, main }) => (
+  <Flex
+    justify="flex-start"
+    align="flex-start"
+    direction="row"
+    wrap="nowrap"
+    // gap="xs"
+    h="100%"
+    miw="0"
+  >
+    <Box h="100%" w="30vw" miw="300" maw="500" flex="0 0 auto">
+      {sidebar}
+    </Box>
+
+    <Box
+      h="100%"
+      miw="0"
+      flex="auto"
+      // style={{ overflowX: 'auto' }}
+    >
+      {main}
+    </Box>
+  </Flex>
+)
 
 const Dashboard = () => {
   const { id_tile } = useParams()
@@ -37,10 +64,8 @@ const Dashboard = () => {
 
   const createManagementPlan = (planName) => {
     const newPlan = {
-      id: managementPlans.length,
-      name: planName
-        ? planName
-        : `Management Plan ${managementPlans.length + 1}`,
+      id: Date.now(),
+      name: planName ? planName : 'New Management Plan',
       created: new Date(),
       tasks: [],
     }

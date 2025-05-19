@@ -5,10 +5,10 @@ import { colorSchemeAtom } from '../state'
 import { useEffect } from 'react'
 
 const DarkModeToggle = () => {
-  const { colorScheme: mantineColorScheme, toggleColorScheme } = useMantineColorScheme()
+  const { colorScheme: mantineColorScheme, toggleColorScheme } =
+    useMantineColorScheme()
   const [colorScheme, setColorScheme] = useAtom(colorSchemeAtom)
 
-  // Sync Mantine's color scheme with our atom
   useEffect(() => {
     setColorScheme(mantineColorScheme)
   }, [mantineColorScheme, setColorScheme])

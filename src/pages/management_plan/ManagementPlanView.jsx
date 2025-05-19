@@ -3,23 +3,22 @@ import {
   Box,
   Text,
   Stack,
-  // Paper,
-  // Group,
-  // Tooltip,
-  // Image,
-  // Divider,
+  Button,
+  Group,
+  Title,
+  TextInput,
 } from '@mantine/core'
-// import { format } from 'date-fns'
 import { useAtomValue, useSetAtom } from 'jotai'
 import {
   getManagementPlanByIdAtom,
   updateManagementPlanTaskAtom,
   deleteManagementPlanTaskAtom,
   addManagementPlanTaskAtom,
+  updateManagementPlanNameAtom,
 } from '@state'
-import { useState } from 'react' // Removed useEffect, useRef
+import { useState } from 'react'
 import TaskEditorForm from './TaskEditorForm'
-import { Timeline } from './Timeline' // Import the new Timeline component
+import { Timeline } from './TaskTimeline'
 
 export const ManagementPlanView = ({ tile, id_managementPlan }) => {
   if (id_managementPlan === null || id_managementPlan === undefined) {
@@ -32,6 +31,7 @@ export const ManagementPlanView = ({ tile, id_managementPlan }) => {
   const updateTask = useSetAtom(updateManagementPlanTaskAtom)
   const deleteTask = useSetAtom(deleteManagementPlanTaskAtom)
   const addTask = useSetAtom(addManagementPlanTaskAtom)
+  const updatePlanName = useSetAtom(updateManagementPlanNameAtom)
   const [editingTask, setEditingTask] = useState(null)
 
   const currentTasks = managementPlan?.tasks || []
@@ -44,16 +44,24 @@ export const ManagementPlanView = ({ tile, id_managementPlan }) => {
     )
   }
 
-  if (!currentTasks || currentTasks.length === 0) {
-    return (
-      <Container fluid>
-        <Text c="dimmed">No tasks available for this management plan</Text>
-      </Container>
-    )
-  }
-
   const handleTaskClick = (task) => {
     setEditingTask(task)
+  }
+
+  const handleCreateNewTask = () => {
+    if (!managementPlan) {
+      console.error('Cannot create task: managementPlan is not available.')
+      return
+    }
+    const newTask = addTask({
+      managementPlan: managementPlan,
+      previousTask: null,
+    })
+    if (newTask) {
+      setEditingTask(newTask)
+    } else {
+      console.error('Failed to create a new task.')
+    }
   }
 
   const handleFormAction = (actionType, data) => {
@@ -86,19 +94,52 @@ export const ManagementPlanView = ({ tile, id_managementPlan }) => {
   }
 
   return (
-    <Box w="100%" h="100%" miw="750">
-      <Stack gap="xs" h="100%">
-        <Timeline
-          tasks={currentTasks}
-          tile={tile}
-          onTaskClick={handleTaskClick}
-        />
+    <Box w="100%" h="100%" miw={750}>
+      <Stack gap="md" h="100%">
+        <Group position="right" py="sm">
+          <Button onClick={handleCreateNewTask} disabled={!managementPlan}>
+            Create New Task
+          </Button>
+          <TextInput
+            value={managementPlan.name}
+            onChange={(e) =>
+              updatePlanName({ managementPlan, newName: e.target.value })
+            }
+            variant="unstyled"
+            size="xl"
+            fz="xl"
+            fw={500}
+            flex="auto"
+          />
+        </Group>
+
+        {currentTasks && currentTasks.length > 0 ? (
+          <Timeline
+            tasks={currentTasks}
+            tile={tile}
+            onTaskClick={handleTaskClick}
+          />
+        ) : (
+          <Container
+            fluid
+            style={{
+              flex: 1,
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <Text c="dimmed">No tasks yet.</Text>
+            <Text c="dimmed">Click 'Create New Task' to add one.</Text>
+          </Container>
+        )}
       </Stack>
       {editingTask && (
         <TaskEditorForm
-          key={editingTask.id} // Ensure key is stable if editingTask can change but represent the same conceptual item
+          key={editingTask.id}
           task={editingTask}
-          tasks={currentTasks} // Pass currentTasks for context if needed by the form (e.g., for validation)
+          tasks={currentTasks}
           onAction={handleFormAction}
         />
       )}

@@ -5,8 +5,7 @@ import { Title, Anchor, Tabs, AppShell, Group } from '@mantine/core'
 import MapContainer from '@pages/map'
 import { useInitTiles } from '@state'
 import Tiles from '@pages/Tiles'
-import Dashboard from '@/pages/Dashboard'
-import TESTING from '@pages/TESTING'
+import Dashboard from '@pages/Dashboard'
 
 const TabContainer = () => {
   return (
@@ -55,10 +54,6 @@ const router = createBrowserRouter(
       path: 'tile/:id_tile/dashboard',
       element: <Dashboard />,
     },
-    {
-      path: 'testing',
-      element: <TESTING />,
-    },
   ],
   {
     future: {
@@ -72,10 +67,16 @@ const App = () => {
   useInitTiles()
   return (
     <>
-      {/* There is no way to have header height be dynamic, so we have to use a fixed height 🙃 */}
+      {/* There is no way to have header height be dynamic, so we have to use a fixed height */}
       <AppShell header={{ height: 90.62 }} padding="md">
         <AppShell.Header>
-          <Group justify="space-between" align="center" ml="sm" mr="sm">
+          <Group
+            wrap="nowrap"
+            justify="space-between"
+            align="center"
+            ml="sm"
+            mr="sm"
+          >
             <Title>
               Ecotwin{' '}
               <span style={{ color: '#F2C94C', fontWeight: 900 }}>Map</span>

@@ -1,21 +1,7 @@
-// src/components/ItemList.jsx
 import React from 'react'
-import { Card, Flex, Text, Space, Button, Stack } from '@mantine/core'
+import { Card, Text, Button, Stack, Group } from '@mantine/core'
 import { IconTrashFilled } from '@tabler/icons-react'
 
-/**
- * A reusable component to display a list of items in cards,
- * supporting selection and deletion.
- *
- * @param {object[]} items - Array of items to display. Each item MUST have an 'id'.
- * @param {string|number|null} selectedId - The ID of the currently selected item.
- * @param {function(id: string|number): void} onSelect - Function called when an item card is clicked.
- * @param {function(id: string|number): void} onDelete - Function called when the delete button is clicked.
- * @param {function(item: object): React.ReactNode} renderItemContent - Function that takes an item and returns the JSX for its content within the card.
- * @param {string} [title] - Optional title to display above the list.
- * @param {string} [buttonLabel] - Optional label for the action button.
- * @param {function(): void} [onButtonClick] - Optional callback for when the action button is clicked.
- */
 const ItemList = ({
   items,
   selectedId,
@@ -27,45 +13,47 @@ const ItemList = ({
   onButtonClick,
 }) => {
   return (
-    <Stack
-      gap="md"
-      w="100%"
-      h="100%"
-      pl="md"
-      pr="md"
-      style={{ overflowY: 'scroll' }}
-    >
-      {title && (
-        <Text size="xl" fw={500}>
-          {title}
-        </Text>
-      )}
-      {buttonLabel && onButtonClick && (
-        <Button variant="filled" onClick={onButtonClick}>
-          {buttonLabel}
-        </Button>
-      )}
-      {!items || items.length === 0 ? (
-        <Text c="dimmed">No items available.</Text>
-      ) : (
-        items.map((item) => (
-          <Card
-            key={item.id}
-            withBorder
-            shadow="xs"
-            style={
-              item.id === selectedId
-                ? { borderColor: '#339AF0', borderWidth: 2, cursor: 'pointer' }
-                : { cursor: 'pointer' }
-            }
-            onClick={() => onSelect(item.id)}
-            padding="sm"
-          >
-            <Flex align="center" justify="space-between">
-              <div style={{ flexGrow: 1, marginRight: 'md' }}>
-                {renderItemContent(item)}
-              </div>
-
+    <Stack gap="md" w="100%" h="100%">
+      <Group gap="xs" pr="md" justify="space-between">
+        {title && (
+          <Text size="xl" fw={500} truncate>
+            {title}
+          </Text>
+        )}
+        {buttonLabel && onButtonClick && (
+          <Button variant="filled" onClick={onButtonClick}>
+            {buttonLabel}
+          </Button>
+        )}
+      </Group>
+      <Group
+        gap="xs"
+        w="100%"
+        justify="space-between"
+        style={{ overflowY: 'auto' }}
+      >
+        {!items || items.length === 0 ? (
+          <Text c="dimmed">No items available.</Text>
+        ) : (
+          items.map((item) => (
+            <Card
+              key={item.id}
+              withBorder
+              shadow="xs"
+              flex="auto"
+              p="sm"
+              style={{
+                ...(item.id === selectedId
+                  ? {
+                      borderColor: '#339AF0',
+                      borderWidth: 2,
+                      cursor: 'pointer',
+                    }
+                  : { cursor: 'pointer' }),
+              }}
+              onClick={() => onSelect(item.id)}
+            >
+              {renderItemContent(item)}
               <Button
                 w={48}
                 pl={12}
@@ -80,10 +68,10 @@ const ItemList = ({
               >
                 <IconTrashFilled size={16} />
               </Button>
-            </Flex>
-          </Card>
-        ))
-      )}
+            </Card>
+          ))
+        )}
+      </Group>
     </Stack>
   )
 }
