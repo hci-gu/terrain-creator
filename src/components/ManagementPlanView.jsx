@@ -5,8 +5,6 @@ import {
   Stack,
   Button,
   Group,
-  Title,
-  TextInput,
 } from '@mantine/core'
 import { useAtomValue, useSetAtom } from 'jotai'
 import {
@@ -17,8 +15,8 @@ import {
   updateManagementPlanNameAtom,
 } from '@state'
 import { useState } from 'react'
-import TaskEditorForm from './TaskEditorForm'
-import { Timeline } from './TaskTimeline'
+import TaskEditorForm from '@components/TaskEditorForm'
+import { Timeline } from '@components/TaskTimeline'
 
 export const ManagementPlanView = ({ tile, id_managementPlan }) => {
   if (id_managementPlan === null || id_managementPlan === undefined) {
@@ -94,23 +92,28 @@ export const ManagementPlanView = ({ tile, id_managementPlan }) => {
   }
 
   return (
-    <Box w="100%" h="100%" miw={750}>
-      <Stack gap="md" h="100%">
-        <Group position="right" py="sm">
-          <Button onClick={handleCreateNewTask} disabled={!managementPlan}>
-            Create New Task
-          </Button>
-          <TextInput
+    <Box w="100%" h="100%">
+      <Stack h="100%" gap="0">
+        <Group flex="initial" wrap="nowrap">
+          <input
+            type="text"
             value={managementPlan.name}
+            style={{
+              border: 'none',
+              background: 'transparent',
+              fontSize: 'var(--mantine-font-size-xl)',
+              fontWeight: 500,
+              outline: 'none',
+              padding: 0,
+              textOverflow: 'ellipsis',
+            }}
             onChange={(e) =>
               updatePlanName({ managementPlan, newName: e.target.value })
             }
-            variant="unstyled"
-            size="xl"
-            fz="xl"
-            fw={500}
-            flex="auto"
           />
+          <Button onClick={handleCreateNewTask} disabled={!managementPlan}>
+            Create New Task
+          </Button>
         </Group>
 
         {currentTasks && currentTasks.length > 0 ? (

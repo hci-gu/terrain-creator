@@ -8,7 +8,7 @@ import {
   landcoverFilters as initialLandcoverFilters,
 } from '@constants/landcover'
 
-import { parse, addDays } from 'date-fns'
+import { parse, addDays, addMonths } from 'date-fns'
 
 export const oceancovers = [
   {
@@ -83,7 +83,7 @@ const managementPlans_init_TESTING = [
         name: 'Chop down trees',
         type: 'landcoverEdit',
         start: parse('2025-04-01', 'yyyy-MM-dd', new Date()),
-        end: parse('2025-04-07', 'yyyy-MM-dd', new Date()),
+        end: parse('2025-05-01', 'yyyy-MM-dd', new Date()),
         landcover: {
           id: 0,
           url: 'https://example.com/trees.png',
@@ -93,8 +93,8 @@ const managementPlans_init_TESTING = [
         id: 1,
         name: 'Build barn',
         type: 'landcoverEdit',
-        start: parse('2025-04-07', 'yyyy-MM-dd', new Date()),
-        end: parse('2025-04-14', 'yyyy-MM-dd', new Date()),
+        start: parse('2025-05-01', 'yyyy-MM-dd', new Date()),
+        end: parse('2025-06-01', 'yyyy-MM-dd', new Date()),
         landcover: {
           id: 1,
           url: 'https://example.com/barn.png',
@@ -105,14 +105,14 @@ const managementPlans_init_TESTING = [
   {
     id: 1,
     name: 'Gothenburg Fishing Policy 2025',
-    created: addDays(new Date(), 1),
+    created: addMonths(new Date(), 1),
     tasks: [
       {
         id: 0,
         name: 'Start of fishing season',
         type: 'fishingPolicyEdit',
         start: parse('2025-04-01', 'yyyy-MM-dd', new Date()),
-        end: parse('2025-04-07', 'yyyy-MM-dd', new Date()),
+        end: parse('2025-05-01', 'yyyy-MM-dd', new Date()),
         fishingPolicy: {
           herring: 0.26,
           spat: 0.26,
@@ -123,8 +123,8 @@ const managementPlans_init_TESTING = [
         id: 1,
         name: 'Mid-season fishing',
         type: 'fishingPolicyEdit',
-        start: parse('2025-04-07', 'yyyy-MM-dd', new Date()),
-        end: parse('2025-04-14', 'yyyy-MM-dd', new Date()),
+        start: parse('2025-05-01', 'yyyy-MM-dd', new Date()),
+        end: parse('2025-06-01', 'yyyy-MM-dd', new Date()),
         fishingPolicy: {
           herring: 0.26,
           spat: 0.26,
@@ -135,8 +135,8 @@ const managementPlans_init_TESTING = [
         id: 2,
         name: 'End of fishing season',
         type: 'fishingPolicyEdit',
-        start: parse('2025-04-14', 'yyyy-MM-dd', new Date()),
-        end: parse('2025-04-21', 'yyyy-MM-dd', new Date()),
+        start: parse('2025-06-01', 'yyyy-MM-dd', new Date()),
+        end: parse('2025-07-01', 'yyyy-MM-dd', new Date()),
         fishingPolicy: {
           herring: 0.26,
           spat: 0.26,
@@ -147,8 +147,8 @@ const managementPlans_init_TESTING = [
         id: 3,
         name: 'Build Oil Rig',
         type: 'landcoverEdit',
-        start: parse('2025-04-21', 'yyyy-MM-dd', new Date()),
-        end: parse('2025-04-28', 'yyyy-MM-dd', new Date()),
+        start: parse('2025-07-01', 'yyyy-MM-dd', new Date()),
+        end: parse('2025-08-01', 'yyyy-MM-dd', new Date()),
         landcover: {
           id: 0,
           url: 'https://example.com/oil_rig.png',
@@ -158,8 +158,8 @@ const managementPlans_init_TESTING = [
         id: 4,
         name: 'Build Second Oil Rig',
         type: 'landcoverEdit',
-        start: parse('2025-04-28', 'yyyy-MM-dd', new Date()),
-        end: parse('2025-05-05', 'yyyy-MM-dd', new Date()),
+        start: parse('2025-08-01', 'yyyy-MM-dd', new Date()),
+        end: parse('2025-09-01', 'yyyy-MM-dd', new Date()),
         landcover: {
           id: 1,
           url: 'https://example.com/oil_rig.png',
@@ -206,7 +206,7 @@ export const addManagementPlanTaskAtom = atom(
 
     const type = previousTask?.type || 'landcoverEdit'
     const startDate = previousTask ? previousTask.end : new Date()
-    const endDate = addDays(startDate, 1)
+    const endDate = addMonths(startDate, 1)
 
     const newTask = {
       id: newTaskId,

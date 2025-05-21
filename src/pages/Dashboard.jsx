@@ -3,7 +3,7 @@ import { useParams } from 'react-router-dom'
 import { Stack, Box, Paper, Flex } from '@mantine/core'
 import { useAtomValue, useAtom } from 'jotai'
 import { getTileByIdAtom, managementPlansAtom } from '@state'
-import { ManagementPlanView } from '@pages/management_plan/ManagementPlanView'
+import { ManagementPlanView } from '@/components/ManagementPlanView'
 import { SimulationChartView } from '@components/SimulationChartView'
 import { ManagementPlanItemList } from '@components/ManagementPlanItemList'
 import { SimulationItemList } from '@components/SimulationItemList'
@@ -13,7 +13,7 @@ export const ContentCell = ({ children, flexBasis = '50%', ...props }) => (
   <Paper
     flex={`1 1 ${flexBasis}`}
     w="100%"
-    p="md"
+    p="xs"
     shadow="xl"
     radius="md"
     withBorder
@@ -30,11 +30,11 @@ export const ContentLayout = ({ sidebar, main }) => (
     align="flex-start"
     direction="row"
     wrap="nowrap"
-    // gap="xs"
+    gap="md"
     h="100%"
     miw="0"
   >
-    <Box h="100%" w="30vw" miw="300" maw="500" flex="0 0 auto">
+    <Box h="100%" w="30vw" miw="200" maw="500" flex="0 0 20%">
       {sidebar}
     </Box>
 
@@ -101,7 +101,7 @@ const Dashboard = () => {
 
   return (
     <Box w="100%" h="100%">
-      <Stack h="100%" gap="md">
+      <Stack h="100%" gap="6px">
         <ContentCell flexBasis="70%">
           <ContentLayout
             sidebar={

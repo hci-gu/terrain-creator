@@ -46,65 +46,50 @@ const TimelineTaskItem = ({
         </Stack>
       }
       withArrow
-      // position="top"
     >
       <Paper
         shadow="xl"
         withBorder
-        p="xs"
+        p="sm"
         w={`${widthPercentage}%`}
-        h="50%"
+        h="100%"
         left={`${leftPercentage}%`}
         pos="absolute"
         style={{
           cursor: 'pointer',
           zIndex: 2,
           overflow: 'hidden',
+          display: 'flex',
+          flexDirection: 'column',
         }}
         onClick={() => handleTaskClick(task)}
       >
-        <Stack
-          w="100%"
-          h="100%"
-          gap="xs"
-          // align="flex-start"
-          // justify="flex-start"
-        >
-          <Box w="100%" h="100%">
-            <Text fz="xl" fw={600} truncate>
-              {task.name}
-            </Text>
-            {task.type === 'landcoverEdit' && (
-              <Text fz="xs" truncate>
-                Landcover edit specfic values
-              </Text>
-            )}
+          <Text fz="xl" fw={600} truncate>
+            {task.name}
+          </Text>
+          <Stack w="100%" gap="xs" style={{ flex: 1, minHeight: 0 }}>
             {task.type === 'fishingPolicyEdit' && task.fishingPolicy && (
               <FishingPolicyView fishingPolicy={task.fishingPolicy} />
             )}
-          </Box>
-          {tile.landcover?.url &&
-            task.type === 'landcoverEdit' &&
-            widthPercentage > 1 && (
-              // <Box h="50%">
-              <Image
-                src={tile.landcover.url}
-                alt={task.name}
-                radius="sm"
-                // h="100%"
-                // w="auto"
-                fit="contain"
-              />
-              // </Box>
-            )}
-          {/* {task.type === 'fishingPolicyEdit' && (
-            <Box h="312">
-              <Text fz="xs" c="blue" truncate>
-                Fishing Policy: {`${task.fishingPolicy}`}
-              </Text>
-            </Box>
-          )} */}
-        </Stack>
+            {tile.landcover?.url &&
+              task.type === 'landcoverEdit' &&
+              widthPercentage > 1 && (
+                <Box
+                  mih="0"
+                  style={{
+                    display: 'flex',
+                  }}
+                >
+                  <Image
+                    src={tile.landcover.url}
+                    alt={task.name}
+                    radius="sm"
+                    h="100%"
+                    fit="contain"
+                  />
+                </Box>
+              )}
+          </Stack>
       </Paper>
     </Tooltip>
   )
@@ -219,11 +204,12 @@ export const Timeline = ({ tasks, tile, onTaskClick }) => {
       flex="auto"
       style={{
         overflowX: 'scroll',
+        overflowY: 'auto',
         userSelect: 'none',
       }}
     >
       <Box w={`${timelineWidth}px`} h="100%" pos="relative">
-        <Group h={50} gap={0} pos="relative">
+        <Group h="30" gap="0" pos="relative">
           {monthMarkers.map((markerDate, index) => {
             const markerPositionPercent =
               timelineDuration > 0
@@ -234,7 +220,7 @@ export const Timeline = ({ tasks, tile, onTaskClick }) => {
             return (
               <Text
                 key={`label-${index}`}
-                fz="xl"
+                fz="lg"
                 fw={600}
                 c="dimmed"
                 pos="absolute"
@@ -248,7 +234,8 @@ export const Timeline = ({ tasks, tile, onTaskClick }) => {
         </Group>
 
         <Box
-          h={'calc(100% - 50px)'}
+          h={'calc(100% - 30px)'}
+          // h="100%"
           pos="relative"
           sx={(theme) => ({
             backgroundColor:

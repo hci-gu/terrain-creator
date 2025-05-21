@@ -23,7 +23,7 @@ import { subDays, addDays } from 'date-fns'
 import { getTileByIdAtom } from '@state'
 import { useAtomValue } from 'jotai'
 import TileLandcoverDrawingEditor from '@components/TileLandcoverDrawingEditor'
-import FishingPolicyView from '../../components/FishingPolicyView'
+import FishingPolicyView from '@components/FishingPolicyView'
 
 const MapTileEditorView = ({
   mapTileImage,
@@ -167,7 +167,7 @@ const TaskEditorForm = ({ task, tasks, onAction }) => {
         opened={opened}
         onClose={handleClose}
         onKeyDown={handleKeyDown}
-        title={<Title order={3}>Edit '{formData.name}'</Title>}
+        title={<Text size="xl" fw={600}>Edit '{formData.name}'</Text>}
         size="lg"
         padding="xl"
       >
@@ -320,7 +320,7 @@ const TaskEditorForm = ({ task, tasks, onAction }) => {
       <Modal
         opened={tileViewOpened}
         onClose={() => setTileViewOpened(false)}
-        title={<Title order={3}>Edit Landcover for '{formData.name}'</Title>}
+        title={<Text size="xl" fw={600}>Edit Landcover for '{formData.name}'</Text>}
         size="xl"
         padding="xl"
       >

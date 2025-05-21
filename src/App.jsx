@@ -68,7 +68,7 @@ const App = () => {
   return (
     <>
       {/* There is no way to have header height be dynamic, so we have to use a fixed height */}
-      <AppShell header={{ height: 90.62 }} padding="md">
+      <AppShell header={{ height: 90.62 }} padding="6">
         <AppShell.Header>
           <Group
             wrap="nowrap"

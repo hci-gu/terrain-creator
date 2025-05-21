@@ -14,7 +14,7 @@ const ItemList = ({
 }) => {
   return (
     <Stack gap="md" w="100%" h="100%" wrap="nowrap">
-      <Group gap="xs" pr="lg" justify="space-between">
+      <Group gap="xs" justify="space-between">
         {title && (
           <Text size="xl" fw={500} truncate>
             {title}
