@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import { useAtomValue } from 'jotai'
 import { unwrap } from 'jotai/utils'
-import { timestepsAtom } from '../state'
+import { timestepsAtom } from '@state'
 import * as pocketbase from '../pocketbase'
 import {
   CartesianGrid,
@@ -12,7 +12,7 @@ import {
   XAxis,
   YAxis,
 } from 'recharts'
-import { Space, Text, Flex, Stack, Card, Slider } from '@mantine/core'
+import { Space, Text, Flex, Stack, Card, Slider, Checkbox } from '@mantine/core'
 import { useEffect } from 'react'
 import LoadingSpinner from './LoadingSpinner'
 
@@ -75,45 +75,46 @@ export const SimulationChartView = ({ id_simulation }) => {
     <ResponsiveContainer
       width="100%"
       height="100%"
-      // minWidth="750px"
-      style={{ overflow: 'hidden' }}
     >
       <LineChart
         data={data}
-        margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
       >
         <XAxis
           dataKey="day"
+          tick={{ fill: '#666', }}
           tickFormatter={(val) => `${val}`}
           stroke="#666"
-          tick={{ fill: '#666', fontSize: 14, fontWeight: 700 }}
         />
         <YAxis
-          stroke="#666"
-          tick={{ fill: '#666', fontSize: 14, fontWeight: 700 }}
+          tick={{ fill: '#666',  }}
           tickFormatter={(val) => `${(val / 1000).toFixed(0)}`}
+          stroke="#666"
         />
         <CartesianGrid strokeDasharray="3 3" stroke="#eee" />
         <Legend
           wrapperStyle={{
-            paddingTop: '20px',
-            fontSize: '14px',
+            display: 'flex',
+            flexDirection: 'row',
+            flexWrap: 'wrap',
+            justifyContent: 'center',
           }}
           formatter={(value, entry) => (
-            <Flex align="center" gap="sm">
-              <input
-                type="checkbox"
-                checked={visibleFields[value]}
-                onChange={() => {
-                  setVisibleFields((prev) => ({
-                    ...prev,
-                    [value]: !prev[value],
-                  }))
-                }}
-                style={{ accentColor: entry.color }}
-              />
-              <span>{value}</span>
-            </Flex>
+            <Checkbox
+              label={value}
+              checked={visibleFields[value]}
+              onChange={(event) => {
+                const newCheckedState = event.currentTarget.checked;
+                setVisibleFields((prev) => ({
+                  ...prev,
+                  [value]: newCheckedState,
+                }))
+              }}
+              color={entry.color}
+              size="sm"
+              styles={{
+                label: {  paddingLeft: '0.5em' }
+              }}
+            />
           )}
         />
         {fields.map((field, i) => (

@@ -64,7 +64,7 @@ const TimelineTaskItem = ({
         }}
         onClick={() => handleTaskClick(task)}
       >
-          <Text fz="xl" fw={600} truncate>
+          <Text fz="md" fw={600} truncate>
             {task.name}
           </Text>
           <Stack w="100%" gap="xs" style={{ flex: 1, minHeight: 0 }}>
@@ -220,7 +220,7 @@ export const Timeline = ({ tasks, tile, onTaskClick }) => {
             return (
               <Text
                 key={`label-${index}`}
-                fz="lg"
+                fz="sm"
                 fw={600}
                 c="dimmed"
                 pos="absolute"

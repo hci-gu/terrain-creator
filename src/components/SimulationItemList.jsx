@@ -32,8 +32,8 @@ export const SimulationItemList = ({
       onSelect={onSelect}
       onDelete={onDelete}
       renderItemContent={renderSimulationContent}
-      title="Simulation History"
-      buttonLabel="Run New Simulation"
+      title="Simulations"
+      buttonLabel="New Simulation"
       onButtonClick={onCreateSimulation}
     />
   )

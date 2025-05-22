@@ -10,7 +10,7 @@ const FishingPolicyView = ({
   }
   return (
     <Stack h="100%" w="100%" gap="0">
-      <Text fz="h4" fw={500} truncate>
+      <Text fz="sm" fw={500} truncate>
         Fishing Amounts
       </Text>
       <Box

@@ -102,7 +102,7 @@ const Dashboard = () => {
   return (
     <Box w="100%" h="100%">
       <Stack h="100%" gap="6px">
-        <ContentCell flexBasis="70%">
+        <ContentCell flexBasis="60%">
           <ContentLayout
             sidebar={
               <ManagementPlanItemList
@@ -122,7 +122,7 @@ const Dashboard = () => {
           />
         </ContentCell>
 
-        <ContentCell flexBasis="30%">
+        <ContentCell flexBasis="40%">
           <ContentLayout
             sidebar={
               <SimulationItemList

@@ -101,11 +101,12 @@ export const ManagementPlanView = ({ tile, id_managementPlan }) => {
             style={{
               border: 'none',
               background: 'transparent',
-              fontSize: 'var(--mantine-font-size-xl)',
-              fontWeight: 500,
               outline: 'none',
               padding: 0,
+              fontSize: 'var(--mantine-font-size-xl)',
+              fontWeight: 500,
               textOverflow: 'ellipsis',
+              flex: 1,
             }}
             onChange={(e) =>
               updatePlanName({ managementPlan, newName: e.target.value })
