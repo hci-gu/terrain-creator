@@ -37,18 +37,18 @@ const MapTileEditorView = ({
 
   return (
     <Grid>
-      <Grid.Col span={4}>
-        <Text>Map Tile</Text>
+      <Grid.Col span={2}>
+          <Text>Map Tile</Text>
       </Grid.Col>
-      <Grid.Col span={8}>
-        <Switch
-          label={mapTileImage ? 'Satellite' : 'Landcover'}
-          checked={mapTileImage}
-          onChange={(event) =>
-            onMapTileImageChange(event.currentTarget.checked)
-          }
-          mb="xs"
-        />
+      <Grid.Col span={10}>
+          <Switch
+            label={mapTileImage ? 'Satellite' : 'Landcover'}
+            checked={mapTileImage}
+            onChange={(event) =>
+              onMapTileImageChange(event.currentTarget.checked)
+            }
+            mb="xs"
+          />
         <Box
           pos="relative"
           onClick={onTileViewOpen}
@@ -57,10 +57,8 @@ const MapTileEditorView = ({
           <Image
             src={mapTileImage ? tile.satellite : tile.landcover?.url}
             alt="Map Tile"
-            style={{
-              width: '100%',
-              height: '100%',
-            }}
+            mah="300px"
+            fit="contain"
           />
           {currentLandcoverEdit && (
             <Image
@@ -168,16 +166,16 @@ const TaskEditorForm = ({ task, tasks, onAction }) => {
         onClose={handleClose}
         onKeyDown={handleKeyDown}
         title={<Text size="xl" fw={600}>Edit '{formData.name}'</Text>}
-        size="lg"
+        size="xl"
         padding="xl"
       >
         <Stack gap="md">
           {/* Name */}
           <Grid>
-            <Grid.Col span={4}>
+            <Grid.Col span={2}>
               <Text>Name</Text>
             </Grid.Col>
-            <Grid.Col span={8}>
+            <Grid.Col span={10}>
               <TextInput
                 name="name"
                 value={formData.name || ''}
@@ -189,10 +187,10 @@ const TaskEditorForm = ({ task, tasks, onAction }) => {
           </Grid>
           {/* Start Date */}
           <Grid>
-            <Grid.Col span={4}>
+            <Grid.Col span={2}>
               <Text>Start Date</Text>
             </Grid.Col>
-            <Grid.Col span={8}>
+            <Grid.Col span={10}>
               <DatePickerInput
                 value={formData.start}
                 onChange={(date) => handleFieldChange('start', date)}
@@ -207,10 +205,10 @@ const TaskEditorForm = ({ task, tasks, onAction }) => {
           </Grid>
           {/* End Date */}
           <Grid>
-            <Grid.Col span={4}>
+            <Grid.Col span={2}>
               <Text>End Date</Text>
             </Grid.Col>
-            <Grid.Col span={8}>
+            <Grid.Col span={10}>
               <DatePickerInput
                 value={formData.end}
                 onChange={(date) => handleFieldChange('end', date)}

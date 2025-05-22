@@ -8,8 +8,20 @@ import Tiles from '@pages/Tiles'
 import Dashboard from '@pages/Dashboard'
 
 const TabContainer = () => {
+  const getDefaultTabValue = () => {
+    const { pathname } = window.location
+    if (pathname.includes('/dashboard')) {
+      return null
+    } else if (pathname === '/') {
+      return 'map'
+    } else if (pathname === '/tiles') {
+      return 'tiles'
+    }
+    return 'map' // Default to map
+  }
+
   return (
-    <Tabs defaultValue={window.location.pathname == '/' ? 'map' : 'tiles'}>
+    <Tabs defaultValue={getDefaultTabValue()}>
       <Tabs.List>
         <Tabs.Tab
           value="map"
@@ -68,11 +80,11 @@ const App = () => {
   return (
     <>
       {/* There is no way to have header height be dynamic, so we have to use a fixed height */}
-      <AppShell header={{ height: 90.62 }} padding="6">
+      <AppShell header={{ height: 50 }} padding="6">
         <AppShell.Header>
           <Group
             wrap="nowrap"
-            justify="space-between"
+            justify=""
             align="center"
             ml="sm"
             mr="sm"
@@ -81,9 +93,9 @@ const App = () => {
               Ecotwin{' '}
               <span style={{ color: '#F2C94C', fontWeight: 900 }}>Map</span>
             </Title>
+            <TabContainer />
             <DarkModeToggle />
           </Group>
-          <TabContainer />
         </AppShell.Header>
         <AppShell.Main h="100vh" w="100%">
           <RouterProvider router={router} />
