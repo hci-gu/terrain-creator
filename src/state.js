@@ -3,6 +3,12 @@ import { atomFamily } from 'jotai/utils'
 import _ from 'lodash'
 import * as pocketbase from './pocketbase'
 import { useEffect, useMemo } from 'react'
+import {
+  landcoverSpawnSettings,
+  landcoverFilters as initialLandcoverFilters,
+} from '@constants/landcover'
+
+import { parse, addDays, addMonths } from 'date-fns'
 
 export const oceancovers = [
   {
@@ -18,92 +24,7 @@ export const oceancovers = [
     name: 'Ocean',
   },
 ]
-
-export const landcovers = [
-  {
-    color: '#419BDF',
-    name: 'Water',
-    spawnSettings: {
-      sheep: 0.0,
-      fox: 0.0,
-      goat: 0.0,
-    },
-  },
-  {
-    color: '#397D49',
-    name: 'Trees',
-    spawnSettings: {
-      sheep: 0.25,
-      fox: 0.25,
-      goat: 0.1,
-    },
-  },
-  {
-    color: '#88B053',
-    name: 'Grass',
-    spawnSettings: {
-      sheep: 0.5,
-      fox: 0.5,
-      goat: 0.25,
-    },
-  },
-  {
-    color: '#DFC35A',
-    name: 'Shrub',
-    spawnSettings: {
-      sheep: 0.1,
-      fox: 0.25,
-      goat: 0.1,
-    },
-  },
-  {
-    color: '#E49635',
-    name: 'Crops',
-    spawnSettings: {
-      sheep: 0.1,
-      fox: 0.1,
-      goat: 0.1,
-    },
-  },
-  {
-    color: '#C4281B',
-    name: 'Built',
-    spawnSettings: {
-      sheep: 0,
-      fox: 0,
-      goat: 0,
-    },
-  },
-  {
-    color: '#5e6572',
-    name: 'Bare',
-    spawnSettings: {
-      sheep: 0.05,
-      fox: 0.05,
-      goat: 0.25,
-    },
-  },
-  {
-    color: '#B39FE1',
-    name: 'Snow',
-    spawnSettings: {
-      sheep: 0.05,
-      fox: 0.05,
-      goat: 0.25,
-    },
-  },
-  {
-    color: '#7A87C6',
-    name: 'Flooded vegetation',
-    spawnSettings: {
-      sheep: 0.05,
-      fox: 0.05,
-      goat: 0,
-    },
-  },
-]
-
-export const landcoverMap = _.keyBy(landcovers, 'name')
+// export const landcoverMap = _.keyBy(landcovers, 'name')
 const hexToRgb = (hex) => {
   const r = parseInt(hex.substring(1, 3), 16)
   const g = parseInt(hex.substring(3, 5), 16)
@@ -119,10 +40,6 @@ export const rgbForOceanType = (oceancover) => {
   const hexColor = oceancovers.find((cover) => cover.name === oceancover).color
 
   return hexToRgb(hexColor)
-}
-
-export const defaultSpawnForLandcoverAndAnimal = (landcover, animal) => {
-  return landcoverMap[landcover].spawnSettings[animal]
 }
 
 const nameToKey = (name) => name.toLowerCase().replace(' ', '_')
@@ -149,6 +66,197 @@ const _boundsToQuery = (bounds) => {
 }
 
 export const tilesAtom = atom([])
+
+export const getTileByIdAtom = atomFamily((id) =>
+  atom((get) => {
+    return get(tilesAtom).find((tile) => tile.id === id)
+  })
+)
+const managementPlans_init_TESTING = [
+  {
+    id: 0,
+    name: 'Farmer Johns Plan 2025',
+    created: new Date(),
+    tasks: [
+      {
+        id: 0,
+        name: 'Chop down trees',
+        type: 'landcoverEdit',
+        start: parse('2025-04-01', 'yyyy-MM-dd', new Date()),
+        end: parse('2025-05-01', 'yyyy-MM-dd', new Date()),
+        landcover: {
+          id: 0,
+          url: 'https://example.com/trees.png',
+        },
+      },
+      {
+        id: 1,
+        name: 'Build barn',
+        type: 'landcoverEdit',
+        start: parse('2025-05-01', 'yyyy-MM-dd', new Date()),
+        end: parse('2025-06-01', 'yyyy-MM-dd', new Date()),
+        landcover: {
+          id: 1,
+          url: 'https://example.com/barn.png',
+        },
+      },
+    ],
+  },
+  {
+    id: 1,
+    name: 'Gothenburg Fishing Policy 2025',
+    created: addMonths(new Date(), 1),
+    tasks: [
+      {
+        id: 0,
+        name: 'Start of fishing season',
+        type: 'fishingPolicyEdit',
+        start: parse('2025-04-01', 'yyyy-MM-dd', new Date()),
+        end: parse('2025-05-01', 'yyyy-MM-dd', new Date()),
+        fishingPolicy: {
+          herring: 0.26,
+          spat: 0.26,
+          cod: 0.5,
+        },
+      },
+      {
+        id: 1,
+        name: 'Mid-season fishing',
+        type: 'fishingPolicyEdit',
+        start: parse('2025-05-01', 'yyyy-MM-dd', new Date()),
+        end: parse('2025-06-01', 'yyyy-MM-dd', new Date()),
+        fishingPolicy: {
+          herring: 0.26,
+          spat: 0.26,
+          cod: 0.5,
+        },
+      },
+      {
+        id: 2,
+        name: 'End of fishing season',
+        type: 'fishingPolicyEdit',
+        start: parse('2025-06-01', 'yyyy-MM-dd', new Date()),
+        end: parse('2025-07-01', 'yyyy-MM-dd', new Date()),
+        fishingPolicy: {
+          herring: 0.26,
+          spat: 0.26,
+          cod: 0.5,
+        },
+      },
+      {
+        id: 3,
+        name: 'Build Oil Rig',
+        type: 'landcoverEdit',
+        start: parse('2025-07-01', 'yyyy-MM-dd', new Date()),
+        end: parse('2025-08-01', 'yyyy-MM-dd', new Date()),
+        landcover: {
+          id: 0,
+          url: 'https://example.com/oil_rig.png',
+        },
+      },
+      {
+        id: 4,
+        name: 'Build Second Oil Rig',
+        type: 'landcoverEdit',
+        start: parse('2025-08-01', 'yyyy-MM-dd', new Date()),
+        end: parse('2025-09-01', 'yyyy-MM-dd', new Date()),
+        landcover: {
+          id: 1,
+          url: 'https://example.com/oil_rig.png',
+        },
+      },
+    ],
+  },
+]
+export const managementPlansAtom = atom(managementPlans_init_TESTING)
+
+export const getManagementPlanByIdAtom = atomFamily((id) =>
+  atom((get) => {
+    return get(managementPlansAtom).find((plan) => plan.id === id)
+  })
+)
+
+export const updateManagementPlanTaskAtom = atom(
+  null,
+  (get, set, { managementPlan, taskToUpdateId, taskToUpdateData }) => {
+    const updatedTasks = managementPlan.tasks.map((task) => {
+      if (task.id === taskToUpdateId) {
+        return { ...task, ...taskToUpdateData }
+      }
+      return task
+    })
+    managementPlan.tasks = updatedTasks
+    set(managementPlansAtom, [...get(managementPlansAtom)])
+  }
+)
+
+export const updateManagementPlanNameAtom = atom(
+  null,
+  (get, set, { managementPlan, newName }) => {
+    managementPlan.name = newName
+    set(managementPlansAtom, [...get(managementPlansAtom)])
+  }
+)
+
+export const addManagementPlanTaskAtom = atom(
+  null,
+  (get, set, { managementPlan, taskToAdd, previousTask }) => {
+    const tasks = managementPlan.tasks
+    const newTaskId = Date.now()
+
+    const type = previousTask?.type || 'landcoverEdit'
+    const startDate = previousTask ? previousTask.end : new Date()
+    const endDate = addMonths(startDate, 1)
+
+    const newTask = {
+      id: newTaskId,
+      name: 'New Task',
+      type: type,
+      start: startDate,
+      end: endDate,
+      ...taskToAdd, // Allow overriding defaults
+      id: newTaskId, // Ensure ID is not overridden
+    }
+
+    let newTasksArray
+    if (previousTask) {
+      const insertAtIndex = tasks.findIndex((t) => t.id === previousTask.id) + 1
+      if (insertAtIndex > 0 && insertAtIndex <= tasks.length) {
+        newTasksArray = [
+          ...tasks.slice(0, insertAtIndex),
+          newTask,
+          ...tasks.slice(insertAtIndex),
+        ]
+      } else {
+        newTasksArray = [...tasks, newTask]
+      }
+    } else {
+      newTasksArray = [newTask, ...tasks]
+    }
+
+    set(managementPlansAtom, (prevPlans) => {
+      return prevPlans.map((plan) =>
+        plan.id === managementPlan.id ? { ...plan, tasks: newTasksArray } : plan
+      )
+    })
+    return newTask
+  }
+)
+
+export const deleteManagementPlanTaskAtom = atom(
+  null,
+  (get, set, { managementPlan, taskToDeleteId }) => {
+    const updatedTasks = managementPlan.tasks.filter(
+      (task) => task.id !== taskToDeleteId
+    )
+    managementPlan.tasks = updatedTasks
+    set(managementPlansAtom, [...get(managementPlansAtom)])
+  }
+)
+
+export const spawnSettingsAtom = atom(landcoverSpawnSettings)
+
+export const landcoverFiltersAtom = atom(initialLandcoverFilters)
 
 export const filteredTilesAtom = atom((get) => {
   const tiles = get(tilesAtom)
@@ -274,18 +382,6 @@ export const useInitTiles = () => {
   }, [memo])
 }
 
-export const tileAtom = atomFamily((id) =>
-  atom((get) => {
-    return get(tilesAtom).find((tile) => tile.id === id)
-  })
-)
-
-export const spawnSettingsAtom = atom(
-  landcovers.reduce((acc, curr) => {
-    acc[curr.name] = curr.spawnSettings
-    return acc
-  }, {})
-)
 export const simulationAtom = atomFamily((id) =>
   atom(async (get) => {
     const tiles = get(tilesAtom)
@@ -312,13 +408,6 @@ export const locationFilterAtom = atom({})
 
 export const locationFilterDistanceAtom = atom(100)
 
-export const landcoverFiltersAtom = atom(
-  landcovers.reduce((acc, cur) => {
-    acc[cur.name] = [0, 100]
-    return acc
-  }, {})
-)
-
 export const mapDrawModeAtom = atom('simple_select')
 export const VIEW_MODE = 'VIEW_MODE'
 export const CREATE_MODE = 'CREATE_MODE'
@@ -338,3 +427,5 @@ export const showTileGridAtom = atom((get) => {
 })
 
 export const featuresAtom = atom({})
+
+export const colorSchemeAtom = atom('light')
