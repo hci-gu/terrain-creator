@@ -32,7 +32,7 @@ const TimelineTaskItem = ({
           <Text fw={600}>{task.name}</Text>
           <Text fz="sm">Start: {format(clampedTaskStart, 'MMM d, yyyy')}</Text>
           <Text fz="sm">End: {format(clampedTaskEnd, 'MMM d, yyyy')}</Text>
-          {tile.landcover?.url && task.type === 'landcoverEdit' && (
+          {tile.landcover?.url && task.type === 'landcover' && (
             <Box h="100">
               <Image
                 src={tile.landcover.url}
@@ -52,7 +52,7 @@ const TimelineTaskItem = ({
         withBorder
         p="sm"
         w={`${widthPercentage}%`}
-        h="100%"
+        h="200"
         left={`${leftPercentage}%`}
         pos="absolute"
         style={{
@@ -64,32 +64,32 @@ const TimelineTaskItem = ({
         }}
         onClick={() => handleTaskClick(task)}
       >
-          <Text fz="md" fw={600} truncate>
-            {task.name}
-          </Text>
-          <Stack w="100%" gap="xs" style={{ flex: 1, minHeight: 0 }}>
-            {task.type === 'fishingPolicyEdit' && task.fishingPolicy && (
-              <FishingPolicyView fishingPolicy={task.fishingPolicy} />
+        <Text fz="md" fw={600} truncate>
+          {task.name}
+        </Text>
+        <Stack w="100%" gap="xs" style={{ flex: 1, minHeight: 0 }}>
+          {task.type === 'fishingPolicy' && task.fishingPolicy && (
+            <FishingPolicyView fishingPolicy={task.fishingPolicy} />
+          )}
+          {tile.landcover?.url &&
+            task.type === 'landcover' &&
+            widthPercentage > 1 && (
+              <Box
+                mih="0"
+                style={{
+                  display: 'flex',
+                }}
+              >
+                <Image
+                  src={tile.landcover.url}
+                  alt={task.name}
+                  radius="sm"
+                  h="100%"
+                  fit="contain"
+                />
+              </Box>
             )}
-            {tile.landcover?.url &&
-              task.type === 'landcoverEdit' &&
-              widthPercentage > 1 && (
-                <Box
-                  mih="0"
-                  style={{
-                    display: 'flex',
-                  }}
-                >
-                  <Image
-                    src={tile.landcover.url}
-                    alt={task.name}
-                    radius="sm"
-                    h="100%"
-                    fit="contain"
-                  />
-                </Box>
-              )}
-          </Stack>
+        </Stack>
       </Paper>
     </Tooltip>
   )

@@ -10,12 +10,7 @@ import {
   Image,
   Grid,
   Box,
-  Title,
   Switch,
-  Slider,
-  Space,
-  Paper,
-  Card,
 } from '@mantine/core'
 import { DatePickerInput } from '@mantine/dates'
 import { IconCalendar } from '@tabler/icons-react'
@@ -38,17 +33,17 @@ const MapTileEditorView = ({
   return (
     <Grid>
       <Grid.Col span={2}>
-          <Text>Map Tile</Text>
+        <Text>Map Tile</Text>
       </Grid.Col>
       <Grid.Col span={10}>
-          <Switch
-            label={mapTileImage ? 'Satellite' : 'Landcover'}
-            checked={mapTileImage}
-            onChange={(event) =>
-              onMapTileImageChange(event.currentTarget.checked)
-            }
-            mb="xs"
-          />
+        <Switch
+          label={mapTileImage ? 'Satellite' : 'Landcover'}
+          checked={mapTileImage}
+          onChange={(event) =>
+            onMapTileImageChange(event.currentTarget.checked)
+          }
+          mb="xs"
+        />
         <Box
           pos="relative"
           onClick={onTileViewOpen}
@@ -122,8 +117,8 @@ const TaskEditorForm = ({ task, tasks, onAction }) => {
   const handleFishingPolicyChange = (species, value) => {
     setFormData((prev) => ({
       ...prev,
-      fishingPolicy: {
-        ...prev.fishingPolicy,
+      data: {
+        ...prev.data,
         [species]: value,
       },
     }))
@@ -139,8 +134,8 @@ const TaskEditorForm = ({ task, tasks, onAction }) => {
 
   const handleCancel = () => {
     onAction(null)
-    setFormData({})
     setOpened(false)
+    setFormData({})
   }
 
   const handleDelete = () => {
@@ -165,7 +160,11 @@ const TaskEditorForm = ({ task, tasks, onAction }) => {
         opened={opened}
         onClose={handleClose}
         onKeyDown={handleKeyDown}
-        title={<Text size="xl" fw={600}>Edit '{formData.name}'</Text>}
+        title={
+          <Text size="xl" fw={600}>
+            Edit '{formData.name}'
+          </Text>
+        }
         size="xl"
         padding="xl"
       >
@@ -224,7 +223,7 @@ const TaskEditorForm = ({ task, tasks, onAction }) => {
             </Grid.Col>
           </Grid>
           {/* Map Tile */}
-          {task.type === 'landcoverEdit' && (
+          {task.type === 'landcover' && (
             <MapTileEditorView
               mapTileImage={mapTileImage}
               onMapTileImageChange={setMapTileImage}
@@ -234,15 +233,11 @@ const TaskEditorForm = ({ task, tasks, onAction }) => {
               previousLandcoverEdit={previousTask?.landcoverEdit}
             />
           )}
-          {task.type === 'fishingPolicyEdit' && (
-            <Grid>
-              <Grid.Col span={12}>
-                <FishingPolicyView
-                  fishingPolicy={formData.fishingPolicy}
-                  onFishingPolicyChange={handleFishingPolicyChange}
-                />
-              </Grid.Col>
-            </Grid>
+          {task.type === 'fishingPolicy' && (
+            <FishingPolicyView
+              fishingPolicy={formData.data}
+              onFishingPolicyChange={handleFishingPolicyChange}
+            />
           )}
           {/* Previous Task */}
           <Grid>
@@ -318,7 +313,11 @@ const TaskEditorForm = ({ task, tasks, onAction }) => {
       <Modal
         opened={tileViewOpened}
         onClose={() => setTileViewOpened(false)}
-        title={<Text size="xl" fw={600}>Edit Landcover for '{formData.name}'</Text>}
+        title={
+          <Text size="xl" fw={600}>
+            Edit Landcover for '{formData.name}'
+          </Text>
+        }
         size="xl"
         padding="xl"
       >

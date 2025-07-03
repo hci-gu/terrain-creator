@@ -130,6 +130,26 @@ const mapTile = (tile) => {
   }
 }
 
+const mapManagementPlan = (plan) => {
+  return {
+    id: plan.id,
+    name: plan.name,
+    created: new Date(plan.created),
+    tasks: plan.expand?.tasks?.map(mapTask) || [],
+  }
+}
+
+const mapTask = (task) => {
+  return {
+    id: task.id,
+    name: task.name,
+    type: task.type,
+    start: new Date(task.start),
+    end: task.end ? new Date(task.end) : new Date(),
+    data: task.data || {},
+  }
+}
+
 export const ACTIONS = {
   CREATE: 'create',
   UPDATE: 'update',
@@ -149,6 +169,53 @@ export const getTiles = () =>
       expand: 'landcover,heightmap,oceanData,simulations',
     })
     .then((tiles) => tiles.map(mapTile))
+
+export const getManagementPlans = () => {
+  return pb
+    .collection('managementPlans')
+    .getFullList({
+      expand: 'tasks',
+    })
+    .then((plans) => plans.map(mapManagementPlan))
+}
+
+export const createManagementPlan = () => {
+  return pb.collection('managementPlans').create({
+    name: 'New Management Plan',
+  })
+}
+
+export const updateManagementPlan = (id, data) => {
+  return pb.collection('managementPlans').update(id, data)
+}
+
+export const deleteManagementPlan = (id) => {
+  return pb.collection('managementPlans').delete(id)
+}
+
+export const createTask = async (plan) => {
+  const lastMonth = new Date()
+  lastMonth.setMonth(lastMonth.getMonth() - 1)
+  const task = await pb.collection('tasks').create({
+    name: 'New Task',
+    type: 'landcover',
+    start: lastMonth,
+    end: new Date(),
+  })
+
+  await pb.collection('managementPlans').update(plan.id, {
+    tasks: [...(plan.tasks.map((task) => task.id) || []), task.id],
+  })
+  return mapTask(task)
+}
+
+export const updateTask = async (taskId, taskData) => {
+  return pb.collection('tasks').update(taskId, taskData)
+}
+
+export const deleteTask = async (taskId) => {
+  return pb.collection('tasks').delete(taskId)
+}
 
 export const createTiles = ({ coords, zoom }) => {
   const tiles = minTilesForCoords(coords, zoom)
@@ -200,12 +267,35 @@ export const timestepsForSimulation = (id) =>
 export const getSimulationAgents = async () => {
   const agentsResponse = await axios.get(`${SIMULATION_URL}/simulate/agents`)
 
-  console.log('agentsResponse', agentsResponse.data)
-
   return agentsResponse.data
 }
 
-export const createSimulation = async (tile, simulationOptions) => {
+const simulationOptionsFromManagementPlan = (plan) => {
+  const options = {}
+  // get min date from tasks
+  const minDate = new Date(
+    Math.min(...plan.tasks.map((t) => new Date(t.start)))
+  )
+  const maxDate = new Date(
+    Math.max(...plan.tasks.map((t) => new Date(t.end || t.start)))
+  )
+  options.start = minDate.toISOString()
+  options.end = maxDate.toISOString()
+  options.tasks = plan.tasks.map((task) => {
+    return {
+      id: task.id,
+      name: task.name,
+      type: task.type,
+      start: task.start.toISOString(),
+      end: task.end ? task.end.toISOString() : null,
+      data: task.data || {},
+    }
+  })
+
+  return options
+}
+
+export const createSimulation = async (tile, managementPlanId) => {
   if (!tile?.landcover?.url_small || !tile?.oceanData?.depth_url) {
     throw new Error('Missing required tile data for simulation')
   }
@@ -227,9 +317,14 @@ export const createSimulation = async (tile, simulationOptions) => {
   const formData = new FormData()
   formData.append('texture', textureFile)
   formData.append('depth', depthFile)
-  if (!simulationOptions.agent) {
-    delete simulationOptions.agent
-  }
+  const managementPlan = mapManagementPlan(
+    await pb.collection('managementPlans').getOne(managementPlanId, {
+      expand: 'tasks',
+    })
+  )
+
+  const simulationOptions = simulationOptionsFromManagementPlan(managementPlan)
+
   formData.append('options', JSON.stringify(simulationOptions))
 
   const uploadResponse = await axios.post(
@@ -252,6 +347,7 @@ export const createSimulation = async (tile, simulationOptions) => {
   )
   const simulation = await pb.collection('simulations').create({
     options: simulationOptions,
+    plan: managementPlanId,
   })
   const updatedSimulations = tile.simulations
     ? [simulation.id, ...tile.simulations.map((s) => s.id)]

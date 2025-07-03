@@ -6,8 +6,13 @@ const FishingPolicyView = ({
   onFishingPolicyChange = () => {},
 }) => {
   if (!fishingPolicy) {
-    return null
+    return (
+      <Text c="dimmed" fz="sm">
+        No fishing policy data available.
+      </Text>
+    )
   }
+
   return (
     <Stack h="100%" w="100%" gap="0">
       <Text fz="sm" fw={500} truncate>
@@ -17,13 +22,13 @@ const FishingPolicyView = ({
         w="100%"
         h="100%"
         flex="auto"
-        style={{ overflowY: 'auto', overflowX: 'hidden' }}
+        // style={{ overflowY: 'auto', overflowX: 'hidden' }}
       >
         {Object.entries(fishingPolicy).map(([species, amount]) => (
-          <Box
-            key={`fishing_${species}`}
-          >
-            <Text>{"% " + species.charAt(0).toUpperCase() + species.slice(1)}</Text>
+          <Box key={`fishing_${species}`}>
+            <Text>
+              {'% ' + species.charAt(0).toUpperCase() + species.slice(1)}
+            </Text>
             <Slider
               value={amount}
               onChange={(value) => onFishingPolicyChange(species, value)}

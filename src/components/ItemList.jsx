@@ -33,6 +33,7 @@ const ItemList = ({
           items.map((item) => (
             <Card
               key={item.id}
+              mb="xs"
               withBorder
               shadow="xs"
               flex="auto"

@@ -72,186 +72,19 @@ export const getTileByIdAtom = atomFamily((id) =>
     return get(tilesAtom).find((tile) => tile.id === id)
   })
 )
-const managementPlans_init_TESTING = [
-  {
-    id: 0,
-    name: 'Farmer Johns Plan 2025',
-    created: new Date(),
-    tasks: [
-      {
-        id: 0,
-        name: 'Chop down trees',
-        type: 'landcoverEdit',
-        start: parse('2025-04-01', 'yyyy-MM-dd', new Date()),
-        end: parse('2025-05-01', 'yyyy-MM-dd', new Date()),
-        landcover: {
-          id: 0,
-          url: 'https://example.com/trees.png',
-        },
-      },
-      {
-        id: 1,
-        name: 'Build barn',
-        type: 'landcoverEdit',
-        start: parse('2025-05-01', 'yyyy-MM-dd', new Date()),
-        end: parse('2025-06-01', 'yyyy-MM-dd', new Date()),
-        landcover: {
-          id: 1,
-          url: 'https://example.com/barn.png',
-        },
-      },
-    ],
-  },
-  {
-    id: 1,
-    name: 'Gothenburg Fishing Policy 2025',
-    created: addMonths(new Date(), 1),
-    tasks: [
-      {
-        id: 0,
-        name: 'Start of fishing season',
-        type: 'fishingPolicyEdit',
-        start: parse('2025-04-01', 'yyyy-MM-dd', new Date()),
-        end: parse('2025-05-01', 'yyyy-MM-dd', new Date()),
-        fishingPolicy: {
-          herring: 0.26,
-          spat: 0.26,
-          cod: 0.5,
-        },
-      },
-      {
-        id: 1,
-        name: 'Mid-season fishing',
-        type: 'fishingPolicyEdit',
-        start: parse('2025-05-01', 'yyyy-MM-dd', new Date()),
-        end: parse('2025-06-01', 'yyyy-MM-dd', new Date()),
-        fishingPolicy: {
-          herring: 0.26,
-          spat: 0.26,
-          cod: 0.5,
-        },
-      },
-      {
-        id: 2,
-        name: 'End of fishing season',
-        type: 'fishingPolicyEdit',
-        start: parse('2025-06-01', 'yyyy-MM-dd', new Date()),
-        end: parse('2025-07-01', 'yyyy-MM-dd', new Date()),
-        fishingPolicy: {
-          herring: 0.26,
-          spat: 0.26,
-          cod: 0.5,
-        },
-      },
-      {
-        id: 3,
-        name: 'Build Oil Rig',
-        type: 'landcoverEdit',
-        start: parse('2025-07-01', 'yyyy-MM-dd', new Date()),
-        end: parse('2025-08-01', 'yyyy-MM-dd', new Date()),
-        landcover: {
-          id: 0,
-          url: 'https://example.com/oil_rig.png',
-        },
-      },
-      {
-        id: 4,
-        name: 'Build Second Oil Rig',
-        type: 'landcoverEdit',
-        start: parse('2025-08-01', 'yyyy-MM-dd', new Date()),
-        end: parse('2025-09-01', 'yyyy-MM-dd', new Date()),
-        landcover: {
-          id: 1,
-          url: 'https://example.com/oil_rig.png',
-        },
-      },
-    ],
-  },
-]
-export const managementPlansAtom = atom(managementPlans_init_TESTING)
+
+export const refreshManagementPlansAtom = atom(new Date())
+export const managementPlansAtom = atom(async (get) => {
+  const _ = get(refreshManagementPlansAtom)
+  return pocketbase.getManagementPlans()
+})
 
 export const getManagementPlanByIdAtom = atomFamily((id) =>
-  atom((get) => {
-    return get(managementPlansAtom).find((plan) => plan.id === id)
+  atom(async (get) => {
+    const plans = await get(managementPlansAtom)
+
+    return plans.find((plan) => plan.id === id)
   })
-)
-
-export const updateManagementPlanTaskAtom = atom(
-  null,
-  (get, set, { managementPlan, taskToUpdateId, taskToUpdateData }) => {
-    const updatedTasks = managementPlan.tasks.map((task) => {
-      if (task.id === taskToUpdateId) {
-        return { ...task, ...taskToUpdateData }
-      }
-      return task
-    })
-    managementPlan.tasks = updatedTasks
-    set(managementPlansAtom, [...get(managementPlansAtom)])
-  }
-)
-
-export const updateManagementPlanNameAtom = atom(
-  null,
-  (get, set, { managementPlan, newName }) => {
-    managementPlan.name = newName
-    set(managementPlansAtom, [...get(managementPlansAtom)])
-  }
-)
-
-export const addManagementPlanTaskAtom = atom(
-  null,
-  (get, set, { managementPlan, taskToAdd, previousTask }) => {
-    const tasks = managementPlan.tasks
-    const newTaskId = Date.now()
-
-    const type = previousTask?.type || 'landcoverEdit'
-    const startDate = previousTask ? previousTask.end : new Date()
-    const endDate = addMonths(startDate, 1)
-
-    const newTask = {
-      id: newTaskId,
-      name: 'New Task',
-      type: type,
-      start: startDate,
-      end: endDate,
-      ...taskToAdd, // Allow overriding defaults
-      id: newTaskId, // Ensure ID is not overridden
-    }
-
-    let newTasksArray
-    if (previousTask) {
-      const insertAtIndex = tasks.findIndex((t) => t.id === previousTask.id) + 1
-      if (insertAtIndex > 0 && insertAtIndex <= tasks.length) {
-        newTasksArray = [
-          ...tasks.slice(0, insertAtIndex),
-          newTask,
-          ...tasks.slice(insertAtIndex),
-        ]
-      } else {
-        newTasksArray = [...tasks, newTask]
-      }
-    } else {
-      newTasksArray = [newTask, ...tasks]
-    }
-
-    set(managementPlansAtom, (prevPlans) => {
-      return prevPlans.map((plan) =>
-        plan.id === managementPlan.id ? { ...plan, tasks: newTasksArray } : plan
-      )
-    })
-    return newTask
-  }
-)
-
-export const deleteManagementPlanTaskAtom = atom(
-  null,
-  (get, set, { managementPlan, taskToDeleteId }) => {
-    const updatedTasks = managementPlan.tasks.filter(
-      (task) => task.id !== taskToDeleteId
-    )
-    managementPlan.tasks = updatedTasks
-    set(managementPlansAtom, [...get(managementPlansAtom)])
-  }
 )
 
 export const spawnSettingsAtom = atom(landcoverSpawnSettings)

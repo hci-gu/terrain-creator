@@ -1,13 +1,18 @@
 import React, { useState, useEffect } from 'react'
 import { useParams } from 'react-router-dom'
 import { Stack, Box, Paper, Flex } from '@mantine/core'
-import { useAtomValue, useAtom } from 'jotai'
-import { getTileByIdAtom, managementPlansAtom } from '@state'
+import { useAtomValue, useSetAtom } from 'jotai'
+import {
+  getTileByIdAtom,
+  managementPlansAtom,
+  refreshManagementPlansAtom,
+} from '@state'
 import { ManagementPlanView } from '@/components/ManagementPlanView'
 import { SimulationChartView } from '@components/SimulationChartView'
 import { ManagementPlanItemList } from '@components/ManagementPlanItemList'
 import { SimulationItemList } from '@components/SimulationItemList'
 import * as pocketbase from '@/pocketbase'
+import { startTransition } from 'react'
 
 export const ContentCell = ({ children, flexBasis = '50%', ...props }) => (
   <Paper
@@ -52,7 +57,9 @@ export const ContentLayout = ({ sidebar, main }) => (
 const Dashboard = () => {
   const { id_tile } = useParams()
   const tile = useAtomValue(getTileByIdAtom(id_tile))
-  const [managementPlans, setManagementPlans] = useAtom(managementPlansAtom)
+  const refreshPlans = useSetAtom(refreshManagementPlansAtom)
+  const managementPlans = useAtomValue(managementPlansAtom)
+
   const [selectedPlanId, setSelectedPlanId] = useState(0)
   const [selectedSimulationId, setSelectedSimulationId] = useState(null)
 
@@ -62,19 +69,21 @@ const Dashboard = () => {
     }
   }, [tile])
 
-  const createManagementPlan = (planName) => {
-    const newPlan = {
-      id: Date.now(),
-      name: planName ? planName : 'New Management Plan',
-      created: new Date(),
-      tasks: [],
-    }
-    setManagementPlans([...managementPlans, newPlan])
+  const createManagementPlan = async () => {
+    // const newPlan = {
+    //   id: Date.now(),
+    //   name: planName ? planName : 'New Management Plan',
+    //   created: new Date(),
+    //   tasks: [],
+    // }
+    const newPlan = await pocketbase.createManagementPlan()
+    refreshPlans()
     return newPlan
   }
 
-  const handleDeletePlan = (id_plan) => {
-    setManagementPlans(managementPlans.filter((plan) => plan.id !== id_plan))
+  const handleDeletePlan = async (planId) => {
+    await pocketbase.deleteManagementPlan(planId)
+    refreshPlans()
   }
 
   const handleDeleteSimulation = (simulationId) => {
@@ -85,11 +94,13 @@ const Dashboard = () => {
   }
 
   const handleCreateSimulation = async () => {
+    if (!tile || !selectedPlanId) {
+      alert('Please select a management plan before creating a simulation.')
+      return
+    }
+
     try {
-      const simulation = await pocketbase.createSimulation(
-        tile,
-        simulationOptions
-      )
+      const simulation = await pocketbase.createSimulation(tile, selectedPlanId)
       setSelectedSimulationId(simulation.id)
     } catch (error) {
       console.error('Failed to create simulation:', error.message)
@@ -108,17 +119,16 @@ const Dashboard = () => {
               <ManagementPlanItemList
                 managementPlans={managementPlans}
                 selectedPlanId={selectedPlanId}
-                onSelect={setSelectedPlanId}
+                onSelect={(id) => {
+                  startTransition(() => {
+                    setSelectedPlanId(id)
+                  })
+                }}
                 onDelete={handleDeletePlan}
                 onCreatePlan={() => createManagementPlan()}
               />
             }
-            main={
-              <ManagementPlanView
-                tile={tile}
-                id_managementPlan={selectedPlanId}
-              />
-            }
+            main={<ManagementPlanView tile={tile} id={selectedPlanId} />}
           />
         </ContentCell>
 
