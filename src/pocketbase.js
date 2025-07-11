@@ -97,6 +97,7 @@ const mapSimulation = (simulation) => {
     id: simulation.id,
     created: new Date(simulation.created),
     options: simulation.options,
+    plan: simulation.plan,
   }
 }
 

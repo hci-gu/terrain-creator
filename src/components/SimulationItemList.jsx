@@ -1,4 +1,4 @@
-import { Stack, Text } from '@mantine/core'
+import { Stack, Flex, Text } from '@mantine/core'
 import ItemList from './ItemList'
 
 export const SimulationItemList = ({
@@ -9,7 +9,7 @@ export const SimulationItemList = ({
   onCreateSimulation,
 }) => {
   const renderSimulationContent = (simulation) => (
-    <Stack>
+    <Flex direction="column" gap="0">
       <Text fw={500}>{simulation.created.toLocaleDateString()}</Text>
       <Text fz="sm" c="dimmed">
         {simulation.created
@@ -22,7 +22,7 @@ export const SimulationItemList = ({
             </span>
           ))}
       </Text>
-    </Stack>
+    </Flex>
   )
 
   return (

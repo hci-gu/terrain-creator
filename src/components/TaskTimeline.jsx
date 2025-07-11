@@ -1,3 +1,4 @@
+import React, { useLayoutEffect, useEffect, useRef } from 'react'
 import {
   Box,
   Text,
@@ -9,13 +10,13 @@ import {
   Divider,
 } from '@mantine/core'
 import { format } from 'date-fns'
-import { useEffect, useRef } from 'react'
 import { atom, useAtom } from 'jotai'
 import FishingPolicyView from '@components/FishingPolicyView'
 
 export const timelineWidthAtom = atom(null)
 
 const ZOOM_SPEED_FACTOR = 10
+
 const TimelineTaskItem = ({
   task,
   tile,
@@ -24,218 +25,182 @@ const TimelineTaskItem = ({
   clampedTaskStart,
   clampedTaskEnd,
   handleTaskClick,
-}) => {
-  return (
-    <Tooltip
-      label={
-        <Stack gap="xs">
-          <Text fw={600}>{task.name}</Text>
-          <Text fz="sm">Start: {format(clampedTaskStart, 'MMM d, yyyy')}</Text>
-          <Text fz="sm">End: {format(clampedTaskEnd, 'MMM d, yyyy')}</Text>
-          {tile.landcover?.url && task.type === 'landcover' && (
-            <Box h="100">
+}) => (
+  <Tooltip
+    label={
+      <Stack gap="xs">
+        <Text fw={600}>{task.name}</Text>
+        <Text fz="sm">Start: {format(clampedTaskStart, 'MMM d, yyyy')}</Text>
+        <Text fz="sm">End: {format(clampedTaskEnd, 'MMM d, yyyy')}</Text>
+        {tile.landcover?.url && task.type === 'landcover' && (
+          <Box h="100">
+            <Image
+              src={tile.landcover.url}
+              alt={task.name}
+              h="100%"
+              radius="sm"
+              fit="contain"
+            />
+          </Box>
+        )}
+      </Stack>
+    }
+    withArrow
+  >
+    <Paper
+      shadow="xl"
+      withBorder
+      p="sm"
+      w={`${widthPercentage}%`}
+      h="200"
+      left={`${leftPercentage}%`}
+      pos="absolute"
+      style={{
+        cursor: 'pointer',
+        zIndex: 2,
+        overflow: 'hidden',
+        display: 'flex',
+        flexDirection: 'column',
+      }}
+      onClick={() => handleTaskClick(task)}
+    >
+      <Text fz="md" fw={600} truncate>
+        {task.name}
+      </Text>
+      <Stack w="100%" gap="xs" style={{ flex: 1, minHeight: 0 }}>
+        {task.type === 'fishingPolicy' && task.data && (
+          <FishingPolicyView fishingPolicy={task.data} />
+        )}
+        {tile.landcover?.url &&
+          task.type === 'landcover' &&
+          widthPercentage > 1 && (
+            <Box mih="0" style={{ display: 'flex' }}>
               <Image
                 src={tile.landcover.url}
                 alt={task.name}
-                h="100%"
                 radius="sm"
+                h="60px"
                 fit="contain"
               />
             </Box>
           )}
-        </Stack>
-      }
-      withArrow
-    >
-      <Paper
-        shadow="xl"
-        withBorder
-        p="sm"
-        w={`${widthPercentage}%`}
-        h="200"
-        left={`${leftPercentage}%`}
-        pos="absolute"
-        style={{
-          cursor: 'pointer',
-          zIndex: 2,
-          overflow: 'hidden',
-          display: 'flex',
-          flexDirection: 'column',
-        }}
-        onClick={() => handleTaskClick(task)}
-      >
-        <Text fz="md" fw={600} truncate>
-          {task.name}
-        </Text>
-        <Stack w="100%" gap="xs" style={{ flex: 1, minHeight: 0 }}>
-          {task.type === 'fishingPolicy' && task.fishingPolicy && (
-            <FishingPolicyView fishingPolicy={task.fishingPolicy} />
-          )}
-          {tile.landcover?.url &&
-            task.type === 'landcover' &&
-            widthPercentage > 1 && (
-              <Box
-                mih="0"
-                style={{
-                  display: 'flex',
-                }}
-              >
-                <Image
-                  src={tile.landcover.url}
-                  alt={task.name}
-                  radius="sm"
-                  h="100%"
-                  fit="contain"
-                />
-              </Box>
-            )}
-        </Stack>
-      </Paper>
-    </Tooltip>
-  )
-}
+      </Stack>
+    </Paper>
+  </Tooltip>
+)
 
 export const Timeline = ({ tasks, tile, onTaskClick }) => {
-  const timelineContainerRef = useRef(null)
+  const containerRef = useRef(null)
   const [timelineWidth, setTimelineWidth] = useAtom(timelineWidthAtom)
-  const zoomAnchorRef = useRef(null)
+  const zoomAnchor = useRef(null)
 
-  // Setup horizontal scrolling and zooming
+  // 1) Initialize width on mount
+  useLayoutEffect(() => {
+    const el = containerRef.current
+    if (el) {
+      setTimelineWidth(el.clientWidth)
+    }
+  }, [setTimelineWidth])
+
+  // 2) Wheel → scroll / shift+wheel → zoom
   useEffect(() => {
-    const timelineElement = timelineContainerRef.current
-    if (!timelineElement) return
+    const el = containerRef.current
+    if (!el) return
 
-    const handleWheel = (event) => {
-      if (event.shiftKey) {
-        event.preventDefault()
+    const handleWheel = (e) => {
+      if (e.shiftKey) {
+        e.preventDefault()
+        const mouseX = e.clientX - el.getBoundingClientRect().left
+        const beforeW = timelineWidth || el.clientWidth
+        const scrollLeft = el.scrollLeft
 
-        const mouseX =
-          event.clientX - timelineElement.getBoundingClientRect().left
-        const currentScrollLeft = timelineElement.scrollLeft
-        const widthBeforeThisZoomEvent = timelineWidth
-
-        const anchorRatio =
-          widthBeforeThisZoomEvent > 0
-            ? (currentScrollLeft + mouseX) / widthBeforeThisZoomEvent
-            : 0
-
-        zoomAnchorRef.current = {
-          ratio: anchorRatio,
-          mouseXAtZoom: mouseX,
-          widthBeforeZoom: widthBeforeThisZoomEvent,
+        zoomAnchor.current = {
+          ratio: (scrollLeft + mouseX) / beforeW,
+          mouseX,
+          beforeW,
         }
 
-        setTimelineWidth((prevActualWidth) => {
-          const changeAmount = event.deltaY * ZOOM_SPEED_FACTOR
-          let newCalculatedWidth = prevActualWidth - changeAmount
-          const containerVisibleWidth = timelineElement.clientWidth
-          return Math.max(containerVisibleWidth, newCalculatedWidth)
+        setTimelineWidth((prev) => {
+          const change = e.deltaY * ZOOM_SPEED_FACTOR
+          return Math.max(el.clientWidth, prev - change)
         })
-      } else {
-        if (event.deltaY !== 0) {
-          event.preventDefault()
-          timelineElement.scrollLeft -= event.deltaY
-        }
+      } else if (e.deltaY !== 0) {
+        e.preventDefault()
+        el.scrollLeft -= e.deltaY
       }
     }
 
-    timelineElement.addEventListener('wheel', handleWheel, {
-      passive: false,
-    })
+    el.addEventListener('wheel', handleWheel, { passive: false })
+    return () =>
+      el.removeEventListener('wheel', handleWheel, { passive: false })
+  }, [timelineWidth, setTimelineWidth])
 
-    return () => {
-      timelineElement.removeEventListener('wheel', handleWheel, {
-        passive: false,
-      })
-    }
-  }, [timelineWidth, ZOOM_SPEED_FACTOR])
-
-  // Effect to adjust scroll after zoom
+  // 3) After zoom, re-anchor scroll
   useEffect(() => {
-    const timelineElement = timelineContainerRef.current
-    if (timelineElement && zoomAnchorRef.current) {
-      const { ratio, mouseXAtZoom, widthBeforeZoom } = zoomAnchorRef.current
-      const newWidthAfterZoom = timelineWidth
-
-      if (newWidthAfterZoom !== widthBeforeZoom) {
-        let newScrollLeft = ratio * newWidthAfterZoom - mouseXAtZoom
-
-        const containerVisibleWidth = timelineElement.clientWidth
-        const maxScrollLeft = Math.max(
-          0,
-          newWidthAfterZoom - containerVisibleWidth
-        )
-        newScrollLeft = Math.max(0, Math.min(newScrollLeft, maxScrollLeft))
-
-        timelineElement.scrollLeft = newScrollLeft
+    const el = containerRef.current
+    const anchor = zoomAnchor.current
+    if (el && anchor) {
+      const { ratio, mouseX, beforeW } = anchor
+      const newW = timelineWidth
+      if (newW !== beforeW) {
+        let newScroll = ratio * newW - mouseX
+        const maxScroll = newW - el.clientWidth
+        el.scrollLeft = Math.max(0, Math.min(newScroll, maxScroll))
       }
-      zoomAnchorRef.current = null
     }
+    zoomAnchor.current = null
   }, [timelineWidth])
 
-  let displayYear
-  if (tasks.length > 0) {
-    const earliestTaskDate = new Date(
-      Math.min(...tasks.map((task) => new Date(task.start)))
-    )
-    displayYear = earliestTaskDate.getFullYear()
-  } else {
-    displayYear = new Date().getFullYear()
-  }
+  // 4) Compute past-5-year window
+  const now = new Date()
+  const startDate = new Date(now)
+  startDate.setFullYear(now.getFullYear())
+  startDate.setMonth(0, 1) // January 1st
+  // zero-out time so tasks align by date
+  startDate.setHours(0, 0, 0, 0)
+  const endDate = new Date(startDate)
+  endDate.setFullYear(now.getFullYear() + 3)
+  endDate.setHours(23, 59, 59, 999)
+  const totalDuration = endDate.getTime() - startDate.getTime()
 
-  const timelineMinDate = new Date(displayYear, 0, 1)
-  const timelineMaxDate = new Date(displayYear + 1, 0, 1)
-  const actualTimelineEndDate = new Date(displayYear, 11, 31, 23, 59, 59)
-  const timelineDuration = timelineMaxDate.getTime() - timelineMinDate.getTime()
-
-  const getMonthMarkers = () => {
-    const markers = []
-    for (let i = 0; i < 12; i++) {
-      markers.push(new Date(displayYear, i, 1))
-    }
-    return markers
-  }
-
-  const monthMarkers = getMonthMarkers()
+  // 5) Year markers at each whole year
+  const yearMarkers = Array.from({ length: 6 }, (_, i) => {
+    const m = new Date(startDate)
+    m.setFullYear(startDate.getFullYear() + i)
+    return m
+  })
 
   return (
     <Box
-      ref={timelineContainerRef}
+      ref={containerRef}
       flex="auto"
-      style={{
-        overflowX: 'scroll',
-        overflowY: 'auto',
-        userSelect: 'none',
-      }}
+      style={{ overflowX: 'scroll', overflowY: 'auto', userSelect: 'none' }}
     >
       <Box w={`${timelineWidth}px`} h="100%" pos="relative">
+        {/* Year labels */}
         <Group h="30" gap="0" pos="relative">
-          {monthMarkers.map((markerDate, index) => {
-            const markerPositionPercent =
-              timelineDuration > 0
-                ? ((markerDate.getTime() - timelineMinDate.getTime()) /
-                    timelineDuration) *
-                  100
-                : 0
+          {yearMarkers.map((d, i) => {
+            const pct =
+              ((d.getTime() - startDate.getTime()) / totalDuration) * 100
             return (
               <Text
-                key={`label-${index}`}
+                key={i}
                 fz="sm"
                 fw={600}
                 c="dimmed"
                 pos="absolute"
-                left={`${markerPositionPercent}%`}
+                left={`${pct}%`}
                 pl="4px"
               >
-                {format(markerDate, 'MMMM')}
+                {format(d, 'yyyy')}
               </Text>
             )
           })}
         </Group>
 
+        {/* Grid + tasks */}
         <Box
-          h={'calc(100% - 30px)'}
-          // h="100%"
+          h="calc(100% - 30px)"
           pos="relative"
           sx={(theme) => ({
             backgroundColor:
@@ -244,76 +209,49 @@ export const Timeline = ({ tasks, tile, onTaskClick }) => {
                 : theme.colors.gray[0],
           })}
         >
-          {monthMarkers.map((markerDate, index) => {
-            const markerPositionPercent =
-              timelineDuration > 0
-                ? ((markerDate.getTime() - timelineMinDate.getTime()) /
-                    timelineDuration) *
-                  100
-                : 0
-
+          {yearMarkers.map((d, i) => {
+            const pct =
+              ((d.getTime() - startDate.getTime()) / totalDuration) * 100
             return (
               <Divider
-                key={`line-${index}`}
+                key={i}
                 orientation="vertical"
                 size="xs"
                 pos="absolute"
-                left={`${markerPositionPercent}%`}
+                left={`${pct}%`}
                 top="0"
                 bottom="0"
-                style={{
-                  zIndex: 1,
-                }}
+                style={{ zIndex: 1 }}
               />
             )
           })}
 
           <Group h="100%" gap="lg" wrap="nowrap" pos="relative">
             {tasks.map((task) => {
-              const taskStart = new Date(task.start)
-              let taskEnd = new Date(task.end)
+              const ts = new Date(task.start)
+              const te = new Date(task.end)
 
-              const clampedTaskStart = new Date(
-                Math.max(taskStart, timelineMinDate)
-              )
-              const clampedTaskEnd = new Date(
-                Math.min(taskEnd, actualTimelineEndDate)
-              )
+              const clampedStart = new Date(Math.max(ts, startDate))
+              const clampedEnd = new Date(Math.min(te, endDate))
+              if (clampedStart > clampedEnd) return null
 
-              if (clampedTaskStart > clampedTaskEnd) {
-                return null
-              }
+              const dur = clampedEnd.getTime() - clampedStart.getTime()
+              const leftPct =
+                ((clampedStart.getTime() - startDate.getTime()) /
+                  totalDuration) *
+                100
+              const widthPct = (dur / totalDuration) * 100
+              if (widthPct <= 0) return null
 
-              const taskDuration =
-                clampedTaskEnd.getTime() - clampedTaskStart.getTime()
-
-              const leftPercentage =
-                timelineDuration > 0
-                  ? ((clampedTaskStart.getTime() - timelineMinDate.getTime()) /
-                      timelineDuration) *
-                    100
-                  : 0
-              const widthPercentage =
-                timelineDuration > 0
-                  ? (taskDuration / timelineDuration) * 100
-                  : 0
-
-              if (
-                taskEnd < timelineMinDate ||
-                taskStart > actualTimelineEndDate ||
-                widthPercentage <= 0
-              ) {
-                return null
-              }
               return (
                 <TimelineTaskItem
                   key={task.id}
                   task={task}
                   tile={tile}
-                  leftPercentage={leftPercentage}
-                  widthPercentage={widthPercentage}
-                  clampedTaskStart={clampedTaskStart}
-                  clampedTaskEnd={clampedTaskEnd}
+                  leftPercentage={leftPct}
+                  widthPercentage={widthPct}
+                  clampedTaskStart={clampedStart}
+                  clampedTaskEnd={clampedEnd}
                   handleTaskClick={onTaskClick}
                 />
               )

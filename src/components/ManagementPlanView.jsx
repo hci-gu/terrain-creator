@@ -1,4 +1,12 @@
-import { Container, Box, Text, Stack, Button, Group } from '@mantine/core'
+import {
+  Container,
+  Box,
+  Text,
+  Stack,
+  Button,
+  Group,
+  Center,
+} from '@mantine/core'
 import { useAtomValue, useSetAtom } from 'jotai'
 import * as pocketbase from '@/pocketbase'
 import { getManagementPlanByIdAtom, refreshManagementPlansAtom } from '@state'
@@ -21,9 +29,9 @@ export const ManagementPlanView = ({ tile, id }) => {
 
   if (!managementPlan) {
     return (
-      <Container fluid>
+      <Center h="100%">
         <Text c="dimmed">No management plan selected</Text>
-      </Container>
+      </Center>
     )
   }
 

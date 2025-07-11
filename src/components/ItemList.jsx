@@ -1,5 +1,14 @@
 import React from 'react'
-import { Card, Text, Button, Stack, Group, Box } from '@mantine/core'
+import {
+  Card,
+  Text,
+  Button,
+  Stack,
+  Group,
+  Box,
+  Flex,
+  Divider,
+} from '@mantine/core'
 import { IconTrashFilled } from '@tabler/icons-react'
 
 const ItemList = ({
@@ -21,14 +30,17 @@ const ItemList = ({
           </Text>
         )}
         {buttonLabel && onButtonClick && (
-          <Button variant="filled" onClick={onButtonClick}>
+          <Button variant="filled" onClick={onButtonClick} size="xs">
             {buttonLabel}
           </Button>
         )}
       </Group>
+      <Divider />
       <Box gap="xs" w="100%" style={{ overflowY: 'auto' }}>
         {!items || items.length === 0 ? (
-          <Text c="dimmed">No items available.</Text>
+          <Flex justify="center" align="center" h="100%">
+            <Text c="dimmed">No items available.</Text>
+          </Flex>
         ) : (
           items.map((item) => (
             <Card
@@ -49,21 +61,23 @@ const ItemList = ({
               }}
               onClick={() => onSelect(item.id)}
             >
-              {renderItemContent(item)}
-              <Button
-                w={48}
-                pl={12}
-                pr={12}
-                variant="outline"
-                color="red"
-                onClick={(e) => {
-                  e.stopPropagation()
-                  onDelete(item.id)
-                }}
-                aria-label={`Delete item ${item.id}`}
-              >
-                <IconTrashFilled size={16} />
-              </Button>
+              <Flex justify="space-between" align="center" gap="xs">
+                {renderItemContent(item)}
+                <Button
+                  w={48}
+                  pl={12}
+                  pr={12}
+                  variant="outline"
+                  color="red"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    onDelete(item.id)
+                  }}
+                  aria-label={`Delete item ${item.id}`}
+                >
+                  <IconTrashFilled size={16} />
+                </Button>
+              </Flex>
             </Card>
           ))
         )}

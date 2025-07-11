@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { useParams } from 'react-router-dom'
-import { Stack, Box, Paper, Flex } from '@mantine/core'
+import { Stack, Box, Paper, Flex, Divider, Center, Text } from '@mantine/core'
 import { useAtomValue, useSetAtom } from 'jotai'
 import {
   getTileByIdAtom,
@@ -42,13 +42,8 @@ export const ContentLayout = ({ sidebar, main }) => (
     <Box h="100%" w="30vw" miw="200" maw="500" flex="0 0 20%">
       {sidebar}
     </Box>
-
-    <Box
-      h="100%"
-      miw="0"
-      flex="auto"
-      // style={{ overflowX: 'auto' }}
-    >
+    <Divider orientation="vertical" />
+    <Box h="100%" miw="0" flex="auto">
       {main}
     </Box>
   </Flex>
@@ -63,19 +58,7 @@ const Dashboard = () => {
   const [selectedPlanId, setSelectedPlanId] = useState(0)
   const [selectedSimulationId, setSelectedSimulationId] = useState(null)
 
-  useEffect(() => {
-    if (tile && tile.simulations && tile.simulations.length > 0) {
-      setSelectedSimulationId(tile.simulations[0].id)
-    }
-  }, [tile])
-
   const createManagementPlan = async () => {
-    // const newPlan = {
-    //   id: Date.now(),
-    //   name: planName ? planName : 'New Management Plan',
-    //   created: new Date(),
-    //   tasks: [],
-    // }
     const newPlan = await pocketbase.createManagementPlan()
     refreshPlans()
     return newPlan
@@ -110,10 +93,17 @@ const Dashboard = () => {
 
   if (!tile) return null
 
+  const managementPlan = managementPlans.find(
+    (plan) => plan.id === selectedPlanId
+  )
+  const simulations = tile.simulations.filter(
+    (sim) => sim.plan === selectedPlanId
+  )
+
   return (
     <Box w="100%" h="100%">
-      <Stack h="100%" gap="6px">
-        <ContentCell flexBasis="60%">
+      <Stack h="100%" gap="4px">
+        <ContentCell flexBasis="30%">
           <ContentLayout
             sidebar={
               <ManagementPlanItemList
@@ -121,6 +111,7 @@ const Dashboard = () => {
                 selectedPlanId={selectedPlanId}
                 onSelect={(id) => {
                   startTransition(() => {
+                    setSelectedSimulationId(null)
                     setSelectedPlanId(id)
                   })
                 }}
@@ -132,18 +123,29 @@ const Dashboard = () => {
           />
         </ContentCell>
 
-        <ContentCell flexBasis="40%">
+        <ContentCell flexBasis="70%">
           <ContentLayout
             sidebar={
               <SimulationItemList
-                simulations={tile.simulations}
+                simulations={simulations}
                 selectedSimulationId={selectedSimulationId}
                 onSelect={setSelectedSimulationId}
                 onDelete={handleDeleteSimulation}
                 onCreateSimulation={handleCreateSimulation}
               />
             }
-            main={<SimulationChartView id_simulation={selectedSimulationId} />}
+            main={
+              selectedSimulationId ? (
+                <SimulationChartView
+                  simulationId={selectedSimulationId}
+                  managementPlan={managementPlan}
+                />
+              ) : (
+                <Center h="100%">
+                  <Text c="dimmed">No simulation selected</Text>
+                </Center>
+              )
+            }
           />
         </ContentCell>
       </Stack>
